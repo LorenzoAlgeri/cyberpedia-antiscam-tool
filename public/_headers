@@ -2,12 +2,26 @@
  * Cloudflare Pages custom headers
  * Applied automatically at the edge — no server needed.
  *
- * Security headers for iframe integration with cyberpedia.it
- * and general hardening.
+ * Security headers per /security-requirement-extraction:
+ * - CSP frame-ancestors for iframe integration with cyberpedia.it
+ * - Full browser-side hardening (XSS, clickjacking, MIME sniffing)
+ * - Strict CSP for inline scripts: only vite-generated hashes
  */
 
 /*
-  Content-Security-Policy: frame-ancestors 'self' https://cyberpedia.it https://*.cyberpedia.it
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; frame-ancestors 'self' https://cyberpedia.it https://*.cyberpedia.it; base-uri 'self'; form-action 'self'
   X-Content-Type-Options: nosniff
+  X-Frame-Options: SAMEORIGIN
   Referrer-Policy: strict-origin-when-cross-origin
-  Permissions-Policy: camera=(), microphone=(), geolocation=()
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=()
+  Cross-Origin-Opener-Policy: same-origin
+  Cross-Origin-Resource-Policy: same-origin
+  Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
+
+# Service worker must be served without caching for updates to work
+/sw.js
+  Cache-Control: no-cache, no-store, must-revalidate
+
+# Static assets: immutable cache (filenames have content hashes)
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
