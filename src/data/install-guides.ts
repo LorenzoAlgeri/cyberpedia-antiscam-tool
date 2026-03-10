@@ -39,10 +39,11 @@ const iosSafari: InstallGuideData = {
   title: 'Safari su iPhone / iPad',
   icon: 'Smartphone',
   steps: [
-    { text: 'Tocca l\'icona di condivisione in basso', hint: 'Il quadrato con la freccia verso l\'alto' },
-    { text: 'Scorri e tocca "Aggiungi alla schermata Home"' },
-    { text: 'Conferma toccando "Aggiungi" in alto a destra' },
-    { text: 'L\'app apparirà nella tua Home Screen', hint: 'Puoi spostarla come qualsiasi altra app' },
+    { text: 'Tocca il pulsante ⋯ (Altro) in basso a destra', hint: 'In alternativa, tocca l\'icona di condivisione (quadrato con freccia)' },
+    { text: 'Tocca "Condividi"' },
+    { text: 'Scorri e tocca "Aggiungi alla schermata Home"', hint: 'Se non lo vedi, scorri in basso e tocca "Modifica azioni" per aggiungerlo' },
+    { text: 'Tocca "Aggiungi" in alto a destra' },
+    { text: 'Puoi anche selezionare "Apri come web app"', hint: 'L\'app funzionerà in modo indipendente da Safari' },
   ],
 };
 
@@ -51,9 +52,9 @@ const iosChrome: InstallGuideData = {
   icon: 'Smartphone',
   steps: [
     { text: 'Chrome su iOS non supporta l\'installazione diretta' },
-    { text: 'Apri questa pagina in Safari', hint: 'Tocca i tre puntini ⋯ → "Apri in Safari"' },
-    { text: 'In Safari, tocca l\'icona di condivisione' },
-    { text: 'Tocca "Aggiungi alla schermata Home"' },
+    { text: 'Copia l\'indirizzo di questa pagina dalla barra URL' },
+    { text: 'Apri Safari e incolla l\'indirizzo' },
+    { text: 'In Safari, tocca ⋯ (Altro) → Condividi → "Aggiungi alla schermata Home"' },
   ],
 };
 
@@ -62,9 +63,9 @@ const androidChrome: InstallGuideData = {
   icon: 'Smartphone',
   steps: [
     { text: 'Tocca "Installa" nel banner che appare', hint: 'Se il banner non appare, usa il passo successivo' },
-    { text: 'In alternativa: tocca i tre puntini ⋮ in alto' },
-    { text: 'Seleziona "Installa app" o "Aggiungi a schermata Home"' },
-    { text: 'Conferma toccando "Installa"', hint: 'L\'app apparirà nel cassetto applicazioni' },
+    { text: 'In alternativa: tocca i tre puntini ⋮ in alto a destra' },
+    { text: 'Seleziona "Aggiungi a schermata Home"' },
+    { text: 'Tocca "Installa" per confermare', hint: 'L\'app apparirà nel cassetto applicazioni e nella Home Screen' },
   ],
 };
 
@@ -104,9 +105,10 @@ const desktopEdge: InstallGuideData = {
   title: 'Edge su Desktop',
   icon: 'Monitor',
   steps: [
-    { text: 'Clicca l\'icona di installazione nella barra degli indirizzi' },
-    { text: 'In alternativa: menu ⋯ → "App" → "Installa questo sito come app"' },
-    { text: 'Conferma cliccando "Installa"' },
+    { text: 'Clicca i tre puntini ⋯ in alto a destra' },
+    { text: 'Seleziona "Altri strumenti" → "App"' },
+    { text: 'Clicca "Installa questo sito come app"' },
+    { text: 'Conferma cliccando "Installa"', hint: 'L\'app apparirà anche in edge://apps' },
   ],
 };
 
@@ -120,13 +122,24 @@ const desktopFirefox: InstallGuideData = {
   ],
 };
 
+const desktopSafari: InstallGuideData = {
+  title: 'Safari su Mac',
+  icon: 'Monitor',
+  steps: [
+    { text: 'Dal menu in alto, scegli File → "Aggiungi al Dock"', hint: 'In alternativa: clicca il pulsante Condividi → "Aggiungi al Dock"' },
+    { text: 'Scegli un nome per l\'app e clicca "Aggiungi"' },
+    { text: 'L\'app apparirà nel Dock e in Spotlight', hint: 'Richiede macOS Sonoma 14 o successivo' },
+  ],
+};
+
 const genericDesktop: InstallGuideData = {
   title: 'Desktop',
   icon: 'Monitor',
   steps: [
-    { text: 'Apri questa pagina in Chrome o Edge' },
-    { text: 'Clicca l\'icona di installazione nella barra degli indirizzi' },
-    { text: 'Conferma cliccando "Installa"' },
+    { text: 'Apri questa pagina in Chrome, Edge o Safari (Mac)' },
+    { text: 'Chrome: ⋮ → "Trasmetti, salva e condividi" → "Installa pagina come app..."' },
+    { text: 'Edge: ⋯ → "Altri strumenti" → "App" → "Installa questo sito come app"' },
+    { text: 'Safari (Mac): File → "Aggiungi al Dock"' },
   ],
 };
 
@@ -155,6 +168,7 @@ export function getInstallGuide(
   // Desktop
   if (browser === 'chrome') return desktopChrome;
   if (browser === 'edge') return desktopEdge;
+  if (browser === 'safari') return desktopSafari;
   if (browser === 'firefox') return desktopFirefox;
   return genericDesktop;
 }
