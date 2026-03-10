@@ -1,13 +1,12 @@
 # =============================================================
-# Cloudflare Pages — Deploy on push to master
+# CI — Lint + Type Check + Build verification
 # =============================================================
-# Pipeline: checkout → install → lint → build → deploy
-# Secrets required:
-#   CLOUDFLARE_ACCOUNT_ID — your CF account ID
-#   CLOUDFLARE_API_TOKEN  — CF API token with Pages edit perms
+# Deploy is handled automatically by Cloudflare Pages
+# Git integration (connected to this repo).
+# This workflow runs checks on every push and PR.
 # =============================================================
 
-name: Deploy to Cloudflare Pages
+name: CI
 
 on:
   push:
@@ -17,10 +16,9 @@ on:
 
 permissions:
   contents: read
-  deployments: write
 
 jobs:
-  build-and-deploy:
+  ci:
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
@@ -42,11 +40,3 @@ jobs:
 
       - name: Type check + Build
         run: npm run build
-
-      - name: Deploy to Cloudflare Pages
-        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
-        uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy dist --project-name=cyberpedia-antiscam-tool
