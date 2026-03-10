@@ -1,4 +1,5 @@
 import { useHashRouter } from '@/hooks/useHashRouter';
+import { useReturningUser } from '@/hooks/useReturningUser';
 import { WizardShell } from '@/components/layout/WizardShell';
 import { LandingPage } from '@/pages/LandingPage';
 import { EmergencyPage } from '@/pages/EmergencyPage';
@@ -12,12 +13,15 @@ import { InstallPage } from '@/pages/InstallPage';
  */
 function App() {
   const { currentStep, direction, goTo, goNext, goBack } = useHashRouter();
+  const { isReturningUser } = useReturningUser();
 
   /** Render the active step page */
   function renderStep() {
     switch (currentStep) {
       case 0:
-        return <LandingPage onNext={goNext} />;
+        return (
+          <LandingPage onNext={goNext} isReturningUser={isReturningUser} />
+        );
       case 1:
         return <EmergencyPage onNext={goNext} onBack={goBack} />;
       case 2:
