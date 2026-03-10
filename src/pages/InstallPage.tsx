@@ -1,6 +1,7 @@
 import { motion } from 'motion/react';
-import { CheckCircle, Download } from 'lucide-react';
+import { CheckCircle, Download, Zap } from 'lucide-react';
 import { useDeviceInfo } from '@/hooks/useDeviceInfo';
+import { useInstallPrompt } from '@/hooks/useInstallPrompt';
 import { getInstallGuide } from '@/data/install-guides';
 import { InstallGuide } from '@/components/install/InstallGuide';
 
@@ -11,16 +12,21 @@ interface InstallPageProps {
 /**
  * Step 4 — PWA install guide with OS/browser auto-detection.
  *
- * /mobile-ios-design: shows Safari share-sheet instructions for iOS.
- * /mobile-android-design: shows Chrome/Samsung install steps for Android.
- * /interaction-design: stagger entrance, success state for standalone.
+ * /mobile-ios-design: Safari share-sheet instructions for iOS.
+ * /mobile-android-design: Chrome native install prompt for Android.
+ * /interaction-design: stagger entrance, success/installed states.
  *
- * If the app is already installed (standalone mode), shows a success
- * message instead of the install guide.
+ * Three states:
+ * 1. Standalone → already installed, show success
+ * 2. Native prompt available → one-click install button
+ * 3. Fallback → step-by-step manual guide
  */
 export function InstallPage({ onBack }: InstallPageProps) {
   const device = useDeviceInfo();
+  const { isInstallReady, isInstalled, promptInstall } = useInstallPrompt();
   const guide = getInstallGuide(device.os, device.browser);
+
+  const showSuccess = device.isStandalone || isInstalled;
 
   return (
     <div className="flex flex-col items-center gap-8 px-4 py-8 text-center">
@@ -31,7 +37,7 @@ export function InstallPage({ onBack }: InstallPageProps) {
         animate={{ scale: 1, opacity: 1 }}
         transition={{ duration: 0.3 }}
       >
-        {device.isStandalone ? (
+        {showSuccess ? (
           <CheckCircle className="h-8 w-8 text-[var(--success)]" strokeWidth={1.5} />
         ) : (
           <Download className="h-8 w-8 text-cyan-brand" strokeWidth={1.5} />
@@ -46,16 +52,30 @@ export function InstallPage({ onBack }: InstallPageProps) {
         transition={{ duration: 0.3, delay: 0.05 }}
       >
         <h2 className="text-3xl font-bold text-foreground">
-          {device.isStandalone
-            ? 'App già installata!'
-            : 'Installa sulla Home Screen'}
+          {showSuccess ? 'App installata!' : 'Installa sulla Home Screen'}
         </h2>
         <p className="max-w-md text-muted-foreground">
-          {device.isStandalone
+          {showSuccess
             ? 'Hai già accesso rapido al tool dal tuo dispositivo.'
             : 'In caso di truffa, lo aprirai in 2 secondi.'}
         </p>
       </motion.div>
+
+      {/* Native install button (Chrome/Edge on Android/Desktop) */}
+      {isInstallReady && !showSuccess && (
+        <motion.button
+          type="button"
+          onClick={() => void promptInstall()}
+          className="flex items-center gap-3 rounded-2xl bg-gradient-to-r from-cyan-500 to-cyan-400 px-8 py-4 text-lg font-semibold text-primary-foreground shadow-xl shadow-cyan-500/25 transition-transform active:scale-[0.98]"
+          style={{ minHeight: 44 }}
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.3, delay: 0.1 }}
+        >
+          <Zap className="h-5 w-5" strokeWidth={2} />
+          Installa con un click
+        </motion.button>
+      )}
 
       {/* Install guide or success card */}
       <motion.div
@@ -64,18 +84,26 @@ export function InstallPage({ onBack }: InstallPageProps) {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3, delay: 0.12 }}
       >
-        {device.isStandalone ? (
+        {showSuccess ? (
           <p className="text-base text-muted-foreground">
-            Stai già usando l&apos;app in modalità standalone.
-            Puoi trovarla nella tua Home Screen.
+            {isInstalled
+              ? 'Installazione completata! Troverai l\u2019app nella tua Home Screen.'
+              : 'Stai già usando l\u2019app in modalità standalone.'}
           </p>
         ) : (
-          <InstallGuide guide={guide} />
+          <>
+            {isInstallReady && (
+              <p className="mb-4 text-sm text-muted-foreground">
+                Oppure segui la guida manuale:
+              </p>
+            )}
+            <InstallGuide guide={guide} />
+          </>
         )}
       </motion.div>
 
-      {/* Device info badge (subtle) */}
-      {!device.isStandalone && (
+      {/* Device info badge */}
+      {!showSuccess && (
         <motion.p
           className="text-xs text-muted-foreground/60"
           initial={{ opacity: 0 }}
