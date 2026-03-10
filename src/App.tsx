@@ -1,5 +1,6 @@
 import { lazy, Suspense } from 'react';
 import { useHashRouter } from '@/hooks/useHashRouter';
+import { useIframeResize } from '@/hooks/useIframeResize';
 import { useReturningUser } from '@/hooks/useReturningUser';
 import { WizardShell } from '@/components/layout/WizardShell';
 import { LandingPage } from '@/pages/LandingPage';
@@ -45,6 +46,9 @@ function StepFallback() {
 function App() {
   const { currentStep, direction, goTo, goNext, goBack } = useHashRouter();
   const { isReturningUser } = useReturningUser();
+
+  // Notify parent iframe (cyberpedia.it) of height changes
+  useIframeResize();
 
   /** Render the active step page, lazy pages wrapped in Suspense */
   function renderStep() {
