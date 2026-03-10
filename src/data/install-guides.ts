@@ -93,10 +93,10 @@ const desktopChrome: InstallGuideData = {
   title: 'Chrome su Desktop',
   icon: 'Monitor',
   steps: [
-    { text: 'Clicca l\'icona di installazione nella barra degli indirizzi', hint: 'Un\'icona con monitor e freccia, a destra della URL' },
-    { text: 'In alternativa: menu ⋮ → "Installa Anti-Truffa Tool"' },
-    { text: 'Clicca "Installa" nella finestra di conferma' },
-    { text: 'L\'app si aprirà in una finestra dedicata' },
+    { text: 'Clicca i tre puntini ⋮ in alto a destra' },
+    { text: 'Seleziona "Trasmetti, salva e condividi"' },
+    { text: 'Clicca "Installa pagina come app..."' },
+    { text: 'Conferma cliccando "Installa"', hint: 'L\'app si aprirà in una finestra dedicata' },
   ],
 };
 
