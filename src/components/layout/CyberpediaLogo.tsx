@@ -25,8 +25,10 @@ interface CyberpediaLogoProps {
 
 /**
  * Brand wordmark: "cyber" (cyan) + "pedia" (white) + ®
- * Font: system sans-serif with letter-spacing to match brand.
- * viewBox calibrated for the logotype proportions.
+ *
+ * Uses a single <text> with <tspan> children so the browser
+ * handles inter-word spacing naturally — no hardcoded x gaps.
+ * textAnchor="middle" keeps it perfectly centered in the viewBox.
  */
 export function CyberpediaLogo({
   width = 260,
@@ -35,6 +37,8 @@ export function CyberpediaLogo({
   style,
 }: CyberpediaLogoProps) {
   const viewBoxHeight = showTagline ? 56 : 38;
+  const fontFamily =
+    "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif";
 
   return (
     <svg
@@ -46,42 +50,26 @@ export function CyberpediaLogo({
       className={className}
       style={style}
     >
-      {/* "cyber" — brand cyan */}
+      {/* Wordmark — single text element, centered */}
       <text
-        x="0"
+        x="130"
         y="30"
-        fill="oklch(0.82 0.09 200)"
-        fontFamily="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif"
+        textAnchor="middle"
+        fontFamily={fontFamily}
         fontSize="36"
         fontWeight="400"
         letterSpacing="-0.5"
       >
-        cyber
-      </text>
-
-      {/* "pedia" — foreground (white on dark) */}
-      <text
-        x="113"
-        y="30"
-        fill="oklch(0.95 0.01 260)"
-        fontFamily="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif"
-        fontSize="36"
-        fontWeight="400"
-        letterSpacing="-0.5"
-      >
-        pedia
-      </text>
-
-      {/* ® symbol */}
-      <text
-        x="228"
-        y="16"
-        fill="oklch(0.95 0.01 260)"
-        fontFamily="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif"
-        fontSize="11"
-        fontWeight="300"
-      >
-        ®
+        <tspan fill="oklch(0.82 0.09 200)">cyber</tspan>
+        <tspan fill="oklch(0.95 0.01 260)">pedia</tspan>
+        <tspan
+          fill="oklch(0.95 0.01 260)"
+          fontSize="11"
+          fontWeight="300"
+          baselineShift="super"
+        >
+          ®
+        </tspan>
       </text>
 
       {/* Tagline (optional) */}
@@ -91,7 +79,7 @@ export function CyberpediaLogo({
           y="50"
           textAnchor="middle"
           fill="oklch(0.65 0.02 260)"
-          fontFamily="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif"
+          fontFamily={fontFamily}
           fontSize="12"
           fontWeight="300"
           fontStyle="italic"
