@@ -94,7 +94,7 @@ export function SimulationsPage({
                             group-hover:bg-cyan-brand/20"
               >
                 {Icon && (
-                  <Icon className="size-5 text-cyan-brand" />
+                  <Icon className="size-5 text-cyan-brand" aria-hidden="true" />
                 )}
               </div>
 
@@ -116,10 +116,7 @@ export function SimulationsPage({
         <button
           type="button"
           onClick={onBack}
-          className="flex-1 rounded-2xl border border-white/10 bg-secondary
-                     px-6 py-4 text-lg font-medium text-secondary-foreground
-                     transition-colors hover:bg-secondary/80"
-          style={{ minHeight: 44 }}
+          className="btn-secondary flex-1"
         >
           Indietro
         </button>

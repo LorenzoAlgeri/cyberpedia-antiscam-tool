@@ -118,8 +118,7 @@ export function InstallPage({ onBack }: InstallPageProps) {
       <motion.button
         type="button"
         onClick={onBack}
-        className="rounded-2xl border border-white/10 bg-secondary px-8 py-4 text-lg font-medium text-secondary-foreground transition-colors hover:bg-secondary/80"
-        style={{ minHeight: 44 }}
+        className="btn-secondary px-8"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.2 }}

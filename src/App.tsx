@@ -20,8 +20,15 @@ const InstallPage = lazy(() =>
 /** Minimal loading spinner matching design system. */
 function StepFallback() {
   return (
-    <div className="flex flex-1 items-center justify-center">
-      <div className="h-8 w-8 animate-spin rounded-full border-2 border-cyan-400 border-t-transparent" />
+    <div
+      className="flex flex-1 items-center justify-center"
+      role="status"
+      aria-label="Caricamento in corso"
+    >
+      <div
+        className="h-8 w-8 animate-spin rounded-full border-2 border-cyan-400 border-t-transparent"
+        aria-hidden="true"
+      />
     </div>
   );
 }

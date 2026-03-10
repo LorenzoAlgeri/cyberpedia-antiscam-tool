@@ -13,10 +13,11 @@
  * - Touch target ≥ 44px on all interactive elements
  */
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Lock, AlertCircle, KeyRound } from 'lucide-react';
 import { isValidPin } from '@/lib/encryption';
+import { useFocusTrap } from '@/hooks/useFocusTrap';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -57,6 +58,7 @@ const COPY: Record<PinMode, { title: string; description: string; cta: string }>
 export function PinDialog({ open, mode, error, onSubmit, onCancel }: PinDialogProps) {
   const [pin, setPin] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
 
   // Reset + auto-focus when dialog opens
   useEffect(() => {
@@ -66,6 +68,10 @@ export function PinDialog({ open, mode, error, onSubmit, onCancel }: PinDialogPr
       return () => clearTimeout(t);
     }
   }, [open]);
+
+  // Focus trap: keep Tab within dialog + Escape to close
+  const stableCancel = useCallback(() => onCancel(), [onCancel]);
+  useFocusTrap(dialogRef, open, stableCancel);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -95,6 +101,7 @@ export function PinDialog({ open, mode, error, onSubmit, onCancel }: PinDialogPr
 
           {/* Dialog card */}
           <motion.div
+            ref={dialogRef}
             className="glass-card relative z-10 w-full max-w-sm p-6 sm:p-8"
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -108,9 +115,9 @@ export function PinDialog({ open, mode, error, onSubmit, onCancel }: PinDialogPr
             <div className="mb-6 flex flex-col items-center gap-3">
               <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10">
                 {mode === 'create' ? (
-                  <KeyRound className="h-7 w-7 text-primary" />
+                  <KeyRound className="h-7 w-7 text-primary" aria-hidden="true" />
                 ) : (
-                  <Lock className="h-7 w-7 text-primary" />
+                  <Lock className="h-7 w-7 text-primary" aria-hidden="true" />
                 )}
               </div>
               <h3
@@ -150,7 +157,7 @@ export function PinDialog({ open, mode, error, onSubmit, onCancel }: PinDialogPr
                     initial={{ opacity: 0, y: -4 }}
                     animate={{ opacity: 1, y: 0 }}
                   >
-                    <AlertCircle className="h-4 w-4 shrink-0" />
+                    <AlertCircle className="h-4 w-4 shrink-0" aria-hidden="true" />
                     {error}
                   </motion.p>
                 )}

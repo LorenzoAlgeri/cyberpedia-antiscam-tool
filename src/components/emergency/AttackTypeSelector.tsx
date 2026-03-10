@@ -11,6 +11,7 @@
  *   touch targets 44px, Lucide icons only
  */
 
+import { useRef, useCallback } from 'react';
 import { motion } from 'motion/react';
 import {
   Banknote,
@@ -45,6 +46,38 @@ export function AttackTypeSelector({
   selected,
   onSelect,
 }: AttackTypeSelectorProps) {
+  const groupRef = useRef<HTMLDivElement>(null);
+
+  /** Roving tabindex: arrow keys move focus + select */
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (!['ArrowRight', 'ArrowLeft', 'ArrowDown', 'ArrowUp'].includes(e.key))
+        return;
+
+      e.preventDefault();
+      const buttons = groupRef.current?.querySelectorAll<HTMLButtonElement>(
+        '[role="radio"]',
+      );
+      if (!buttons?.length) return;
+
+      const current = Array.from(buttons).findIndex(
+        (b) => b === document.activeElement,
+      );
+      let next = current;
+
+      if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+        next = (current + 1) % buttons.length;
+      } else {
+        next = (current - 1 + buttons.length) % buttons.length;
+      }
+
+      const nextBtn = buttons[next]!;
+      nextBtn.focus();
+      onSelect(ATTACK_TYPES[next]!.id);
+    },
+    [onSelect],
+  );
+
   return (
     <section>
       <h3 className="mb-2 text-lg font-semibold text-foreground">
@@ -55,11 +88,13 @@ export function AttackTypeSelector({
       </p>
 
       <div
+        ref={groupRef}
         role="radiogroup"
         aria-label="Seleziona il tipo di attacco"
+        onKeyDown={handleKeyDown}
         className="grid grid-cols-2 gap-3 md:grid-cols-3"
       >
-        {ATTACK_TYPES.map((attack) => {
+        {ATTACK_TYPES.map((attack, idx) => {
           const Icon = ICON_MAP[attack.icon] ?? Brain;
           const isSelected = selected === attack.id;
 
@@ -69,6 +104,7 @@ export function AttackTypeSelector({
               type="button"
               role="radio"
               aria-checked={isSelected}
+              tabIndex={isSelected || (!selected && idx === 0) ? 0 : -1}
               onClick={() => onSelect(attack.id)}
               whileHover={{ scale: 1.02, y: -2 }}
               whileTap={{ scale: 0.97 }}

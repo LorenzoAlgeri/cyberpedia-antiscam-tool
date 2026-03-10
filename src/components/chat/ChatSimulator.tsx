@@ -67,7 +67,7 @@ export function ChatSimulator({ simulation, onBack }: ChatSimulatorProps) {
             className="flex size-9 shrink-0 items-center justify-center
                         rounded-full bg-slate-700/60"
           >
-            <MessageCircle className="size-4 text-cyan-400" />
+            <MessageCircle className="size-4 text-cyan-400" aria-hidden="true" />
           </div>
           <div className="min-w-0">
             <p className="truncate text-sm font-semibold text-slate-100">

@@ -50,7 +50,14 @@ function ProgressBar({
           {completed}/{total} completati
         </span>
       </div>
-      <div className="h-2 overflow-hidden rounded-full bg-white/10">
+      <div
+        className="h-2 overflow-hidden rounded-full bg-white/10"
+        role="progressbar"
+        aria-valuenow={completed}
+        aria-valuemin={0}
+        aria-valuemax={total}
+        aria-label={`${label}: ${completed} di ${total} completati`}
+      >
         <motion.div
           className="h-full rounded-full bg-gradient-to-r from-cyan-brand to-cyan-brand-light"
           initial={{ width: 0 }}

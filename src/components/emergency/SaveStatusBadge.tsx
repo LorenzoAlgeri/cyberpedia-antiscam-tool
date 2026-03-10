@@ -32,7 +32,7 @@ export function SaveStatusBadge({ status, lastSaved }: SaveStatusBadgeProps) {
             exit={{ opacity: 0 }}
             transition={{ duration: 0.15 }}
           >
-            <Loader2 className="h-4 w-4 animate-spin" />
+            <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
             Salvataggio…
           </motion.span>
         )}
@@ -46,7 +46,7 @@ export function SaveStatusBadge({ status, lastSaved }: SaveStatusBadgeProps) {
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
           >
-            <Check className="h-4 w-4" />
+            <Check className="h-4 w-4" aria-hidden="true" />
             Salvato
           </motion.span>
         )}
@@ -59,7 +59,7 @@ export function SaveStatusBadge({ status, lastSaved }: SaveStatusBadgeProps) {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
           >
-            <AlertCircle className="h-4 w-4" />
+            <AlertCircle className="h-4 w-4" aria-hidden="true" />
             Errore
           </motion.span>
         )}

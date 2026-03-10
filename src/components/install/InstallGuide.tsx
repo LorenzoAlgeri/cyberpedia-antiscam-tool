@@ -36,7 +36,7 @@ export function InstallGuide({ guide }: InstallGuideProps) {
         transition={{ duration: 0.3 }}
       >
         <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-cyan-brand/10">
-          <IconComponent className="h-5 w-5 text-cyan-brand" />
+          <IconComponent className="h-5 w-5 text-cyan-brand" aria-hidden="true" />
         </div>
         <h3 className="text-lg font-semibold text-foreground">
           {guide.title}
@@ -57,6 +57,7 @@ export function InstallGuide({ guide }: InstallGuideProps) {
             <div
               className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-cyan-brand/15 text-sm font-bold text-cyan-brand"
               style={{ minWidth: 32, minHeight: 32 }}
+              aria-hidden="true"
             >
               {index + 1}
             </div>

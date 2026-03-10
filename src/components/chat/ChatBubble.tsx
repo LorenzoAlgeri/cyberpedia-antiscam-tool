@@ -79,6 +79,7 @@ export function ChatBubble({ entry }: ChatBubbleProps) {
             : 'rounded-bl-md bg-slate-800/80 text-slate-200'
         }`}
       >
+        <span className="sr-only">{isUser ? 'Tu: ' : 'Truffatore: '}</span>
         {text}
       </div>
     </motion.div>

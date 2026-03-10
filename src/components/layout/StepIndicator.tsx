@@ -7,7 +7,7 @@ interface StepIndicatorProps {
 
 /**
  * Step progress indicator — 4 dots with labels.
- * Accessible: uses role="tablist" + aria-selected.
+ * Accessible: semantic <nav> with aria-current="step".
  * Touch targets: min 44x44px per dot.
  */
 export function StepIndicator({
@@ -16,11 +16,10 @@ export function StepIndicator({
 }: StepIndicatorProps) {
   return (
     <nav
-      role="tablist"
       aria-label="Progresso del wizard"
-      className="flex items-center justify-center gap-2 px-4 py-4"
+      className="step-indicator flex items-center justify-center gap-2 px-4 py-4"
     >
-      {STEPS.map((step, i) => {
+      {STEPS.map((step) => {
         const isActive = currentStep === step.index;
         const isCompleted = currentStep > step.index;
 
@@ -28,8 +27,7 @@ export function StepIndicator({
           <button
             key={step.hash}
             type="button"
-            role="tab"
-            aria-selected={isActive}
+            aria-current={isActive ? 'step' : undefined}
             aria-label={step.ariaLabel}
             onClick={() => onStepClick(step.index)}
             className="group flex flex-col items-center gap-1.5"
@@ -37,6 +35,7 @@ export function StepIndicator({
           >
             {/* Dot */}
             <span
+              aria-hidden="true"
               className={[
                 'flex h-3 w-3 rounded-full transition-all duration-300',
                 isActive
@@ -60,35 +59,26 @@ export function StepIndicator({
             >
               {step.label}
             </span>
-
-            {/* Connector line (not after last dot) */}
-            {i < STEPS.length - 1 && (
-              <span
-                className={[
-                  'absolute hidden', // connector is handled via gap
-                ].join(' ')}
-              />
-            )}
           </button>
         );
       })}
 
-      {/* Connecting lines between dots */}
+      {/* Connecting line between dots */}
       <style>{`
-        nav[role="tablist"] {
+        .step-indicator {
           position: relative;
         }
-        nav[role="tablist"]::before {
+        .step-indicator::before {
           content: '';
           position: absolute;
-          top: calc(1rem + 6px); /* align with dot centers */
+          top: calc(1rem + 6px);
           left: 25%;
           right: 25%;
           height: 1px;
           background: oklch(1 0 0 / 10%);
           z-index: 0;
         }
-        nav[role="tablist"] button {
+        .step-indicator button {
           position: relative;
           z-index: 1;
         }
