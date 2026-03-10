@@ -1,5 +1,6 @@
 import { motion } from 'motion/react';
 import { Lock, ShieldCheck } from 'lucide-react';
+import { CyberpediaLogo } from '@/components/layout/CyberpediaLogo';
 
 interface LandingPageProps {
   readonly onNext: () => void;
@@ -27,25 +28,29 @@ export function LandingPage({
 }: LandingPageProps) {
   return (
     <div className="flex flex-1 flex-col items-center justify-center gap-10 py-12 text-center">
-      {/* Logo / Shield icon — placeholder until real Cyberpedia logo */}
+      {/* Cyberpedia brand logo */}
       <motion.div
         initial={{ opacity: 0, scale: 0.8 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-        className="relative flex h-24 w-24 items-center justify-center"
+        className="flex flex-col items-center gap-5"
       >
-        {/* Glow ring behind icon */}
-        <span
-          className="absolute inset-0 rounded-full opacity-30 blur-xl"
-          style={{ background: 'oklch(0.82 0.09 200 / 40%)' }}
-          aria-hidden="true"
-        />
-        <div className="relative flex h-24 w-24 items-center justify-center rounded-full border border-cyan-brand/20 bg-cyan-brand/10">
-          <ShieldCheck
-            className="h-12 w-12 text-cyan-brand"
-            strokeWidth={1.5}
+        <CyberpediaLogo width={220} showTagline className="sm:w-[280px]" />
+
+        {/* Shield icon with glow */}
+        <div className="relative flex h-16 w-16 items-center justify-center">
+          <span
+            className="absolute inset-0 rounded-full opacity-30 blur-xl"
+            style={{ background: 'oklch(0.82 0.09 200 / 40%)' }}
             aria-hidden="true"
           />
+          <div className="relative flex h-16 w-16 items-center justify-center rounded-full border border-cyan-brand/20 bg-cyan-brand/10">
+            <ShieldCheck
+              className="h-8 w-8 text-cyan-brand"
+              strokeWidth={1.5}
+              aria-hidden="true"
+            />
+          </div>
         </div>
       </motion.div>
 
