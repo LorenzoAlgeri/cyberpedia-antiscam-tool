@@ -57,4 +57,16 @@ export default defineConfig({
       '@': resolve(__dirname, './src'),
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          /* Vendor: React core (rarely changes → long cache) */
+          'vendor-react': ['react', 'react-dom'],
+          /* Vendor: Animation library */
+          'vendor-motion': ['motion'],
+        },
+      },
+    },
+  },
 })
