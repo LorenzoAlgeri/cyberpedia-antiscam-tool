@@ -1,6 +1,8 @@
 import { useState, useCallback } from 'react';
 import { EmergencyForm } from '@/components/emergency/EmergencyForm';
-import type { TrustedContact } from '@/types/emergency';
+import { AttackTypeSelector } from '@/components/emergency/AttackTypeSelector';
+import { TodoChecklist } from '@/components/emergency/TodoChecklist';
+import type { AttackType, TrustedContact } from '@/types/emergency';
 
 interface EmergencyPageProps {
   readonly onNext: () => void;
@@ -11,16 +13,26 @@ interface EmergencyPageProps {
  * Step 2 — Emergency data + To-Do checklist.
  *
  * State managed locally with useState:
- * - bankPhone: string
- * - contacts: TrustedContact[]
+ * - bankPhone, contacts → EmergencyForm
+ * - selectedAttack → AttackTypeSelector
+ * - completedGenericTodos, completedAttackTodos → TodoChecklist
  *
- * TODO (Week 2 points 6-8): AttackTypeSelector, TodoChecklist, auto-save
+ * TODO (Week 2 point 8): auto-save debounced + manual save
  */
 export function EmergencyPage({ onNext, onBack }: EmergencyPageProps) {
   const [bankPhone, setBankPhone] = useState('');
   const [contacts, setContacts] = useState<TrustedContact[]>([
     { name: '', phone: '' },
   ]);
+
+  // Attack type + checklist state
+  const [selectedAttack, setSelectedAttack] = useState<AttackType | null>(null);
+  const [completedGenericTodos, setCompletedGenericTodos] = useState<string[]>(
+    [],
+  );
+  const [completedAttackTodos, setCompletedAttackTodos] = useState<string[]>(
+    [],
+  );
 
   const handleContactChange = useCallback(
     (index: number, field: keyof TrustedContact, value: string) => {
@@ -38,6 +50,35 @@ export function EmergencyPage({ onNext, onBack }: EmergencyPageProps) {
   const handleRemoveContact = useCallback((index: number) => {
     setContacts((prev) => prev.filter((_, i) => i !== index));
   }, []);
+
+  /** Reset attack-specific todos when the user switches attack type. */
+  const handleAttackSelect = useCallback((type: AttackType) => {
+    setSelectedAttack(type);
+    setCompletedAttackTodos([]);
+  }, []);
+
+  /** Toggle a todo ID in a completed set (add if missing, remove if present). */
+  const toggleTodo = useCallback(
+    (
+      id: string,
+      setter: React.Dispatch<React.SetStateAction<string[]>>,
+    ) => {
+      setter((prev) =>
+        prev.includes(id) ? prev.filter((t) => t !== id) : [...prev, id],
+      );
+    },
+    [],
+  );
+
+  const handleToggleGeneric = useCallback(
+    (id: string) => toggleTodo(id, setCompletedGenericTodos),
+    [toggleTodo],
+  );
+
+  const handleToggleAttack = useCallback(
+    (id: string) => toggleTodo(id, setCompletedAttackTodos),
+    [toggleTodo],
+  );
 
   return (
     <div className="flex flex-col gap-6 px-4 py-8">
@@ -62,8 +103,20 @@ export function EmergencyPage({ onNext, onBack }: EmergencyPageProps) {
         />
       </div>
 
-      {/* TODO: AttackTypeSelector goes here (point 6) */}
-      {/* TODO: TodoChecklist goes here (point 7) */}
+      {/* Attack type selector — 6-card grid */}
+      <AttackTypeSelector
+        selected={selectedAttack}
+        onSelect={handleAttackSelect}
+      />
+
+      {/* Prioritised to-do checklist */}
+      <TodoChecklist
+        selectedAttack={selectedAttack}
+        completedGeneric={completedGenericTodos}
+        completedAttack={completedAttackTodos}
+        onToggleGeneric={handleToggleGeneric}
+        onToggleAttack={handleToggleAttack}
+      />
 
       {/* Navigation */}
       <div className="flex gap-4">
