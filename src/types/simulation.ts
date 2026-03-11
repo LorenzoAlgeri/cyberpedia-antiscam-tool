@@ -5,9 +5,10 @@
  * - SimMessage: a single message in the chat thread
  *   - 'scammer' | 'user' | 'system' sender types
  * - SimChoice:  a user decision point with 2-3 options
- * - SimFeedback: correct/wrong feedback after a choice
+ * - SimFeedback: correct/wrong feedback after a choice (supports retry)
  * - SimStep:    discriminated union of all step types
  * - Simulation: full script for one simulation scenario
+ * - SimScore:   final score shown at completion
  */
 
 // ---------------------------------------------------------------------------
@@ -41,14 +42,28 @@ export interface SimChoice {
   readonly options: readonly ChoiceOption[];
 }
 
-/** Feedback shown after the user makes a choice */
+/** Feedback shown after the user makes a choice — supports retry on wrong answer */
 export interface SimFeedback {
   readonly type: 'feedback';
-  /** If true → user chose correctly */
-  readonly correct: boolean;
-  /** Explanation of why the choice was right or wrong */
+
+  /** Explanation shown when the user picks a correct option (green). */
   readonly explanation: string;
-  /** Follow-up messages that continue the thread after feedback */
+
+  /**
+   * Brief message shown on a wrong answer (amber — never red, UX rule:
+   * red triggers panic in stressed users).
+   * If omitted, falls back to a generic amber message.
+   */
+  readonly wrongExplanation?: string;
+
+  /**
+   * Scammer "stays in character" after a wrong answer.
+   * Shown with typing animation before re-presenting the same choice.
+   * If omitted, the choice is re-presented without a follow-up message.
+   */
+  readonly retryMessage?: SimMessage;
+
+  /** Follow-up messages that continue the thread after a CORRECT answer. */
   readonly followUp: readonly SimMessage[];
 }
 
@@ -86,6 +101,7 @@ export type EnginePhase =
   | 'message'    // displaying a message bubble
   | 'choice'     // waiting for user to pick an option
   | 'feedback'   // showing correct/wrong feedback
+  | 'retry'      // wrong answer — retryMessage playing, choice will re-appear
   | 'complete';  // simulation finished
 
 /** A rendered chat entry in the visible thread */
@@ -93,6 +109,22 @@ export interface ChatEntry {
   readonly id: string;
   readonly sender: Sender | 'feedback';
   readonly text: string;
-  /** For feedback entries */
+  /** For feedback entries: true = correct (green), false = wrong (amber) */
   readonly correct?: boolean;
+}
+
+// ---------------------------------------------------------------------------
+// Score — shown at simulation completion
+// ---------------------------------------------------------------------------
+
+/**
+ * Final score computed by the engine at the end of a simulation.
+ * correctAnswers is always equal to the number of SimChoice steps
+ * in the script (Modello A: all choices must be answered correctly).
+ */
+export interface SimScore {
+  /** Number of correct answers — equals the total choice count in the script. */
+  readonly correctAnswers: number;
+  /** Total attempts made (>= correctAnswers). */
+  readonly totalAttempts: number;
 }

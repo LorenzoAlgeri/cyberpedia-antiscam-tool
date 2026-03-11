@@ -80,6 +80,32 @@ PWA installabile nativamente su Android/Chrome.
 
 **Milestone verificata**: tool pronto per deploy su cyberpedia.it/antitruffa.
 
+---
+
+## Idee future
+
+### Simulazioni AI-generate
+- **Obiettivo**: generazione dinamica di nuovi script tramite LLM,
+  senza dover scrivere manualmente ogni scenario.
+- **Tecnologia suggerita**: Cloudflare Workers AI
+  (es. `@cf/meta/llama-3.1-8b-instruct`)
+- **Approccio**: un Worker che riceve tipo di truffa + parametri
+  e restituisce un oggetto `Simulation` valido secondo
+  `src/types/simulation.ts` — il formato è già completamente
+  tipizzato, pronto per essere usato come schema di output.
+- **Considerazioni tecniche da affrontare nella sessione dedicata**:
+  - Rate limiting per evitare abuse
+  - Caching dell'output generato (KV o R2)
+  - Validazione/moderazione del contenuto prima del rendering
+  - Schema validation runtime (es. zod) per garantire che l'output
+    LLM rispetti esattamente `SimStep[]` prima di passarlo
+    all'engine — senza questo, un output malformato rompe il
+    renderer silenziosamente
+  - I 4 script statici rimangono come fallback garantito
+- **Stato**: ⏳ da pianificare — richiede sessione dedicata
+
+---
+
 ### Bundle finale (produzione)
 
 | Chunk | Raw | Gzip |

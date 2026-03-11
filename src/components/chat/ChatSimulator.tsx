@@ -7,7 +7,7 @@
 
 import { useEffect, useRef } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
-import { ArrowLeft, MessageCircle, RotateCcw } from 'lucide-react';
+import { ArrowLeft, CircleCheck, MessageCircle } from 'lucide-react';
 import { useChatSimulator } from '@/hooks/useChatSimulator';
 import { ChatBubble } from '@/components/chat/ChatBubble';
 import { ChatTyping } from '@/components/chat/ChatTyping';
@@ -20,7 +20,7 @@ interface ChatSimulatorProps {
 }
 
 export function ChatSimulator({ simulation, onBack }: ChatSimulatorProps) {
-  const { phase, entries, currentChoices, start, selectChoice, reset } =
+  const { phase, entries, currentChoices, score, start, selectChoice, reset } =
     useChatSimulator(simulation);
 
   const scrollRef = useRef<HTMLDivElement | undefined>(undefined);
@@ -42,11 +42,8 @@ export function ChatSimulator({ simulation, onBack }: ChatSimulatorProps) {
     }
   }, [entries.length, phase]);
 
-  const handleRestart = () => {
-    reset();
-    // Small delay before restarting for visual reset
-    setTimeout(() => start(), 200);
-  };
+  // Retry count — meaningful only at completion; 0 when score is null (unused)
+  const retries = score !== null ? score.totalAttempts - score.correctAnswers : 0;
 
   return (
     <div className="mx-auto flex h-full w-full max-w-2xl flex-col">
@@ -109,24 +106,22 @@ export function ChatSimulator({ simulation, onBack }: ChatSimulatorProps) {
           <ChatChoices options={currentChoices} onSelect={selectChoice} />
         )}
 
-        {/* Completion message */}
-        {phase === 'complete' && (
+        {/* Completion + score */}
+        {phase === 'complete' && score !== null && (
           <motion.div
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
-            className="flex flex-col items-center gap-3 py-6"
+            className="flex flex-col items-center gap-3 py-6 text-center"
           >
-            <p className="text-center text-sm text-slate-400">
-              Simulazione completata
+            <div className="flex items-center gap-2 text-cyan-400">
+              <CircleCheck className="size-5" aria-hidden="true" />
+              <p className="text-sm font-semibold">Simulazione completata</p>
+            </div>
+            <p className="max-w-xs text-sm leading-relaxed text-slate-300">
+              {score.totalAttempts === score.correctAnswers
+                ? `Hai risposto correttamente al primo tentativo tutte le ${score.correctAnswers} volte.`
+                : `Hai risposto correttamente al primo tentativo ${score.correctAnswers} volt${score.correctAnswers === 1 ? 'a' : 'e'} su ${score.totalAttempts}, con ${retries} ripensament${retries === 1 ? 'o' : 'i'}.`}
             </p>
-            <button
-              onClick={handleRestart}
-              className="btn-primary flex items-center gap-2 px-6 py-3 text-sm"
-              type="button"
-            >
-              <RotateCcw className="size-4" aria-hidden="true" />
-              Riprova
-            </button>
           </motion.div>
         )}
       </div>

@@ -2,6 +2,7 @@ import { lazy, Suspense } from 'react';
 import { useHashRouter } from '@/hooks/useHashRouter';
 import { useIframeResize } from '@/hooks/useIframeResize';
 import { useReturningUser } from '@/hooks/useReturningUser';
+import { useVisitCount } from '@/hooks/useVisitCount';
 import { WizardShell } from '@/components/layout/WizardShell';
 import { LandingPage } from '@/pages/LandingPage';
 
@@ -46,6 +47,7 @@ function StepFallback() {
 function App() {
   const { currentStep, direction, goTo, goNext, goBack } = useHashRouter();
   const { isReturningUser } = useReturningUser();
+  const { visitCount } = useVisitCount();
 
   // Notify parent iframe (cyberpedia.it) of height changes
   useIframeResize();
@@ -60,7 +62,7 @@ function App() {
       case 1:
         return (
           <Suspense fallback={<StepFallback />}>
-            <EmergencyPage onNext={goNext} onBack={goBack} />
+            <EmergencyPage onNext={goNext} onBack={goBack} visitCount={visitCount} />
           </Suspense>
         );
       case 2:

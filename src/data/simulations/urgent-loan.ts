@@ -3,7 +3,12 @@
  *
  * Scenario: someone impersonating a friend/acquaintance contacts
  * you asking for an emergency loan via a messaging app.
- * 10 messages, 2 decision points.
+ * 3 decision points (Modello A: 3 correct required).
+ *
+ * Arc:
+ *  1. "Marco" asks for urgent transfer (broken car story)
+ *  2. Escalates with time pressure after refusal
+ *  3. Pivots to asking for a gift card (classic scam signal)
  */
 
 import type { Simulation } from '@/types/simulation';
@@ -16,6 +21,7 @@ export const urgentLoan: Simulation = {
   icon: 'Wallet',
   scammerName: 'Marco (amico)',
   steps: [
+    // --- Opening ---
     {
       type: 'message',
       sender: 'system',
@@ -37,7 +43,7 @@ export const urgentLoan: Simulation = {
       text: 'Ho il bancomat bloccato e non riesco a prelevare. Puoi farmi un bonifico istantaneo? Ti ridò tutto domani, giuro.',
     },
 
-    // --- Decision 1 ---
+    // --- Decision 1: first loan request ---
     {
       type: 'choice',
       options: [
@@ -60,9 +66,15 @@ export const urgentLoan: Simulation = {
     },
     {
       type: 'feedback',
-      correct: true,
       explanation:
         'Prima di inviare soldi, verifica SEMPRE l\'identità della persona chiamandola al numero che già conosci. I truffatori usano l\'urgenza per impedirti di riflettere. Una domanda personale può smascherarli.',
+      wrongExplanation:
+        'Non inviare mai denaro a un numero sconosciuto senza verificare. L\'urgenza è una tecnica di pressione: rallenta e verifica prima.',
+      retryMessage: {
+        type: 'message',
+        sender: 'scammer',
+        text: 'Dai, sono in mezzo all\'autostrada! Non ho tempo per chiamate. Un bonifico veloce e risolviamo tutto.',
+      },
       followUp: [
         {
           type: 'message',
@@ -77,7 +89,7 @@ export const urgentLoan: Simulation = {
       ],
     },
 
-    // --- Decision 2 ---
+    // --- Decision 2: escalation pressure ---
     {
       type: 'choice',
       options: [
@@ -91,18 +103,70 @@ export const urgentLoan: Simulation = {
           text: 'Ti richiamo al vecchio numero. Se non rispondi, non posso aiutarti.',
           correct: true,
         },
+        {
+          id: 'l2-direct',
+          text: 'Dammi il numero del meccanico: lo pago io direttamente.',
+          correct: true,
+        },
       ],
     },
     {
       type: 'feedback',
-      correct: true,
       explanation:
-        'L\'urgenza estrema è il segnale più forte di truffa. Un vero amico capirebbe se hai bisogno di 2 minuti per verificare. Se il "vecchio numero" funziona ancora, è quasi certamente un impostore.',
+        'L\'urgenza estrema è il segnale più forte di truffa. Un vero amico capirebbe se hai bisogno di 2 minuti per verificare. Offrire di pagare direttamente il servizio (non la persona) smonta il truffatore: rifiuterà sempre.',
+      wrongExplanation:
+        'Cedere alla pressione emotiva è esattamente quello che il truffatore vuole. Rallenta sempre, anche se fa sentire in colpa.',
+      retryMessage: {
+        type: 'message',
+        sender: 'scammer',
+        text: 'Non capisco perché non ti fidi di me! Siamo amici da anni. Ho davvero bisogno di te.',
+      },
+      followUp: [
+        {
+          type: 'message',
+          sender: 'scammer',
+          text: 'Ok, capisco. Senti, il meccanico accetta anche buoni regalo. Potresti comprarmi una Google Play card da 500€ e mandarmi il codice? È più veloce di un bonifico.',
+        },
+      ],
+    },
+
+    // --- Decision 3: gift card pivot ---
+    {
+      type: 'choice',
+      options: [
+        {
+          id: 'l3-giftcard',
+          text: 'Ok, compro la card e ti mando il codice subito.',
+          correct: false,
+        },
+        {
+          id: 'l3-block',
+          text: 'Blocco questo numero. Nessun meccanico accetta buoni regalo.',
+          correct: true,
+        },
+        {
+          id: 'l3-expose',
+          text: 'Nessun meccanico usa buoni regalo. Stai cercando di truffarmi.',
+          correct: true,
+        },
+      ],
+    },
+    {
+      type: 'feedback',
+      explanation:
+        'Chiedere buoni regalo (Google Play, Amazon, iTunes) è la firma di una truffa. Nessun servizio legittimo li accetta come pagamento: sono anonimi e non tracciabili. Questo è il segnale definitivo.',
+      wrongExplanation:
+        'I buoni regalo sono moneta anonima che non può essere recuperata. Nessun meccanico, avvocato o ente legittimo li accetta. Richiederli è sempre una truffa.',
+      retryMessage: {
+        type: 'message',
+        sender: 'scammer',
+        text: 'Dai, il meccanico li accetta davvero! È un accordo speciale. Fidati, è velocissimo e semplice.',
+      },
       followUp: [
         {
           type: 'message',
           sender: 'system',
-          text: 'Hai completato la simulazione. Regola d\'oro: se qualcuno ti chiede soldi con urgenza, prenditi sempre il tempo di verificare per un\'altra via (chiamata, di persona).',
+          text: 'Simulazione completata. Regola d\'oro: verifica sempre l\'identità chiamando il numero originale. I buoni regalo chiesti come pagamento sono sempre una truffa.',
         },
       ],
     },

@@ -12,10 +12,12 @@ import type { AttackType, TrustedContact, EmergencyData } from '@/types/emergenc
 interface EmergencyPageProps {
   readonly onNext: () => void;
   readonly onBack: () => void;
+  /** Incremented on every app mount — used to reveal AttackTypeSelector from 2nd visit onward. */
+  readonly visitCount: number;
 }
 
 /** Step 2 — Emergency data + To-Do + encrypted auto-save (1.5s debounce). */
-export function EmergencyPage({ onNext, onBack }: EmergencyPageProps) {
+export function EmergencyPage({ onNext, onBack, visitCount }: EmergencyPageProps) {
   const [bankPhone, setBankPhone] = useState('');
   const [contacts, setContacts] = useState<TrustedContact[]>([
     { name: '', phone: '' },
@@ -159,8 +161,17 @@ export function EmergencyPage({ onNext, onBack }: EmergencyPageProps) {
         />
       </div>
 
-      {/* Attack type selector */}
-      <AttackTypeSelector selected={selectedAttack} onSelect={handleAttackSelect} />
+      {/* Attack type selector — hidden on first visit to reduce cognitive load */}
+      {visitCount >= 2 && (
+        <>
+          {visitCount === 2 && (
+            <p className="px-1 text-sm text-muted-foreground">
+              Seleziona il tipo di truffa per una checklist più mirata.
+            </p>
+          )}
+          <AttackTypeSelector selected={selectedAttack} onSelect={handleAttackSelect} />
+        </>
+      )}
 
       {/* Prioritised to-do checklist */}
       <TodoChecklist

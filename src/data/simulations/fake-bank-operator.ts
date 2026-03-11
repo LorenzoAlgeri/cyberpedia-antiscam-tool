@@ -3,7 +3,13 @@
  *
  * Scenario: a caller/messager claims to be from your bank's
  * security team. They pressure you into sharing credentials
- * or moving money to a "safe" account. 11 messages, 3 decisions.
+ * or moving money to a "safe" account.
+ * 3 decision points (Modello A: 3 correct required).
+ *
+ * Arc:
+ *  1. Operator asks for account code to "verify identity"
+ *  2. Asks you to transfer savings to a "safe" temporary account
+ *  3. Final pressure: threatens you'll lose everything
  */
 
 import type { Simulation } from '@/types/simulation';
@@ -16,6 +22,7 @@ export const fakeBankOperator: Simulation = {
   icon: 'Building2',
   scammerName: 'Supporto Banca',
   steps: [
+    // --- Opening ---
     {
       type: 'message',
       sender: 'system',
@@ -32,7 +39,7 @@ export const fakeBankOperator: Simulation = {
       text: 'Per bloccare immediatamente la transazione fraudolenta, ho bisogno di verificare la sua identità. Può confermarmi il suo codice cliente?',
     },
 
-    // --- Decision 1 ---
+    // --- Decision 1: credential request ---
     {
       type: 'choice',
       options: [
@@ -55,9 +62,15 @@ export const fakeBankOperator: Simulation = {
     },
     {
       type: 'feedback',
-      correct: true,
       explanation:
         'La tua banca ha GIÀ i tuoi dati e non te li chiederà mai al telefono. Se ricevi una chiamata sospetta, riattacca e chiama tu il numero antifrode ufficiale stampato sulla carta.',
+      wrongExplanation:
+        'Non fornire mai codici, PIN o password al telefono. La tua banca non ha bisogno di chiederteli: li possiede già.',
+      retryMessage: {
+        type: 'message',
+        sender: 'scammer',
+        text: 'Capisco la sua prudenza, ma se non verifichiamo ora non possiamo bloccare l\'operazione sospetta. È una questione di secondi.',
+      },
       followUp: [
         {
           type: 'message',
@@ -72,7 +85,7 @@ export const fakeBankOperator: Simulation = {
       ],
     },
 
-    // --- Decision 2 ---
+    // --- Decision 2: "safe account" transfer ---
     {
       type: 'choice',
       options: [
@@ -90,9 +103,15 @@ export const fakeBankOperator: Simulation = {
     },
     {
       type: 'feedback',
-      correct: true,
       explanation:
         'NON ESISTE un "conto di sicurezza temporaneo". Nessuna banca chiede ai clienti di spostare fondi per proteggerli. È SEMPRE una truffa. L\'urgenza serve a impedirti di ragionare.',
+      wrongExplanation:
+        'Le banche non chiedono mai ai clienti di spostare soldi su altri conti per proteggerli. Qualsiasi IBAN fornito in questo contesto appartiene al truffatore.',
+      retryMessage: {
+        type: 'message',
+        sender: 'scammer',
+        text: 'La capisco, ma il conto di sicurezza è una procedura ufficiale della banca. Le garantisco che è tutto regolare.',
+      },
       followUp: [
         {
           type: 'message',
@@ -102,7 +121,7 @@ export const fakeBankOperator: Simulation = {
       ],
     },
 
-    // --- Decision 3 ---
+    // --- Decision 3: final pressure ---
     {
       type: 'choice',
       options: [
@@ -120,14 +139,20 @@ export const fakeBankOperator: Simulation = {
     },
     {
       type: 'feedback',
-      correct: true,
       explanation:
         'Perfetto. La risposta giusta è SEMPRE riattaccare e chiamare la banca al numero ufficiale. Nessun operatore legittimo ti rimprovererà per aver verificato.',
+      wrongExplanation:
+        'La minaccia di perdere tutto è una tecnica di panico progettata per farti agire senza pensare. Rallenta: una banca vera non ti abbandona se prendi 5 minuti.',
+      retryMessage: {
+        type: 'message',
+        sender: 'scammer',
+        text: 'Sta commettendo un errore gravissimo! Non saremo in grado di recuperare i suoi fondi se non agisce subito.',
+      },
       followUp: [
         {
           type: 'message',
           sender: 'system',
-          text: 'Hai completato la simulazione. Ricorda: la tua banca non ti chiamerà mai per chiederti password, PIN o di spostare soldi. In caso di dubbio, riattacca e chiama tu.',
+          text: 'Simulazione completata. La tua banca non ti chiamerà mai per chiederti password, PIN o di spostare soldi. In caso di dubbio: riattacca, aspetta qualche minuto, poi chiama tu il numero antifrode ufficiale.',
         },
       ],
     },

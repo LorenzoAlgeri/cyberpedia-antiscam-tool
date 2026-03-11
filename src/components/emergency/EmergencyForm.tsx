@@ -11,10 +11,17 @@
  * - Start with 1 contact row, "Aggiungi contatto" to reveal more
  * - Inline helper text for guidance
  * - No submit button here — data flows up via onChange callback
+ *
+ * Contact Picker API (R3):
+ * - BookUser button appears only on supported browsers (Android Chrome ≥80)
+ * - Disabled (not hidden) during pending pick to prevent double-tap
+ * - Only non-empty fields are written to state
  */
 
-import { Plus, Trash2 } from 'lucide-react';
+import { useCallback, useState } from 'react';
+import { BookUser, Plus, Trash2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { useContactPicker } from '@/hooks/useContactPicker';
 import type { TrustedContact } from '@/types/emergency';
 import { MAX_CONTACTS } from '@/types/emergency';
 
@@ -53,6 +60,23 @@ export function EmergencyForm({
   onRemoveContact,
 }: EmergencyFormProps) {
   const canAddMore = contacts.length < MAX_CONTACTS;
+  const { isSupported, pickContact } = useContactPicker();
+
+  // null = idle; number = that row's pick is in flight (disables all BookUser buttons)
+  const [pickingIndex, setPickingIndex] = useState<number | null>(null);
+
+  const handlePickContact = useCallback(
+    async (index: number) => {
+      setPickingIndex(index);
+      const picked = await pickContact();
+      setPickingIndex(null);
+      if (!picked) return;
+      // Write only non-empty fields — never overwrite existing data with ''
+      if (picked.name) onContactChange(index, 'name', picked.name);
+      if (picked.phone) onContactChange(index, 'phone', picked.phone);
+    },
+    [pickContact, onContactChange],
+  );
 
   return (
     <div className="space-y-8">
@@ -94,6 +118,19 @@ export function EmergencyForm({
               className="overflow-hidden"
             >
               <div className="flex items-start gap-3">
+                {/* Import from contacts — shown only on supported browsers */}
+                {isSupported && (
+                  <button
+                    type="button"
+                    onClick={() => void handlePickContact(index)}
+                    disabled={pickingIndex !== null}
+                    className="mt-3 flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-secondary text-muted-foreground transition-colors hover:border-cyan-brand/30 hover:text-cyan-brand disabled:cursor-not-allowed disabled:opacity-40"
+                    aria-label={`Importa contatto ${index + 1} dalla rubrica`}
+                  >
+                    <BookUser className="h-5 w-5" strokeWidth={1.5} />
+                  </button>
+                )}
+
                 {/* Contact fields */}
                 <div className="flex flex-1 flex-col gap-3 sm:flex-row">
                   <input

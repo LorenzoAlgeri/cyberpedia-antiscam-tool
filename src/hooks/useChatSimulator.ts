@@ -4,8 +4,11 @@
  * Orchestrates:
  * - Progressive message delays (typing indicator → bubble)
  * - Decision points with 2-3 choices
- * - Correct/wrong feedback + explanation
- * - Completion state
+ * - Correct answer: green feedback, advance, continue thread
+ * - Wrong answer: amber feedback (never red), scammer stays in character,
+ *   same choice re-presented until user picks correctly (retry loop)
+ * - Completion when all choices answered correctly (Modello A)
+ * - Final score: correctAnswers / totalAttempts
  *
  * Uses useReducer for predictable state transitions.
  */
@@ -18,6 +21,7 @@ import type {
   SimChoice,
   SimFeedback,
   SimMessage,
+  SimScore,
   Simulation,
 } from '@/types/simulation';
 
@@ -33,8 +37,12 @@ interface EngineState {
   entries: readonly ChatEntry[];
   /** Current choice options (when phase === 'choice') */
   currentChoices: readonly ChoiceOption[];
-  /** Queue of follow-up messages to drain after feedback */
+  /** Queue of follow-up messages to drain after correct feedback */
   followUpQueue: readonly SimMessage[];
+  /** Correct answers accumulated across all choice points */
+  correctAnswers: number;
+  /** Total attempts made (>= correctAnswers) */
+  totalAttempts: number;
 }
 
 type Action =
@@ -43,6 +51,9 @@ type Action =
   | { type: 'SHOW_MESSAGE'; entry: ChatEntry }
   | { type: 'SHOW_CHOICE'; options: readonly ChoiceOption[] }
   | { type: 'SHOW_FEEDBACK'; entry: ChatEntry }
+  | { type: 'SHOW_RETRY'; entry: ChatEntry }
+  | { type: 'RECORD_CORRECT' }
+  | { type: 'RECORD_WRONG' }
   | { type: 'QUEUE_FOLLOW_UPS'; messages: readonly SimMessage[] }
   | { type: 'ADVANCE' }
   | { type: 'COMPLETE' }
@@ -54,6 +65,8 @@ const initialState: EngineState = {
   entries: [],
   currentChoices: [],
   followUpQueue: [],
+  correctAnswers: 0,
+  totalAttempts: 0,
 };
 
 function reducer(state: EngineState, action: Action): EngineState {
@@ -77,6 +90,22 @@ function reducer(state: EngineState, action: Action): EngineState {
         entries: [...state.entries, action.entry],
         currentChoices: [],
       };
+    case 'SHOW_RETRY':
+      // Wrong answer: show amber feedback, hide choices, wait for retry
+      return {
+        ...state,
+        phase: 'retry',
+        entries: [...state.entries, action.entry],
+        currentChoices: [],
+      };
+    case 'RECORD_CORRECT':
+      return {
+        ...state,
+        correctAnswers: state.correctAnswers + 1,
+        totalAttempts: state.totalAttempts + 1,
+      };
+    case 'RECORD_WRONG':
+      return { ...state, totalAttempts: state.totalAttempts + 1 };
     case 'QUEUE_FOLLOW_UPS':
       return { ...state, followUpQueue: action.messages };
     case 'ADVANCE':
@@ -112,6 +141,8 @@ export interface ChatSimulatorResult {
   phase: EnginePhase;
   entries: readonly ChatEntry[];
   currentChoices: readonly ChoiceOption[];
+  /** Populated only when phase === 'complete' */
+  score: SimScore | null;
   start: () => void;
   selectChoice: (optionId: string) => void;
   reset: () => void;
@@ -191,13 +222,14 @@ export function useChatSimulator(
     },
     [state.followUpQueue.length],
   );
+
   // Keep ref pointing to the latest processStep — updated via effect (react-hooks/refs)
   useEffect(() => {
     processStepRef.current = processStep;
   }, [processStep]);
 
   // -----------------------------------------------------------------------
-  // Follow-up queue draining
+  // Follow-up queue draining (runs only after a CORRECT answer)
   // -----------------------------------------------------------------------
   useEffect(() => {
     if (state.followUpQueue.length === 0 || state.phase !== 'feedback') return;
@@ -228,7 +260,7 @@ export function useChatSimulator(
         // After last follow-up, advance to next step
         if (i === msgs.length - 1) {
           timerRef.current = setTimeout(() => {
-            processStep(currentIndex);
+            processStepRef.current(currentIndex);
           }, MESSAGE_GAP);
         }
       }, cumulativeDelay);
@@ -244,9 +276,9 @@ export function useChatSimulator(
     dispatch({ type: 'START' });
     // Kick off first step after brief pause
     timerRef.current = setTimeout(() => {
-      processStep(0);
+      processStepRef.current(0);
     }, 400);
-  }, [processStep]);
+  }, []);
 
   const selectChoice = useCallback(
     (optionId: string) => {
@@ -257,7 +289,8 @@ export function useChatSimulator(
       const choiceStep = sim.steps[stepIndex];
       if (!choiceStep || choiceStep.type !== 'choice') return;
 
-      const option = choiceStep.options.find((o) => o.id === optionId);
+      const choice = choiceStep as SimChoice;
+      const option = choice.options.find((o) => o.id === optionId);
       if (!option) return;
 
       // Add user's choice as a message
@@ -270,37 +303,85 @@ export function useChatSimulator(
 
       // Look for feedback step right after the choice
       const nextStep = sim.steps[stepIndex + 1];
-      if (nextStep && nextStep.type === 'feedback') {
-        const fb = nextStep as SimFeedback;
+
+      if (!nextStep || nextStep.type !== 'feedback') {
+        // No feedback step — just advance (no retry possible)
+        dispatch({ type: 'ADVANCE' });
+        timerRef.current = setTimeout(() => {
+          processStepRef.current(stepIndex + 1);
+        }, MESSAGE_GAP);
+        return;
+      }
+
+      const fb = nextStep as SimFeedback;
+
+      if (option.correct) {
+        // ── CORRECT ANSWER — green feedback, advance, continue ──────────
         const feedbackEntry: ChatEntry = {
           id: `feedback-${stepIndex}-${Date.now()}`,
           sender: 'feedback',
           text: fb.explanation,
-          correct: option.correct,
+          correct: true,
         };
-
         timerRef.current = setTimeout(() => {
           dispatch({ type: 'SHOW_FEEDBACK', entry: feedbackEntry });
-          dispatch({ type: 'ADVANCE' }); // skip choice
-          dispatch({ type: 'ADVANCE' }); // skip feedback
+          dispatch({ type: 'RECORD_CORRECT' });
+          dispatch({ type: 'ADVANCE' }); // past choice
+          dispatch({ type: 'ADVANCE' }); // past feedback
 
           if (fb.followUp.length > 0) {
             dispatch({ type: 'QUEUE_FOLLOW_UPS', messages: fb.followUp });
           } else {
             timerRef.current = setTimeout(() => {
-              processStep(stepIndex + 2);
+              processStepRef.current(stepIndex + 2);
             }, 800);
           }
         }, 500);
       } else {
-        // No feedback step — just advance
-        dispatch({ type: 'ADVANCE' });
+        // ── WRONG ANSWER — amber feedback + retry ───────────────────────
+        // UX rule: amber not red — red triggers panic in stressed users
+        const wrongText =
+          fb.wrongExplanation ??
+          'Attenzione: questa risposta potrebbe metterti a rischio. Riprova.';
+        const feedbackEntry: ChatEntry = {
+          id: `feedback-wrong-${stepIndex}-${Date.now()}`,
+          sender: 'feedback',
+          text: wrongText,
+          correct: false,
+        };
+
         timerRef.current = setTimeout(() => {
-          processStep(stepIndex + 1);
-        }, MESSAGE_GAP);
+          dispatch({ type: 'SHOW_RETRY', entry: feedbackEntry });
+          dispatch({ type: 'RECORD_WRONG' });
+
+          if (fb.retryMessage) {
+            // Scammer stays in character — type, show, then re-present choice
+            const retryMsg = fb.retryMessage; // capture for closure
+            timerRef.current = setTimeout(() => {
+              dispatch({ type: 'SHOW_TYPING' });
+              const delay = retryMsg.delay ?? calcTypingDelay(retryMsg.text);
+              timerRef.current = setTimeout(() => {
+                const retryEntry: ChatEntry = {
+                  id: `retry-msg-${stepIndex}-${Date.now()}`,
+                  sender: retryMsg.sender,
+                  text: retryMsg.text,
+                };
+                dispatch({ type: 'SHOW_MESSAGE', entry: retryEntry });
+                timerRef.current = setTimeout(() => {
+                  dispatch({ type: 'SHOW_CHOICE', options: choice.options });
+                }, MESSAGE_GAP);
+              }, delay);
+            }, 800);
+          } else {
+            // No retry message — re-present choice after short pause
+            timerRef.current = setTimeout(() => {
+              dispatch({ type: 'SHOW_CHOICE', options: choice.options });
+            }, 800);
+          }
+        }, 500);
       }
     },
-    [state.phase, state.stepIndex, processStep],
+    [state.phase, state.stepIndex],
   );
 
   const reset = useCallback(() => {
@@ -308,10 +389,17 @@ export function useChatSimulator(
     dispatch({ type: 'RESET' });
   }, []);
 
+  // Compute final score — only available at completion
+  const score: SimScore | null =
+    state.phase === 'complete'
+      ? { correctAnswers: state.correctAnswers, totalAttempts: state.totalAttempts }
+      : null;
+
   return {
     phase: state.phase,
     entries: state.entries,
     currentChoices: state.currentChoices,
+    score,
     start,
     selectChoice,
     reset,
