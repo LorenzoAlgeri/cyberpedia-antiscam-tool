@@ -61,11 +61,15 @@ export function PinDialog({ open, mode, error, onSubmit, onCancel }: PinDialogPr
   const dialogRef = useRef<HTMLDivElement>(null);
 
   // Reset + auto-focus when dialog opens
+  // setPin deferred to avoid synchronous setState inside effect body
   useEffect(() => {
     if (open) {
-      setPin('');
-      const t = setTimeout(() => inputRef.current?.focus(), 120);
-      return () => clearTimeout(t);
+      const tPin   = setTimeout(() => setPin(''), 0);
+      const tFocus = setTimeout(() => inputRef.current?.focus(), 120);
+      return () => {
+        clearTimeout(tPin);
+        clearTimeout(tFocus);
+      };
     }
   }, [open]);
 

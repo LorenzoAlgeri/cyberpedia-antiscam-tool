@@ -125,7 +125,9 @@ export function useChatSimulator(
     undefined,
   );
   const simRef = useRef(simulation);
-  simRef.current = simulation;
+  useEffect(() => {
+    simRef.current = simulation;
+  }, [simulation]);
 
   // Cleanup timers on unmount
   useEffect(() => {
@@ -137,6 +139,9 @@ export function useChatSimulator(
   // -----------------------------------------------------------------------
   // Process next step in the script
   // -----------------------------------------------------------------------
+  // Ref to hold latest processStep — avoids const TDZ in recursive setTimeout
+  const processStepRef = useRef<(stepIndex: number) => void>(() => {});
+
   const processStep = useCallback(
     (stepIndex: number) => {
       const sim = simRef.current;
@@ -173,9 +178,9 @@ export function useChatSimulator(
           dispatch({ type: 'SHOW_MESSAGE', entry });
           dispatch({ type: 'ADVANCE' });
 
-          // Small gap then process next
+          // Small gap then process next — use ref to avoid const TDZ
           timerRef.current = setTimeout(() => {
-            processStep(stepIndex + 1);
+            processStepRef.current(stepIndex + 1);
           }, MESSAGE_GAP);
         }, delay);
       } else if (step.type === 'choice') {
@@ -186,6 +191,10 @@ export function useChatSimulator(
     },
     [state.followUpQueue.length],
   );
+  // Keep ref pointing to the latest processStep — updated via effect (react-hooks/refs)
+  useEffect(() => {
+    processStepRef.current = processStep;
+  }, [processStep]);
 
   // -----------------------------------------------------------------------
   // Follow-up queue draining

@@ -12,7 +12,7 @@
  *   hasStoredData()         → boolean (quick check, no PIN needed)
  *   saveEmergencyData(…)    → encrypt & persist
  *   loadEmergencyData(…)    → decrypt & return
- *   clearStoredData()       → wipe both keys from localStorage
+ *   clearStoredData()       → wipe all known keys from localStorage
  */
 
 import type { EmergencyData } from '@/types/emergency';
@@ -31,6 +31,37 @@ import {
 
 const STORAGE_KEY_SALT = 'antiscam-salt' as const;
 const STORAGE_KEY_DATA = 'antiscam-data' as const;
+// Legacy key written by an old implementation that exported a raw AES key.
+// The current scheme derives the key from PIN+PBKDF2 and never persists it.
+const STORAGE_KEY_LEGACY_KEY = 'antiscam-key' as const;
+
+// ---------------------------------------------------------------------------
+// Security migration
+// ---------------------------------------------------------------------------
+
+/**
+ * Erase any legacy raw CryptoKey from localStorage.
+ *
+ * An early prototype stored an extractable AES-256-GCM key directly in
+ * localStorage under "antiscam-key".  That entry is a security risk: any
+ * XSS can read it and decrypt all saved data without knowing the PIN.
+ *
+ * If the entry is found:
+ *   1. Remove the key itself (immediate security fix).
+ *   2. Remove associated ciphertext — it was encrypted with the raw key,
+ *      which is incompatible with the current PBKDF2 scheme.
+ *   3. Remove the salt — no longer valid without the matching ciphertext.
+ *
+ * The user will be treated as a first-time visitor and asked to re-enter
+ * their data with the secure PIN-based flow.
+ */
+function eraseLegacyKey(): void {
+  if (localStorage.getItem(STORAGE_KEY_LEGACY_KEY) !== null) {
+    localStorage.removeItem(STORAGE_KEY_LEGACY_KEY);
+    localStorage.removeItem(STORAGE_KEY_DATA);
+    localStorage.removeItem(STORAGE_KEY_SALT);
+  }
+}
 
 // ---------------------------------------------------------------------------
 // Public API
@@ -41,6 +72,7 @@ const STORAGE_KEY_DATA = 'antiscam-data' as const;
  * Does NOT require the PIN — just checks if the keys are present.
  */
 export function hasStoredData(): boolean {
+  eraseLegacyKey();
   return (
     localStorage.getItem(STORAGE_KEY_SALT) !== null &&
     localStorage.getItem(STORAGE_KEY_DATA) !== null
@@ -60,6 +92,8 @@ export async function saveEmergencyData(
   data: EmergencyData,
   pin: string,
 ): Promise<void> {
+  eraseLegacyKey();
+
   // Retrieve or generate the PBKDF2 salt
   let salt: Uint8Array;
   const existingSalt = localStorage.getItem(STORAGE_KEY_SALT);
@@ -95,6 +129,8 @@ export async function saveEmergencyData(
 export async function loadEmergencyData(
   pin: string,
 ): Promise<EmergencyData | null> {
+  eraseLegacyKey();
+
   const saltB64 = localStorage.getItem(STORAGE_KEY_SALT);
   const ciphertext = localStorage.getItem(STORAGE_KEY_DATA);
 
@@ -111,10 +147,11 @@ export async function loadEmergencyData(
 }
 
 /**
- * Remove all stored data from localStorage.
+ * Remove all stored data from localStorage, including any legacy entries.
  * Call this for a full reset / "forget my data" flow.
  */
 export function clearStoredData(): void {
   localStorage.removeItem(STORAGE_KEY_SALT);
   localStorage.removeItem(STORAGE_KEY_DATA);
+  localStorage.removeItem(STORAGE_KEY_LEGACY_KEY);
 }

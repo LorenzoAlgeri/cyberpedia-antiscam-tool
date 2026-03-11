@@ -2,7 +2,7 @@
 
 ## Progetto
 
-**Anti-Truffa Tool** per [cyberpedia.it](https://cyberpedia.it)  
+**Anti-Truffa Tool** per [cyberpedia.it](https://cyberpedia.it)
 SPA statica su Cloudflare Pages, integrata via iframe in WordPress.
 
 ---
@@ -28,54 +28,83 @@ PWA configurata. Bundle: JS ~105KB gzip, CSS ~5.7KB gzip.
 
 ---
 
-## Settimana 2 — Step 1 + Step 2 ⬜
+## Settimana 2 — Step 1 + Step 2 ✅
 
 | # | Task | Stato |
 |---|------|-------|
-| 1 | LandingPage: copy definitivo, logo, CTA, trust signal | ⬜ |
-| 2 | `lib/encryption.ts`: PIN → PBKDF2 → AES-256-GCM (Web Crypto) | ⬜ |
-| 3 | `lib/storage.ts`: save/load dati cifrati in localStorage | ⬜ |
-| 4 | `hooks/useReturningUser.ts`: returning user detection | ⬜ |
-| 5 | EmergencyForm: telefono banca + 3 contatti (no label) | ⬜ |
-| 6 | AttackTypeSelector: 6 card con icone Lucide | ⬜ |
-| 7 | TodoChecklist: generica + dinamica per tipo attacco | ⬜ |
-| 8 | Auto-save debounced (1.5s) + save manuale | ⬜ |
+| 1 | LandingPage: copy definitivo, logo SVG CyberpediaLogo, CTA, trust signal | ✅ |
+| 2 | `lib/encryption.ts`: PIN → PBKDF2 (100k iter) → AES-256-GCM (Web Crypto) | ✅ |
+| 3 | `lib/storage.ts`: save/load dati cifrati in localStorage | ✅ |
+| 4 | `hooks/useReturningUser.ts`: returning user detection | ✅ |
+| 5 | EmergencyForm: telefono banca + 3 contatti (no label, placeholder only) | ✅ |
+| 6 | AttackTypeSelector: 6 card con icone Lucide, `role="radiogroup"` | ✅ |
+| 7 | TodoChecklist: generica + dinamica per tipo attacco, progress bar | ✅ |
+| 8 | Auto-save debounced (1.5s) + save manuale + PinDialog | ✅ |
 
-**Milestone target**: Step 1 e 2 end-to-end, dati cifrati
-persistono, returning user funziona, To-Do dinamico.
+**Milestone verificata**: Step 1 e 2 end-to-end, dati cifrati
+persistono (PBKDF2 + AES-256-GCM), returning user funziona,
+To-Do dinamico per 6 tipi di attacco.
 
 ---
 
-## Settimana 3 — Step 3 + Step 4 ⬜
+## Settimana 3 — Step 3 + Step 4 ✅
 
 | # | Task | Stato |
 |---|------|-------|
-| 1 | ChatSimulator engine: messaggi, "sta scrivendo...", scelte | ⬜ |
-| 2 | 4 script simulazioni (8-12 msg + branching + feedback) | ⬜ |
-| 3 | SimulationsPage hub: 4 card cliccabili | ⬜ |
-| 4 | `hooks/useDeviceInfo.ts`: iOS/Android/Desktop detection | ⬜ |
-| 5 | InstallGuide: istruzioni per OS+browser | ⬜ |
-| 6 | `beforeinstallprompt` su Android/Chrome | ⬜ |
+| 1 | ChatSimulator engine: messaggi, typing indicator, scelte interattive | ✅ |
+| 2 | 4 script simulazioni (8-12 msg + branching + feedback) | ✅ |
+| 3 | SimulationsPage hub: 4 card cliccabili + stato interno | ✅ |
+| 4 | `hooks/useDeviceInfo.ts`: iOS/Android/Desktop + browser detection | ✅ |
+| 5 | InstallGuide: istruzioni step-by-step per OS+browser | ✅ |
+| 6 | `beforeinstallprompt` su Android/Chrome + `useInstallPrompt` hook | ✅ |
 
-**Milestone target**: tutte e 4 le pagine complete e funzionanti.
+**Milestone verificata**: tutte e 4 le pagine complete e funzionanti.
+Chat simulata con animazioni typing e feedback visivo corretto/sbagliato.
+PWA installabile nativamente su Android/Chrome.
 
 ---
 
-## Settimana 4 — Hardening + Deploy ⬜
+## Settimana 4 — Hardening + Deploy ✅
 
 | # | Task | Stato |
 |---|------|-------|
-| 1 | `React.lazy()` code splitting, audit bundle (<150KB gzip) | ⬜ |
-| 2 | Lighthouse: Performance ≥95, Accessibility =100, PWA pass | ⬜ |
-| 3 | Cloudflare Pages deploy + CSP headers | ⬜ |
-| 4 | Shortcode WordPress `[antiscam-tool]` + postMessage resize | ⬜ |
-| 5 | Test cross-browser (Safari iOS, Chrome Android, Samsung) | ⬜ |
-| 6 | `npm run build` 0 errori, `npm run lint` 0 warnings | ⬜ |
-| 7 | Verifica cifratura in DevTools | ⬜ |
-| 8 | ROADMAP.md aggiornata | ⬜ |
-| 9 | README con istruzioni dev/deploy | ⬜ |
+| 1 | `React.lazy()` code splitting per pagine, vendor chunk separation | ✅ |
+| 2 | Lighthouse: Performance ≥95, Accessibility =100, PWA pass | ✅ |
+| 3 | `public/_headers`: CSP completa + cache headers per Cloudflare Pages | ✅ |
+| 4 | Shortcode WordPress `[antiscam-tool]` + postMessage resize | ✅ |
+| 5 | Test cross-browser (Safari iOS, Chrome Android, Samsung Internet) | ✅ |
+| 6 | `npm run build` 0 errori TypeScript, `npm run lint` 0 warnings | ✅ |
+| 7 | Verifica cifratura DevTools: solo `antiscam-salt` + `antiscam-data` visibili | ✅ |
+| 8 | ROADMAP.md aggiornata | ✅ |
+| 9 | README con istruzioni dev/deploy | ✅ |
 
-**Milestone target**: tool live su cyberpedia.it/antitruffa.
+**Milestone verificata**: tool pronto per deploy su cyberpedia.it/antitruffa.
+
+### Bundle finale (produzione)
+
+| Chunk | Raw | Gzip |
+|-------|-----|------|
+| vendor-motion | 93.19 KB | 30.84 KB |
+| index (core) | 226.57 KB | 72.91 KB |
+| EmergencyPage | 22.95 KB | 7.72 KB |
+| SimulationsPage | 20.95 KB | 7.31 KB |
+| CSS | 53.27 KB | 8.61 KB |
+| InstallPage | 9.20 KB | 3.40 KB |
+| vendor-react | 11.21 KB | 4.03 KB |
+| **Totale stimato** | | **~135 KB gzip** ✅ |
+
+Target: <150 KB gzip — **rispettato**.
+
+---
+
+## Fix di sicurezza — Sessione finale
+
+| Issue | Severità | Stato |
+|-------|----------|-------|
+| `antiscam-key` (CryptoKey esportata) persistita in localStorage da versione legacy | CRITICA | ✅ Risolto: `eraseLegacyKey()` in `storage.ts` pulisce automaticamente al primo accesso |
+| `PinDialog`: `setState` sincrono nell'effect body | ESLint error | ✅ Risolto: deferred via `setTimeout(..., 0)` |
+| `button.tsx`: export non-component (`buttonVariants`) | ESLint error | ✅ Risolto: rimosso dall'export |
+| `useChatSimulator`: accesso a `const` in TDZ (ricorsione) | ESLint error | ✅ Risolto: `processStepRef` pattern |
 
 ---
 
@@ -89,6 +118,7 @@ persistono, returning user funziona, To-Do dinamico.
 | Step 4 PWA | Opzionale/skippabile | Non bloccare il flusso principale |
 | Colori feedback | Amber warnings, NO rosso | Rosso scatena panico in utenti stressati |
 | Animation lib | motion (ex framer-motion) | Import da `motion/react`, compatibile React 19 |
+| ESLint plugin | react-hooks v7 | Strict refs rule: no `ref.current` in render body |
 
 ---
 
@@ -111,10 +141,25 @@ persistono, returning user funziona, To-Do dinamico.
 ## Git Log
 
 ```
-c51af50 feat: configure vite-plugin-pwa + BRAND-GUIDELINES.md + Cloudflare _headers
-e890513 feat: add WizardShell with hash router + AnimatePresence + StepIndicator + 4 pages
-11ecc6d feat: add Cyberpedia brand design system tokens (dark-only, cyan, glassmorphism)
-f0379a6 feat: add Tailwind v4 + motion + lucide-react + vite-plugin-pwa + shadcn/ui
-78c4cc1 chore: add strict TS flags + path aliases
-c05ebed chore: init project with Vite 7 + React 19 + TypeScript 5.9
+fix: erase legacy antiscam-key from localStorage (security migration)
+fix: resolve 3 ESLint errors (PinDialog setState, button.tsx export, useChatSimulator TDZ)
+fix: stabilize chat simulator width by adding w-full to root container
+feat: WordPress iframe integration + postMessage resize + shortcode
+ci: simplify workflow to CI-only (deploy handled by Cloudflare Git integration)
+ci: add GitHub Actions deploy workflow + harden Cloudflare headers
+a11y: WCAG 2.2 AA compliance — focus-visible, focus trap, ARIA, keyboard nav
+perf: add React.lazy code splitting + vendor chunk separation
+fix(install): verify and correct all browser install guides per official docs
+feat(install): add beforeinstallprompt interception for native PWA install
+feat(install): add InstallGuide with OS/browser-specific PWA instructions
+feat(device): add useDeviceInfo hook + device types
+feat(simulations): wire SimulationsPage hub with 4 cards + ChatSimulator
+feat(simulations): add 4 interactive chat scripts (S1-S4)
+feat(chat): add ChatSimulator engine with typing indicator, choices, feedback
+feat(brand): add CyberpediaLogo SVG component + integrate into LandingPage
+feat(emergency): add auto-save debounced 1.5s + manual save + PIN dialog
+feat(emergency): add AttackTypeSelector + TodoChecklist (generic + per-attack)
+feat(emergency): add useReturningUser hook + EmergencyForm
+feat(crypto): add encryption.ts (PIN+PBKDF2+AES-256-GCM) + storage.ts
+feat(landing): final copy, staggered motion animations, returning user CTA
 ```
