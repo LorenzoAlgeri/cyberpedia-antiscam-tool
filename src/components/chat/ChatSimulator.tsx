@@ -49,7 +49,7 @@ export function ChatSimulator({ simulation, onBack }: ChatSimulatorProps) {
   };
 
   return (
-    <div className="mx-auto flex h-full max-w-2xl flex-col">
+    <div className="mx-auto flex h-full w-full max-w-2xl flex-col">
       {/* Header bar */}
       <div className="flex items-center gap-3 border-b border-slate-700/50 px-4 py-3">
         <button
