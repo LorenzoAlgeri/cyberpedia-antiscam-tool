@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Building2, Heart, Users, Wallet } from 'lucide-react';
+import { Building2, Heart, Loader2, Users, Wallet } from 'lucide-react';
 import { simulations } from '@/data/simulations';
 import { ChatSimulator } from '@/components/chat/ChatSimulator';
+import { useAISimulation } from '@/hooks/useAISimulation';
 import type { Simulation } from '@/types/simulation';
 
 /** Map icon string from simulation data to Lucide component */
@@ -33,6 +34,23 @@ export function SimulationsPage({
   onBack,
 }: SimulationsPageProps) {
   const [activeSim, setActiveSim] = useState<Simulation | null>(null);
+  /** ID of the card currently being loaded — drives per-card loading state */
+  const [selectingId, setSelectingId] = useState<string | null>(null);
+
+  const { fetchAISimulation } = useAISimulation();
+
+  const handleSelectSim = useCallback(
+    async (staticSim: Simulation) => {
+      setSelectingId(staticSim.id);
+      try {
+        const aiSim = await fetchAISimulation(staticSim.id, 'medium');
+        setActiveSim(aiSim ?? staticSim);
+      } finally {
+        setSelectingId(null);
+      }
+    },
+    [fetchAISimulation],
+  );
 
   // --- Active simulation view ---
   if (activeSim) {
@@ -76,25 +94,34 @@ export function SimulationsPage({
             <motion.button
               key={sim.id}
               type="button"
-              onClick={() => setActiveSim(sim)}
+              onClick={() => void handleSelectSim(sim)}
+              disabled={selectingId !== null}
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3, delay: i * 0.08 }}
-              whileHover={{ scale: 1.02, y: -2 }}
-              whileTap={{ scale: 0.98 }}
+              whileHover={selectingId === null ? { scale: 1.02, y: -2 } : {}}
+              whileTap={selectingId === null ? { scale: 0.98 } : {}}
               className="glass-card group flex cursor-pointer flex-col items-start
                          gap-3 p-6 text-left transition-shadow
-                         hover:shadow-cyan-500/20"
+                         hover:shadow-cyan-500/20
+                         disabled:cursor-default disabled:opacity-60"
               style={{ minHeight: 44 }}
             >
-              {/* Icon circle */}
+              {/* Icon circle — swaps to spinner while this card loads */}
               <div
                 className="flex size-11 items-center justify-center rounded-xl
                             bg-cyan-brand/10 transition-colors
                             group-hover:bg-cyan-brand/20"
               >
-                {Icon && (
-                  <Icon className="size-5 text-cyan-brand" aria-hidden="true" />
+                {selectingId === sim.id ? (
+                  <Loader2
+                    className="size-5 animate-spin text-cyan-brand"
+                    aria-hidden="true"
+                  />
+                ) : (
+                  Icon && (
+                    <Icon className="size-5 text-cyan-brand" aria-hidden="true" />
+                  )
                 )}
               </div>
 
@@ -103,7 +130,9 @@ export function SimulationsPage({
                   {sim.title}
                 </h3>
                 <p className="text-sm leading-relaxed text-muted-foreground">
-                  {sim.description}
+                  {selectingId === sim.id
+                    ? 'Preparando la simulazione…'
+                    : sim.description}
                 </p>
               </div>
             </motion.button>

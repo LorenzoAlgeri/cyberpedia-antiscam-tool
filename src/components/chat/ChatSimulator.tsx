@@ -42,9 +42,6 @@ export function ChatSimulator({ simulation, onBack }: ChatSimulatorProps) {
     }
   }, [entries.length, phase]);
 
-  // Retry count — meaningful only at completion; 0 when score is null (unused)
-  const retries = score !== null ? score.totalAttempts - score.correctAnswers : 0;
-
   return (
     <div className="mx-auto flex h-full w-full max-w-2xl flex-col">
       {/* Header bar */}
@@ -119,8 +116,8 @@ export function ChatSimulator({ simulation, onBack }: ChatSimulatorProps) {
             </div>
             <p className="max-w-xs text-sm leading-relaxed text-slate-300">
               {score.totalAttempts === score.correctAnswers
-                ? `Hai risposto correttamente al primo tentativo tutte le ${score.correctAnswers} volte.`
-                : `Hai risposto correttamente al primo tentativo ${score.correctAnswers} volt${score.correctAnswers === 1 ? 'a' : 'e'} su ${score.totalAttempts}, con ${retries} ripensament${retries === 1 ? 'o' : 'i'}.`}
+                ? 'Hai risposto correttamente al primo tentativo tutte le volte.'
+                : `Hai risposto correttamente al primo tentativo ${score.correctAnswers} volt${score.correctAnswers === 1 ? 'a' : 'e'} su ${score.totalAttempts}.`}
             </p>
           </motion.div>
         )}

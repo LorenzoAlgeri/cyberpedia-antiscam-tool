@@ -43,6 +43,12 @@ interface EngineState {
   correctAnswers: number;
   /** Total attempts made (>= correctAnswers) */
   totalAttempts: number;
+  /**
+   * stepIndex for which the wrongExplanation bubble was already shown.
+   * null = not shown for current step. Prevents duplicate amber bubbles
+   * when the user answers the same choice wrong more than once.
+   */
+  wrongShownForStep: number | null;
 }
 
 type Action =
@@ -51,7 +57,8 @@ type Action =
   | { type: 'SHOW_MESSAGE'; entry: ChatEntry }
   | { type: 'SHOW_CHOICE'; options: readonly ChoiceOption[] }
   | { type: 'SHOW_FEEDBACK'; entry: ChatEntry }
-  | { type: 'SHOW_RETRY'; entry: ChatEntry }
+  | { type: 'SHOW_RETRY'; entry: ChatEntry; stepIndex: number }
+  | { type: 'RETRY_SILENT' }
   | { type: 'RECORD_CORRECT' }
   | { type: 'RECORD_WRONG' }
   | { type: 'QUEUE_FOLLOW_UPS'; messages: readonly SimMessage[] }
@@ -67,6 +74,7 @@ const initialState: EngineState = {
   followUpQueue: [],
   correctAnswers: 0,
   totalAttempts: 0,
+  wrongShownForStep: null,
 };
 
 function reducer(state: EngineState, action: Action): EngineState {
@@ -97,7 +105,11 @@ function reducer(state: EngineState, action: Action): EngineState {
         phase: 'retry',
         entries: [...state.entries, action.entry],
         currentChoices: [],
+        wrongShownForStep: action.stepIndex,
       };
+    case 'RETRY_SILENT':
+      // Subsequent wrong: change phase without adding a new feedback bubble
+      return { ...state, phase: 'retry', currentChoices: [] };
     case 'RECORD_CORRECT':
       return {
         ...state,
@@ -340,6 +352,9 @@ export function useChatSimulator(
       } else {
         // ── WRONG ANSWER — amber feedback + retry ───────────────────────
         // UX rule: amber not red — red triggers panic in stressed users
+        // wrongExplanation is shown at most once per SimChoice step.
+        const alreadyShownWrong = state.wrongShownForStep === stepIndex;
+
         const wrongText =
           fb.wrongExplanation ??
           'Attenzione: questa risposta potrebbe metterti a rischio. Riprova.';
@@ -351,7 +366,12 @@ export function useChatSimulator(
         };
 
         timerRef.current = setTimeout(() => {
-          dispatch({ type: 'SHOW_RETRY', entry: feedbackEntry });
+          if (alreadyShownWrong) {
+            // Subsequent wrong: change phase without adding a new bubble
+            dispatch({ type: 'RETRY_SILENT' });
+          } else {
+            dispatch({ type: 'SHOW_RETRY', entry: feedbackEntry, stepIndex });
+          }
           dispatch({ type: 'RECORD_WRONG' });
 
           if (fb.retryMessage) {
@@ -381,7 +401,7 @@ export function useChatSimulator(
         }, 500);
       }
     },
-    [state.phase, state.stepIndex],
+    [state.phase, state.stepIndex, state.wrongShownForStep],
   );
 
   const reset = useCallback(() => {
