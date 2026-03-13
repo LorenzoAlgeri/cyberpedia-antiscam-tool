@@ -43,8 +43,8 @@ export const ATTACK_TYPES: readonly AttackTypeMeta[] = [
   },
   {
     id: 'social-engineering',
-    label: 'Ingegneria sociale',
-    description: 'Manipolazione psicologica, pretexting',
+    label: 'Pressione e urgenza',
+    description: 'Manipolazione psicologica, richieste sotto pressione',
     icon: 'Brain',
   },
 ] as const;

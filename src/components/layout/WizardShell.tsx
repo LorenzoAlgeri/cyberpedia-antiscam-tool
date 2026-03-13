@@ -41,8 +41,9 @@ export function WizardShell({
         </motion.div>
       )}
 
-      {/* Step content with animated transitions */}
-      <main className="relative flex flex-1 flex-col">
+      {/* Step content with animated transitions. overflow-hidden clips the ±60px
+          horizontal slide so it never triggers a viewport-level scrollbar. */}
+      <main className="relative flex flex-1 flex-col overflow-hidden">
         <AnimatePresence mode="wait" custom={direction}>
           <motion.div
             key={currentStep}

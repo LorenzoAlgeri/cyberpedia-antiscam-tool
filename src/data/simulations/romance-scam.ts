@@ -60,11 +60,13 @@ export const romanceScam: Simulation = {
           id: 'r1-doubt',
           text: 'Mi dispiace, ma non posso inviare soldi a qualcuno che non ho mai incontrato.',
           correct: true,
+          skill: 'limite',
         },
         {
           id: 'r1-verify',
           text: 'Possiamo fare una videochiamata prima?',
           correct: true,
+          skill: 'verifica',
         },
         {
           id: 'r1-half',
@@ -111,6 +113,13 @@ export const romanceScam: Simulation = {
           id: 'r2-block',
           text: 'Mi dispiace, ma preferisco non continuare questa conversazione.',
           correct: true,
+          skill: 'limite',
+        },
+        {
+          id: 'r2-verify',
+          text: 'Dimmi il nome dell\'hotel dove sei e il numero della struttura: cerco io un\'alternativa locale.',
+          correct: true,
+          skill: 'verifica',
         },
         {
           id: 'r2-maybe',
@@ -122,7 +131,7 @@ export const romanceScam: Simulation = {
     {
       type: 'feedback',
       explanation:
-        'Il senso di colpa e l\'urgenza sono le armi principali delle truffe sentimentali. Una persona che ti vuole bene non ti mette mai sotto pressione per soldi.',
+        'Il senso di colpa e l\'urgenza sono le armi principali delle truffe sentimentali. Mettere alla prova chiedendo dettagli verificabili — nome dell\'hotel, numero della struttura — smonta subito un impostore: non avrà queste informazioni.',
       wrongExplanation:
         'Cedere alla pressione emotiva — anche parzialmente — conferma al truffatore che la manipolazione funziona.',
       retryMessage: {
@@ -152,11 +161,13 @@ export const romanceScam: Simulation = {
           id: 'r3-end',
           text: 'Non manderò soldi. Blocco questo contatto adesso.',
           correct: true,
+          skill: 'limite',
         },
         {
           id: 'r3-verify',
           text: 'Dimmi il nome dell\'ospedale: chiamo io per verificare.',
           correct: true,
+          skill: 'verifica',
         },
       ],
     },

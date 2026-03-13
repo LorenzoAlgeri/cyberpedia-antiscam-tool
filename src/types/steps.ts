@@ -1,15 +1,16 @@
 /**
- * Step type definitions for the 4-step anti-scam wizard.
+ * Step type definitions for the anti-scam wizard.
  *
  * Step 0: Landing — emotional decompression
  * Step 1: Emergency — contacts + to-do checklist
  * Step 2: Simulations — interactive chat scenarios
  * Step 3: Install — PWA home screen guide
+ * Step 4: Need Mode — on-demand quick actions (post-wizard)
  */
 
-export const STEP_COUNT = 4 as const;
+export const STEP_COUNT = 5 as const;
 
-export type StepIndex = 0 | 1 | 2 | 3;
+export type StepIndex = 0 | 1 | 2 | 3 | 4;
 
 /** Hash fragments mapped to step indices */
 export const STEP_HASHES = [
@@ -17,6 +18,7 @@ export const STEP_HASHES = [
   '#emergency',
   '#simulations',
   '#install',
+  '#need',
 ] as const satisfies readonly string[];
 
 export type StepHash = (typeof STEP_HASHES)[number];
@@ -53,5 +55,11 @@ export const STEPS: readonly StepMeta[] = [
     hash: '#install',
     label: 'Installa',
     ariaLabel: 'Step 4: Installa app',
+  },
+  {
+    index: 4,
+    hash: '#need',
+    label: 'Al bisogno',
+    ariaLabel: 'Step 5: Modalità al bisogno',
   },
 ] as const;

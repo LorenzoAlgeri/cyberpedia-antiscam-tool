@@ -27,12 +27,30 @@ export interface SimMessage {
   readonly delay?: number;
 }
 
+/**
+ * Competency a correct option trains.
+ *
+ * - 'limite'      — asserting a boundary / saying NO
+ * - 'verifica'    — reality-testing / identity check
+ * - 'esposizione' — naming the scam pattern out loud
+ * - 'alternativa' — proposing a safe alternative action
+ *
+ * Incorrect options should omit this field.
+ * Used for documentation, I2 compliance checks, and N8N prompt spec.
+ */
+export type ChoiceSkill = 'limite' | 'verifica' | 'esposizione' | 'alternativa';
+
 /** One option within a choice point */
 export interface ChoiceOption {
   readonly id: string;
   readonly text: string;
   /** Is this the correct (safe) response? */
   readonly correct: boolean;
+  /**
+   * Competency this option trains (correct options only).
+   * Each SimChoice must have ≥ 2 correct options covering DIFFERENT skills (I2 rule).
+   */
+  readonly skill?: ChoiceSkill;
 }
 
 /** A decision point where the user picks a response */

@@ -17,11 +17,15 @@ import type { Simulation } from '@/types/simulation';
 interface ChatSimulatorProps {
   simulation: Simulation;
   onBack: () => void;
+  /** True on the very first simulation — only correct options are shown */
+  isFirstSimulation?: boolean;
+  /** Called once when the simulation reaches the 'complete' phase */
+  onComplete?: () => void;
 }
 
-export function ChatSimulator({ simulation, onBack }: ChatSimulatorProps) {
+export function ChatSimulator({ simulation, onBack, isFirstSimulation = false, onComplete }: ChatSimulatorProps) {
   const { phase, entries, currentChoices, score, start, selectChoice, reset } =
-    useChatSimulator(simulation);
+    useChatSimulator(simulation, isFirstSimulation);
 
   const scrollRef = useRef<HTMLDivElement | undefined>(undefined);
 
@@ -41,6 +45,12 @@ export function ChatSimulator({ simulation, onBack }: ChatSimulatorProps) {
       });
     }
   }, [entries.length, phase]);
+
+  // Notify parent when simulation completes
+  useEffect(() => {
+    if (phase === 'complete') onComplete?.();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase]);
 
   return (
     <div className="mx-auto flex h-full w-full max-w-2xl flex-col">

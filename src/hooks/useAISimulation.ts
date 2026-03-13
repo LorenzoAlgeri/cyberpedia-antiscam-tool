@@ -50,7 +50,8 @@ function isValidSimStep(step: unknown): step is SimStep {
         typeof (o as Record<string, unknown>)['text'] === 'string' &&
         (o as Record<string, unknown>)['correct'] === true,
     ).length;
-    return correctCount === 1;
+    // I2 rule: each choice must have exactly 2 correct options (limite + verifica/esposizione)
+    return correctCount === 2;
   }
 
   if (s['type'] === 'feedback') {

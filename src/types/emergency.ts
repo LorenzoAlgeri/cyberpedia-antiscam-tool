@@ -39,7 +39,11 @@ export const MAX_CONTACTS = 3 as const;
  * This is the single source of truth for user data.
  */
 export interface EmergencyData {
-  /** Bank anti-fraud phone number */
+  /** Bank name (e.g. "Intesa Sanpaolo") — C1 */
+  bankName: string;
+  /** International dialing prefix stored separately (e.g. "+39") — C2 */
+  bankCountryCode: string;
+  /** Bank assistance phone number (bare digits, without prefix) */
   bankPhone: string;
   /** Up to 3 trusted contacts */
   contacts: TrustedContact[];
@@ -56,6 +60,8 @@ export interface EmergencyData {
 /** Factory for a blank EmergencyData record */
 export function createEmptyEmergencyData(): EmergencyData {
   return {
+    bankName: '',
+    bankCountryCode: '+39',
     bankPhone: '',
     contacts: [],
     selectedAttack: null,

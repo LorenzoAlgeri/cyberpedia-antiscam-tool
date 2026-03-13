@@ -56,18 +56,20 @@ export const fakeRelative: Simulation = {
           id: 'f1-call',
           text: 'Ti chiamo al vecchio numero per sicurezza.',
           correct: true,
+          skill: 'verifica',   // verifica via canale fidato
         },
         {
-          id: 'f1-question',
-          text: 'Come si chiama il nostro cane? Rispondimi prima.',
+          id: 'f1-refuse',
+          text: 'Non faccio mai bonifici a numeri sconosciuti, nemmeno per urgenze. Chiamami.',
           correct: true,
+          skill: 'limite',
         },
       ],
     },
     {
       type: 'feedback',
       explanation:
-        'Il messaggio "Ciao mamma/papà, ho cambiato numero" è una delle truffe più diffuse in Italia. Prima di fare qualsiasi cosa, chiama SEMPRE il vecchio numero o fai una domanda personale che solo il vero familiare conosce.',
+        'Il messaggio "Ciao mamma/papà, ho cambiato numero" è una delle truffe più diffuse in Italia. La regola è semplice: mai bonifici a numeri sconosciuti, sempre una chiamata al vecchio numero per confermare. Un figlio reale aspetta i 2 minuti necessari.',
       wrongExplanation:
         'Non fare mai bonifici a numeri sconosciuti senza verificare. Un figlio vero aspetta i 2 minuti necessari per una telefonata di conferma.',
       retryMessage: {
@@ -102,13 +104,20 @@ export const fakeRelative: Simulation = {
           id: 'f2-firm',
           text: 'Se sei davvero mio figlio/a, puoi aspettare che ti chiami. A dopo.',
           correct: true,
+          skill: 'limite',
+        },
+        {
+          id: 'f2-verify',
+          text: 'Dimmi una cosa che solo tu e io sappiamo. Solo allora ti aiuto.',
+          correct: true,
+          skill: 'verifica',
         },
       ],
     },
     {
       type: 'feedback',
       explanation:
-        'Un figlio vero non si offenderebbe se la mamma vuole verificare. Il senso di colpa è l\'arma più potente del truffatore. Se non può rispondere al telefono né a domande personali, è un impostore.',
+        'Un figlio reale non si offende se la mamma vuole verificare. Il senso di colpa è l\'arma più potente del truffatore. Una domanda segreta personale — una parola d\'ordine di famiglia — mette immediatamente in crisi l\'impostore.',
       wrongExplanation:
         'Cedere al senso di colpa è la trappola. Un genitore affettuoso ha tutto il diritto di verificare prima di inviare soldi — nessun figlio reale lo prenderebbe come un insulto.',
       retryMessage: {
@@ -138,11 +147,13 @@ export const fakeRelative: Simulation = {
           id: 'f3-block',
           text: 'No. Blocco questo numero e chiamo il numero originale di mio figlio.',
           correct: true,
+          skill: 'limite',
         },
         {
           id: 'f3-expose',
-          text: 'Le banche non fanno mai fare questo. Sei un truffatore.',
+          text: 'Western Union per un\'emergenza familiare è il segnale definitivo di una truffa. Sei un impostore.',
           correct: true,
+          skill: 'esposizione',
         },
       ],
     },

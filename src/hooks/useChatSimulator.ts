@@ -162,6 +162,7 @@ export interface ChatSimulatorResult {
 
 export function useChatSimulator(
   simulation: Simulation | null,
+  isFirstSimulation = false,
 ): ChatSimulatorResult {
   const [state, dispatch] = useReducer(reducer, initialState);
   const timerRef = useRef<ReturnType<typeof setTimeout> | undefined>(
@@ -171,6 +172,11 @@ export function useChatSimulator(
   useEffect(() => {
     simRef.current = simulation;
   }, [simulation]);
+
+  const isFirstSimRef = useRef(isFirstSimulation);
+  useEffect(() => {
+    isFirstSimRef.current = isFirstSimulation;
+  }, [isFirstSimulation]);
 
   // Cleanup timers on unmount
   useEffect(() => {
@@ -228,7 +234,10 @@ export function useChatSimulator(
         }, delay);
       } else if (step.type === 'choice') {
         const choice = step as SimChoice;
-        dispatch({ type: 'SHOW_CHOICE', options: choice.options });
+        const opts = isFirstSimRef.current
+          ? choice.options.filter((o) => o.correct)
+          : choice.options;
+        dispatch({ type: 'SHOW_CHOICE', options: opts });
       }
       // 'feedback' steps are handled via selectChoice, not auto-processed
     },
@@ -388,14 +397,20 @@ export function useChatSimulator(
                 };
                 dispatch({ type: 'SHOW_MESSAGE', entry: retryEntry });
                 timerRef.current = setTimeout(() => {
-                  dispatch({ type: 'SHOW_CHOICE', options: choice.options });
+                  const retryOpts = isFirstSimRef.current
+                    ? choice.options.filter((o) => o.correct)
+                    : choice.options;
+                  dispatch({ type: 'SHOW_CHOICE', options: retryOpts });
                 }, MESSAGE_GAP);
               }, delay);
             }, 800);
           } else {
             // No retry message — re-present choice after short pause
             timerRef.current = setTimeout(() => {
-              dispatch({ type: 'SHOW_CHOICE', options: choice.options });
+              const retryOpts = isFirstSimRef.current
+                ? choice.options.filter((o) => o.correct)
+                : choice.options;
+              dispatch({ type: 'SHOW_CHOICE', options: retryOpts });
             }, 800);
           }
         }, 500);

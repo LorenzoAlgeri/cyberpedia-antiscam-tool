@@ -52,11 +52,13 @@ export const fakeBankOperator: Simulation = {
           id: 'b1-refuse',
           text: 'La mia banca mi ha detto di non dare mai codici al telefono.',
           correct: true,
+          skill: 'limite',
         },
         {
           id: 'b1-callback',
           text: 'Preferisco riattaccare e chiamare io il numero ufficiale.',
           correct: true,
+          skill: 'verifica',
         },
       ],
     },
@@ -98,13 +100,20 @@ export const fakeBankOperator: Simulation = {
           id: 'b2-hang-up',
           text: 'No. Chiudo la chiamata e contatto la banca dal numero ufficiale.',
           correct: true,
+          skill: 'limite',
+        },
+        {
+          id: 'b2-expose',
+          text: 'Le banche italiane non creano mai conti temporanei di sicurezza. Questa è una tecnica di frode nota.',
+          correct: true,
+          skill: 'esposizione',
         },
       ],
     },
     {
       type: 'feedback',
       explanation:
-        'NON ESISTE un "conto di sicurezza temporaneo". Nessuna banca chiede ai clienti di spostare fondi per proteggerli. È SEMPRE una truffa. L\'urgenza serve a impedirti di ragionare.',
+        'NON ESISTE un "conto di sicurezza temporaneo". Nessuna banca chiede ai clienti di spostare fondi per proteggerli. Nominare la frode esplicitamente — "questa è una tecnica nota" — mette il truffatore sulla difensiva e protegge anche eventuali testimoni.',
       wrongExplanation:
         'Le banche non chiedono mai ai clienti di spostare soldi su altri conti per proteggerli. Qualsiasi IBAN fornito in questo contesto appartiene al truffatore.',
       retryMessage: {
@@ -134,13 +143,20 @@ export const fakeBankOperator: Simulation = {
           id: 'b3-firm',
           text: 'Ho detto no. Chiudo e chiamo la mia banca. Arrivederci.',
           correct: true,
+          skill: 'limite',
+        },
+        {
+          id: 'b3-expose',
+          text: 'Un operatore bancario legittimo non usa minacce. Sta cercando di truffarmi.',
+          correct: true,
+          skill: 'esposizione',
         },
       ],
     },
     {
       type: 'feedback',
       explanation:
-        'Perfetto. La risposta giusta è SEMPRE riattaccare e chiamare la banca al numero ufficiale. Nessun operatore legittimo ti rimprovererà per aver verificato.',
+        'Perfetto. La minaccia di "perdere tutto" è una tecnica di panico deliberata. Nominare la manipolazione — "un operatore reale non usa queste minacce" — è una competenza difensiva potente che interrompe il loop emotivo del truffatore.',
       wrongExplanation:
         'La minaccia di perdere tutto è una tecnica di panico progettata per farti agire senza pensare. Rallenta: una banca vera non ti abbandona se prendi 5 minuti.',
       retryMessage: {

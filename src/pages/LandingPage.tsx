@@ -1,6 +1,8 @@
-import { motion } from 'motion/react';
-import { Lock, ShieldCheck } from 'lucide-react';
+import { useRef, useState } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
+import { Lock, ShieldCheck, X } from 'lucide-react';
 import { CyberpediaLogo } from '@/components/layout/CyberpediaLogo';
+import { useFocusTrap } from '@/hooks/useFocusTrap';
 
 interface LandingPageProps {
   readonly onNext: () => void;
@@ -22,10 +24,135 @@ interface LandingPageProps {
  * Returning user: if encrypted data exists in localStorage,
  * CTA changes to "Accedi ai tuoi dati" → skip to Step 2.
  */
+// ---------------------------------------------------------------------------
+// Privacy detail dialog (A4) — inline, no new routes
+// ---------------------------------------------------------------------------
+
+const PRIVACY_ITEMS = [
+  {
+    icon: '🔒',
+    title: 'I tuoi contatti di emergenza',
+    desc: 'Il numero della tua banca e i contatti di fiducia che inserisci, protetti da un PIN che solo tu conosci.',
+  },
+  {
+    icon: '📋',
+    title: 'Le tue preferenze',
+    desc: 'La risposta a «Hai subito una truffa?» e il tipo di truffa selezionato, per mostrarti le azioni più utili.',
+  },
+  {
+    icon: '📊',
+    title: 'Statistiche anonime locali',
+    desc: "Un contatore anonimo del tipo di truffa selezionato, salvato solo sul tuo dispositivo per migliorare l'app.",
+  },
+] as const;
+
+function PrivacyDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(dialogRef, open, onClose);
+
+  return (
+    <AnimatePresence>
+      {open && (
+        <motion.div
+          className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto p-4 py-8"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.2 }}
+        >
+          {/* Backdrop */}
+          <motion.div
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm"
+            onClick={onClose}
+            aria-hidden="true"
+          />
+
+          {/* Dialog card */}
+          <motion.div
+            ref={dialogRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="privacy-dialog-title"
+            className="glass-card relative z-10 w-full max-w-lg p-6 text-left sm:p-8"
+            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+            transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+          >
+            {/* Header */}
+            <div className="mb-5 flex items-start justify-between gap-4">
+              <div>
+                <h2
+                  id="privacy-dialog-title"
+                  className="text-xl font-bold text-foreground"
+                >
+                  Cosa salviamo sul tuo dispositivo
+                </h2>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Nessun dato viene inviato a server esterni. Tutto rimane nel
+                  browser, sul tuo dispositivo.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={onClose}
+                aria-label="Chiudi"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full
+                           text-muted-foreground transition-colors hover:bg-white/10
+                           hover:text-foreground focus-visible:outline focus-visible:outline-2
+                           focus-visible:outline-cyan-brand"
+              >
+                <X className="h-5 w-5" aria-hidden="true" />
+              </button>
+            </div>
+
+            {/* Plain-language privacy items */}
+            <ul className="space-y-3">
+              {PRIVACY_ITEMS.map(({ icon, title, desc }) => (
+                <li
+                  key={title}
+                  className="flex items-start gap-3 rounded-2xl border border-white/5 bg-white/5 px-4 py-3"
+                >
+                  <span className="mt-0.5 text-xl leading-none" aria-hidden="true">
+                    {icon}
+                  </span>
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">
+                      {title}
+                    </p>
+                    <p className="mt-0.5 text-sm leading-relaxed text-muted-foreground">
+                      {desc}
+                    </p>
+                  </div>
+                </li>
+              ))}
+            </ul>
+
+            {/* Close CTA */}
+            <button
+              type="button"
+              onClick={onClose}
+              className="btn-primary mt-6 w-full"
+            >
+              Capito
+            </button>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// LandingPage
+// ---------------------------------------------------------------------------
+
 export function LandingPage({
   onNext,
   isReturningUser = false,
 }: LandingPageProps) {
+  const [showPrivacy, setShowPrivacy] = useState(false);
+
   return (
     <div className="flex flex-1 flex-col items-center justify-center gap-10 py-12 text-center">
       {/* Cyberpedia brand logo */}
@@ -64,12 +191,16 @@ export function LandingPage({
         <h1 className="text-4xl font-bold leading-tight tracking-tight text-foreground sm:text-5xl md:text-6xl">
           Fermati. Respira.
           <br />
-          <span className="text-cyan-brand">Sei al sicuro qui.</span>
+          <span className="font-normal">
+            Prima{' '}
+            <strong className="font-bold text-cyan-brand">verifica</strong>
+            . Poi decidi.
+          </span>
         </h1>
 
         <p className="mx-auto max-w-lg text-lg leading-relaxed text-muted-foreground md:text-xl">
-          Ti guideremo passo dopo passo per proteggerti
-          da una possibile truffa, senza fretta.
+          Ti aiutiamo a vedere i segnali e fare la prossima mossa giusta,
+          prima che il danno diventi reale.
         </p>
       </motion.div>
 
@@ -87,7 +218,7 @@ export function LandingPage({
           transition={{ type: 'spring', stiffness: 400, damping: 17 }}
           className="btn-primary text-xl"
         >
-          {isReturningUser ? 'Accedi ai tuoi dati' : 'Inizia ora'}
+          {isReturningUser ? 'Apri la tua difesa' : 'Inizia il check (60 sec)'}
         </motion.button>
       </motion.div>
 
@@ -98,8 +229,17 @@ export function LandingPage({
         transition={{ duration: 0.5, delay: 0.5 }}
         className="flex items-center gap-2 text-sm text-muted-foreground"
       >
-        <Lock className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
-        <span>I tuoi dati restano solo sul tuo dispositivo</span>
+        <Lock className="h-4 w-4 shrink-0" strokeWidth={1.5} aria-hidden="true" />
+        <span>
+          Privacy: tutto resta sul tuo telefono.{' '}
+          <button
+            type="button"
+            className="underline underline-offset-2 transition-colors hover:text-foreground"
+            onClick={() => setShowPrivacy(true)}
+          >
+            (Dettagli)
+          </button>
+        </span>
       </motion.div>
 
       {/* Returning user hint */}
@@ -113,6 +253,9 @@ export function LandingPage({
           Bentornato — i tuoi dati salvati sono al sicuro.
         </motion.p>
       )}
+
+      {/* A4 — Privacy detail dialog */}
+      <PrivacyDialog open={showPrivacy} onClose={() => setShowPrivacy(false)} />
     </div>
   );
 }

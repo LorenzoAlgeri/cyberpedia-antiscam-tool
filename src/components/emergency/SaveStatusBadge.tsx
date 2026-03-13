@@ -2,10 +2,10 @@
  * Inline save-status indicator with animated transitions.
  *
  * Displays contextual feedback (/interaction-design):
- * - idle + lastSaved → faded timestamp
- * - saving           → spinning Loader2
- * - saved            → green Check with scale-in
- * - error            → amber AlertCircle
+ * - saving → spinning Loader2
+ * - saved  → green Check with scale-in
+ * - error  → amber AlertCircle
+ * - idle   → nothing shown (intentional — clean header)
  *
  * Uses AnimatePresence mode="wait" for smooth cross-fade.
  */
@@ -16,10 +16,9 @@ import type { SaveStatus } from '@/hooks/useAutoSave';
 
 interface SaveStatusBadgeProps {
   readonly status: SaveStatus;
-  readonly lastSaved: string | null;
 }
 
-export function SaveStatusBadge({ status, lastSaved }: SaveStatusBadgeProps) {
+export function SaveStatusBadge({ status }: SaveStatusBadgeProps) {
   return (
     <div className="flex min-h-[24px] items-center" aria-live="polite">
       <AnimatePresence mode="wait">
@@ -64,18 +63,7 @@ export function SaveStatusBadge({ status, lastSaved }: SaveStatusBadgeProps) {
           </motion.span>
         )}
 
-        {status === 'idle' && lastSaved != null && (
-          <motion.span
-            key="idle"
-            className="text-xs text-muted-foreground/60"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 0.6 }}
-            exit={{ opacity: 0 }}
-          >
-            Ultimo salvataggio:{' '}
-            {new Date(lastSaved).toLocaleTimeString('it-IT')}
-          </motion.span>
-        )}
+
       </AnimatePresence>
     </div>
   );

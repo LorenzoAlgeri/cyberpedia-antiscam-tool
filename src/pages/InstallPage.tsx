@@ -6,6 +6,7 @@ import { getInstallGuide } from '@/data/install-guides';
 import { InstallGuide } from '@/components/install/InstallGuide';
 
 interface InstallPageProps {
+  readonly onNext: () => void;
   readonly onBack: () => void;
 }
 
@@ -21,7 +22,7 @@ interface InstallPageProps {
  * 2. Native prompt available → one-click install button
  * 3. Fallback → step-by-step manual guide
  */
-export function InstallPage({ onBack }: InstallPageProps) {
+export function InstallPage({ onNext, onBack }: InstallPageProps) {
   const device = useDeviceInfo();
   const { isInstallReady, isInstalled, promptInstall } = useInstallPrompt();
   const guide = getInstallGuide(device.os, device.browser);
@@ -115,16 +116,30 @@ export function InstallPage({ onBack }: InstallPageProps) {
       )}
 
       {/* Back button */}
-      <motion.button
-        type="button"
-        onClick={onBack}
-        className="btn-secondary px-8"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.2 }}
-      >
-        Torna indietro
-      </motion.button>
+      <div className="flex w-full max-w-md gap-3">
+        <motion.button
+          type="button"
+          onClick={onBack}
+          className="btn-secondary flex-1"
+          style={{ minHeight: 44 }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.2 }}
+        >
+          Indietro
+        </motion.button>
+        <motion.button
+          type="button"
+          onClick={onNext}
+          className="btn-primary flex-1"
+          style={{ minHeight: 44 }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.22 }}
+        >
+          Modalità al bisogno
+        </motion.button>
+      </div>
     </div>
   );
 }

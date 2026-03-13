@@ -9,8 +9,8 @@ import type { AttackType } from '@/types/emergency';
 import type { TodoItem } from '@/types/todo';
 
 const FINANCIAL_TODOS: readonly TodoItem[] = [
-  { id: 'fin-01', text: 'Blocca immediatamente carte e accessi home banking', priority: 1 },
-  { id: 'fin-02', text: 'Contatta la banca per disconoscere le operazioni', priority: 2 },
+  { id: 'fin-01', text: 'Blocca immediatamente carte e accessi home banking', priority: 1, severe: true },
+  { id: 'fin-02', text: 'Contatta la banca per disconoscere le operazioni', priority: 2, severe: true },
   { id: 'fin-03', text: 'Verifica la piattaforma su consob.it (elenco avvertenze)', priority: 3 },
   { id: 'fin-04', text: 'NON fornire ulteriori fondi per "sbloccare" guadagni', priority: 4 },
   { id: 'fin-05', text: 'Segnala alla Consob e alla Polizia Postale', priority: 5 },
@@ -25,7 +25,7 @@ const ROMANCE_TODOS: readonly TodoItem[] = [
 ];
 
 const FAKE_OPERATOR_TODOS: readonly TodoItem[] = [
-  { id: 'fop-01', text: 'Riaggancia SUBITO e chiama tu il numero ufficiale della banca', priority: 1 },
+  { id: 'fop-01', text: 'Riaggancia SUBITO e chiama tu il numero ufficiale della banca', priority: 1, severe: true },
   { id: 'fop-02', text: 'NON fornire mai PIN, OTP o password al telefono', priority: 2 },
   { id: 'fop-03', text: 'Controlla i movimenti del conto dall\'app ufficiale', priority: 3 },
   { id: 'fop-04', text: 'Ricorda: la banca non chiede MAI credenziali per telefono', priority: 4 },

@@ -56,18 +56,20 @@ export const urgentLoan: Simulation = {
           id: 'l1-call',
           text: 'Ti chiamo al tuo vecchio numero per verificare.',
           correct: true,
+          skill: 'verifica',
         },
         {
-          id: 'l1-question',
-          text: 'Se sei davvero Marco, dimmi dove ci siamo conosciuti.',
+          id: 'l1-refuse',
+          text: 'Non mando soldi a numeri sconosciuti, nemmeno per emergenze. Contattami dal tuo vecchio numero.',
           correct: true,
+          skill: 'limite',
         },
       ],
     },
     {
       type: 'feedback',
       explanation:
-        'Prima di inviare soldi, verifica SEMPRE l\'identità della persona chiamandola al numero che già conosci. I truffatori usano l\'urgenza per impedirti di riflettere. Una domanda personale può smascherarli.',
+        'Prima di inviare soldi, verifica SEMPRE l\'identità chiamando il numero che già conosci. In alternativa, stabilisci un limite chiaro: non si mandano soldi a numeri sconosciuti, punto. L\'urgenza è una tecnica per impedirti di riflettere.',
       wrongExplanation:
         'Non inviare mai denaro a un numero sconosciuto senza verificare. L\'urgenza è una tecnica di pressione: rallenta e verifica prima.',
       retryMessage: {
@@ -102,11 +104,13 @@ export const urgentLoan: Simulation = {
           id: 'l2-firm',
           text: 'Ti richiamo al vecchio numero. Se non rispondi, non posso aiutarti.',
           correct: true,
+          skill: 'verifica',
         },
         {
           id: 'l2-direct',
           text: 'Dammi il numero del meccanico: lo pago io direttamente.',
           correct: true,
+          skill: 'alternativa',
         },
       ],
     },
@@ -143,11 +147,13 @@ export const urgentLoan: Simulation = {
           id: 'l3-block',
           text: 'Blocco questo numero. Nessun meccanico accetta buoni regalo.',
           correct: true,
+          skill: 'limite',
         },
         {
           id: 'l3-expose',
-          text: 'Nessun meccanico usa buoni regalo. Stai cercando di truffarmi.',
+          text: 'Nessun meccanico usa buoni regalo. Questo è un tentativo di truffa.',
           correct: true,
+          skill: 'esposizione',
         },
       ],
     },

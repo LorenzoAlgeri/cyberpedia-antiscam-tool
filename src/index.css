@@ -135,14 +135,48 @@
         @apply font-sans antialiased;
         /* Prevent iOS zoom on input focus */
         font-size: 16px;
+        /* Prevent horizontal scrollbar caused by animated page transitions */
+        overflow-x: hidden;
     }
 
     body {
         @apply bg-background text-foreground min-h-dvh;
+        overflow-x: hidden;
+    }
+
+    #root {
+        overflow-x: hidden;
     }
 }
 
 @import "./styles/components.css";
+
+/* ============================================
+ * SCROLLBAR — dark teal theme, thin, global
+ * Uses --color-cyan-brand (oklch 0.82 0.09 200)
+ * ============================================ */
+
+/* Webkit (Chrome, Edge, Safari) */
+::-webkit-scrollbar {
+    width: 4px;
+    height: 4px; /* horizontal scrollbars too */
+}
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+::-webkit-scrollbar-thumb {
+    background: oklch(0.82 0.09 200 / 30%);
+    border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: oklch(0.82 0.09 200 / 60%);
+}
+
+/* Firefox */
+* {
+    scrollbar-width: thin;
+    scrollbar-color: oklch(0.82 0.09 200 / 30%) transparent;
+}
 
 /* Global interactive focus-visible fallback for buttons/links without a specific class */
 @layer base {
