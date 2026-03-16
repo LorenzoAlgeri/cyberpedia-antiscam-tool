@@ -16,7 +16,9 @@ export function useVisitCount(): { readonly visitCount: number } {
   // Read pre-increment count synchronously
   const [preCount] = useState<number>(() => {
     const raw = localStorage.getItem(STORAGE_KEY);
-    return raw !== null ? parseInt(raw, 10) : 0;
+    if (!raw) return 0;
+    const n = parseInt(raw, 10);
+    return Number.isNaN(n) ? 0 : n;
   });
 
   // Increment once per mount — ref guards against Strict Mode double-fire

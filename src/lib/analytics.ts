@@ -27,7 +27,16 @@ function getDeviceId(): string {
 export function trackAttackSelection(attackType: TrackedAttackType): void {
   try {
     const raw = localStorage.getItem(STATS_KEY);
-    const list: AttackStatRecord[] = raw ? JSON.parse(raw) : [];
+    let list: AttackStatRecord[] = [];
+    if (raw) {
+      try {
+        const parsed: unknown = JSON.parse(raw);
+        list = Array.isArray(parsed) ? (parsed as AttackStatRecord[]) : [];
+      } catch {
+        // Corrupted analytics data -- start fresh, never block UX
+        list = [];
+      }
+    }
     const record: AttackStatRecord = {
       attackType,
       timestamp: new Date().toISOString(),

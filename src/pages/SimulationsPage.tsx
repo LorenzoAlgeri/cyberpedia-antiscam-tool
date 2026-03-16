@@ -42,7 +42,9 @@ export function SimulationsPage({
   /** Number of simulations completed — persisted in localStorage */
   const [simulationCount, setSimulationCount] = useState<number>(() => {
     const raw = localStorage.getItem('antiscam-sim-count');
-    return raw ? parseInt(raw, 10) : 0;
+    if (!raw) return 0;
+    const n = parseInt(raw, 10);
+    return Number.isNaN(n) ? 0 : n;
   });
   /** Show onboarding-to-realistic hint after first completion */
   const [showRealismHint, setShowRealismHint] = useState(false);
