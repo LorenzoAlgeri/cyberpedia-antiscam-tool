@@ -19,6 +19,7 @@
  */
 
 import type { EmergencyData } from '@/types/emergency';
+import { validateEmergencyData } from '@/lib/guards';
 import {
   deriveKey,
   encrypt,
@@ -49,7 +50,7 @@ const STORAGE_KEY_PLAINTEXT = 'antiscam-data-plain' as const;
 // ---------------------------------------------------------------------------
 
 /** Corruption kind for structured error handling in UI. */
-type CorruptionKind = 'missing-pair' | 'invalid-salt' | 'invalid-ciphertext';
+type CorruptionKind = 'missing-pair' | 'invalid-salt' | 'invalid-ciphertext' | 'invalid-json';
 
 /**
  * Thrown when localStorage data is structurally invalid (as opposed to
@@ -168,7 +169,13 @@ export async function loadEmergencyData(
   if (!isCryptoAvailable()) {
     const plain = localStorage.getItem(STORAGE_KEY_PLAINTEXT);
     if (!plain) return null;
-    return JSON.parse(plain) as EmergencyData;
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(plain);
+    } catch {
+      throw new StorageCorruptionError('invalid-json');
+    }
+    return validateEmergencyData(parsed);
   }
 
   // --- Encrypted path (normal) ---
@@ -199,7 +206,13 @@ export async function loadEmergencyData(
   // decrypt() throws OperationError (DOMException) on wrong PIN
   const key = await deriveKey(pin, salt);
   const json = await decrypt(ciphertext, key);
-  return JSON.parse(json) as EmergencyData;
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(json);
+  } catch {
+    throw new StorageCorruptionError('invalid-json');
+  }
+  return validateEmergencyData(parsed);
 }
 
 /**
