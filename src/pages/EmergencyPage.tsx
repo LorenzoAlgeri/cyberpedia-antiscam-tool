@@ -8,8 +8,11 @@ import { PoliziaPostaleCard } from '@/components/emergency/PoliziaPostaleCard';
 import { ChecklistTrigger } from '@/components/emergency/ChecklistTrigger';
 import { EmergencyPageActions } from '@/components/emergency/EmergencyPageActions';
 import { useAutoSave } from '@/hooks/useAutoSave';
-import { loadEmergencyData, hasStoredData, cachePin, getCachedPin, clearPinCache } from '@/lib/storage';
+import { useBruteForceGuard } from '@/hooks/useBruteForceGuard';
+import { loadEmergencyData, hasStoredData, cachePin, getCachedPin, clearPinCache, clearStoredData, StorageCorruptionError } from '@/lib/storage';
+import { isCryptoAvailable } from '@/lib/crypto-support';
 import { trackAttackSelection } from '@/lib/analytics';
+import { AlertTriangle } from 'lucide-react';
 import type { AttackType, TrustedContact, EmergencyData } from '@/types/emergency';
 
 interface EmergencyPageProps {
@@ -36,6 +39,8 @@ export function EmergencyPage({ onNext, onBack, visitCount, victimStatus = null,
   const [pinError, setPinError] = useState<string | null>(null);
   const [isAutoLoading, setIsAutoLoading] = useState(() => hasStoredData() && getCachedPin() !== null);
   const [showChecklist, setShowChecklist] = useState(false);
+  const [corruptionDetected, setCorruptionDetected] = useState(false);
+  const bruteForce = useBruteForceGuard();
   // C6: set true to execute onNext() after first save completes.
   const [pendingNavigation, setPendingNavigation] = useState(false);
 
@@ -56,7 +61,16 @@ export function EmergencyPage({ onNext, onBack, visitCount, victimStatus = null,
           onUnlock?.(cachedPin, data);
         }
       })
-      .catch(() => { clearPinCache(); setPin(null); setShowPinDialog(hasStoredData()); })
+      .catch((err) => {
+        clearPinCache();
+        setPin(null);
+        if (err instanceof StorageCorruptionError) {
+          setCorruptionDetected(true);
+          setShowPinDialog(true);
+        } else {
+          setShowPinDialog(hasStoredData());
+        }
+      })
       .finally(() => { setIsAutoLoading(false); });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -97,16 +111,37 @@ export function EmergencyPage({ onNext, onBack, visitCount, victimStatus = null,
           onUnlock?.(enteredPin, data);
         }
         setPin(enteredPin); cachePin(enteredPin); setShowPinDialog(false); setPinError(null);
-      } catch { setPinError('PIN errato. Riprova.'); }
+        bruteForce.resetOnSuccess();
+      } catch (err) {
+        if (err instanceof StorageCorruptionError) {
+          setCorruptionDetected(true);
+        } else {
+          setPinError('PIN errato. Riprova.');
+          bruteForce.recordFailure();
+        }
+      }
     } else {
       setPin(enteredPin); cachePin(enteredPin); setShowPinDialog(false); setPinError(null);
       await saveWithPin(enteredPin);
       onUnlock?.(enteredPin, getData());
       if (pendingNavigation) { setPendingNavigation(false); onNext(); }
     }
-  }, [pinMode, saveWithPin, pendingNavigation, onNext, onUnlock, getData]);
+  }, [pinMode, saveWithPin, pendingNavigation, onNext, onUnlock, getData, bruteForce]);
 
   const handlePinCancel = useCallback(() => { setShowPinDialog(false); setPendingNavigation(false); }, []);
+
+  const handleResetData = useCallback(() => {
+    clearStoredData();
+    setCorruptionDetected(false);
+    setShowPinDialog(false);
+    setPinMode('create');
+    setPin(null);
+    setPinError(null);
+    setBankName(''); setBankCountryCode('+39'); setBankPhone('');
+    setContacts([{ name: '', phone: '' }]);
+    setSelectedAttack(null);
+    setCompletedGenericTodos([]); setCompletedAttackTodos([]);
+  }, []);
 
   const handleContactChange = useCallback(
     (index: number, field: keyof TrustedContact, value: string) =>
@@ -142,6 +177,15 @@ export function EmergencyPage({ onNext, onBack, visitCount, victimStatus = null,
 
   return (
     <div className="mx-auto flex w-full max-w-2xl flex-col gap-6 px-4 py-8">
+      {!isCryptoAvailable() && (
+        <div
+          className="mb-4 flex items-center gap-2 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-amber-300"
+          role="alert"
+        >
+          <AlertTriangle className="h-5 w-5 shrink-0" aria-hidden="true" />
+          <span>Il tuo browser non supporta la cifratura — i tuoi dati non sono protetti.</span>
+        </div>
+      )}
       <EmergencyPageHeader saveStatus={saveStatus} />
       <div className="glass-card p-6 sm:p-8">
         <EmergencyForm
@@ -166,7 +210,13 @@ export function EmergencyPage({ onNext, onBack, visitCount, victimStatus = null,
         victimStatus={victimStatus} {...(onChangeVictimStatus !== undefined ? { onIncidentChange: onChangeVictimStatus } : {})}
         bankPhone={bankPhone} bankCountryCode={bankCountryCode} bankName={bankName}
       />
-      <PinDialog open={showPinDialog} mode={pinMode} error={pinError} onSubmit={handlePinSubmit} onCancel={handlePinCancel} />
+      <PinDialog
+        open={showPinDialog} mode={pinMode} error={pinError}
+        onSubmit={handlePinSubmit} onCancel={handlePinCancel}
+        isLocked={bruteForce.isLocked} remainingMs={bruteForce.remainingMs}
+        showHint={bruteForce.showHint} onResetData={handleResetData}
+        corruptionDetected={corruptionDetected}
+      />
     </div>
   );
 }

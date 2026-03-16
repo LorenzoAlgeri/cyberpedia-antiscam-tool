@@ -4,7 +4,7 @@ import { FileText, Phone } from 'lucide-react';
 import { PinDialog } from '@/components/emergency/PinDialog';
 import { TodoChecklist } from '@/components/emergency/TodoChecklist';
 import { ATTACK_TYPES } from '@/data/attack-types';
-import { hasStoredData, loadEmergencyData } from '@/lib/storage';
+import { hasStoredData, loadEmergencyData, StorageCorruptionError } from '@/lib/storage';
 import type { EmergencyData } from '@/types/emergency';
 
 interface NeedModePageProps {
@@ -78,8 +78,12 @@ export function NeedModePage({ onBack, pin: pinProp = null, unlockedData = null,
       }
       setPinError(null);
       setShowPinDialog(false);
-    } catch {
-      setPinError('PIN errato. Riprova.');
+    } catch (err) {
+      if (err instanceof StorageCorruptionError) {
+        setPinError('I tuoi dati salvati sono danneggiati. Torna alla pagina principale per resettare.');
+      } else {
+        setPinError('PIN errato. Riprova.');
+      }
     }
   }, [onUnlock]);
 

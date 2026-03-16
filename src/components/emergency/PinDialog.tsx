@@ -32,6 +32,16 @@ interface PinDialogProps {
   readonly error: string | null;
   readonly onSubmit: (pin: string) => void;
   readonly onCancel: () => void;
+  /** Whether PIN input should be disabled (brute-force delay active). */
+  readonly isLocked?: boolean;
+  /** Remaining delay in milliseconds for countdown display. */
+  readonly remainingMs?: number;
+  /** Whether to show the "forgot PIN?" hint after repeated failures. */
+  readonly showHint?: boolean;
+  /** Called when user clicks "reset data" from the hint. */
+  readonly onResetData?: () => void;
+  /** Whether corruption has been detected (shows corruption message instead of PIN form). */
+  readonly corruptionDetected?: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -53,10 +63,32 @@ const COPY: Record<PinMode, { title: string; description: string; cta: string }>
 };
 
 // ---------------------------------------------------------------------------
+// Corruption alert (extracted to keep PinDialog under 200 lines)
+// ---------------------------------------------------------------------------
+
+function CorruptionAlert({ onReset, onCancel }: { readonly onReset?: () => void; readonly onCancel: () => void }) {
+  return (
+    <div className="flex flex-col items-center gap-4 text-center">
+      <AlertCircle className="h-12 w-12 text-destructive" aria-hidden="true" />
+      <h3 id="pin-dialog-title" className="text-xl font-bold text-foreground">Dati danneggiati</h3>
+      <p className="text-sm text-muted-foreground">I tuoi dati salvati sono danneggiati e non possono essere recuperati.</p>
+      {onReset && (
+        <button type="button" onClick={onReset} className="btn-primary" style={{ minHeight: 44 }}>Resetta e ricomincia</button>
+      )}
+      <button type="button" onClick={onCancel} className="rounded-2xl px-4 py-3 text-sm text-muted-foreground transition-colors hover:text-foreground" style={{ minHeight: 44 }}>Annulla</button>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
 
-export function PinDialog({ open, mode, error, onSubmit, onCancel }: PinDialogProps) {
+export function PinDialog({
+  open, mode, error, onSubmit, onCancel,
+  isLocked = false, remainingMs = 0, showHint = false,
+  onResetData, corruptionDetected = false,
+}: PinDialogProps) {
   const [pin, setPin] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
@@ -116,6 +148,10 @@ export function PinDialog({ open, mode, error, onSubmit, onCancel }: PinDialogPr
             aria-modal="true"
             aria-labelledby="pin-dialog-title"
           >
+            {corruptionDetected ? (
+              <CorruptionAlert onReset={onResetData} onCancel={onCancel} />
+            ) : (
+            <>
             {/* Icon + heading */}
             <div className="mb-6 flex flex-col items-center gap-3">
               <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10">
@@ -151,6 +187,7 @@ export function PinDialog({ open, mode, error, onSubmit, onCancel }: PinDialogPr
                     const v = e.target.value.replace(/\D/g, '').slice(0, 6);
                     setPin(v);
                   }}
+                  disabled={isLocked}
                   className="input-glass w-full text-center text-2xl tracking-[0.5em]"
                   placeholder="• • • •"
                   aria-label="PIN di sicurezza"
@@ -166,11 +203,21 @@ export function PinDialog({ open, mode, error, onSubmit, onCancel }: PinDialogPr
                     {error}
                   </m.p>
                 )}
+                {isLocked && remainingMs > 0 && (
+                  <m.p
+                    className="mt-2 flex items-center gap-1.5 text-sm text-amber-400"
+                    initial={{ opacity: 0, y: -4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                  >
+                    <AlertCircle className="h-4 w-4 shrink-0" aria-hidden="true" />
+                    Troppi tentativi. Riprova tra {Math.ceil(remainingMs / 1000)} secondi.
+                  </m.p>
+                )}
               </div>
 
               <button
                 type="submit"
-                disabled={!isValidPin(pin)}
+                disabled={!isValidPin(pin) || isLocked}
                 className="btn-primary disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {cta}
@@ -184,7 +231,23 @@ export function PinDialog({ open, mode, error, onSubmit, onCancel }: PinDialogPr
               >
                 Annulla
               </button>
+
+              {showHint && mode === 'unlock' && onResetData && (
+                <div className="mt-2 rounded-xl bg-slate-800/60 p-4 text-center text-sm text-muted-foreground">
+                  <p>Hai dimenticato il PIN? Puoi resettare i dati e ricominciare.</p>
+                  <button
+                    type="button"
+                    onClick={onResetData}
+                    className="mt-2 rounded-xl px-4 py-2 text-sm font-medium text-destructive transition-colors hover:bg-destructive/10"
+                    style={{ minHeight: 44 }}
+                  >
+                    Resetta tutti i dati
+                  </button>
+                </div>
+              )}
             </form>
+            </>
+            )}
           </m.div>
         </m.div>
       )}
