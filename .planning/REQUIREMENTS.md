@@ -19,7 +19,7 @@ Requirements for this hardening milestone. Each maps to a roadmap phase with a s
 - [x] **REFAC-01**: Split TodoChecklist.tsx (497L) into sub-components (tabs, severity banner, progress tracker)
 - [ ] **REFAC-02**: Split ChatSimulator.tsx + useChatSimulator.ts (456L each) into focused modules
 - [ ] **REFAC-03**: Split EmergencyPage.tsx (421L) into orchestration + sub-sections
-- [ ] **REFAC-04**: Split EmergencyForm.tsx (385L) into bank section + contacts section
+- [x] **REFAC-04**: Split EmergencyForm.tsx (385L) into bank section + contacts section
 
 ### Security Hardening
 
@@ -81,7 +81,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | REFAC-01 | Phase 2: Component Refactoring | Complete |
 | REFAC-02 | Phase 2: Component Refactoring | Pending |
 | REFAC-03 | Phase 2: Component Refactoring | Pending |
-| REFAC-04 | Phase 2: Component Refactoring | Pending |
+| REFAC-04 | Phase 2: Component Refactoring | Complete |
 | SEC-01 | Phase 3: Security Hardening | Pending |
 | SEC-02 | Phase 3: Security Hardening | Pending |
 | SEC-03 | Phase 3: Security Hardening | Pending |
