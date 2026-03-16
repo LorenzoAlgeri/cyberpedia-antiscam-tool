@@ -13,9 +13,9 @@ This milestone hardens the existing cyberpedia-antiscam-tool SPA through six foc
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Dead Code & Bundle** - Audit all 53 source files, remove unused code, verify bundle stays under 150KB gzipped (completed 2026-03-16)
-- [x] **Phase 2: Component Refactoring** - Split four oversized components (TodoChecklist, ChatSimulator, EmergencyPage, EmergencyForm) into focused modules (completed 2026-03-16)
-- [ ] **Phase 3: Security Hardening** - Stress-test encryption edge cases, audit PIN caching, verify legacy migration and CSP headers
-- [ ] **Phase 4: TypeScript Strictness** - Add runtime type guards at storage boundaries and exhaustive switch assertions on all unions
+- [x] **Phase 2: Component Refactoring** - Split four oversized components (TodoChecklist, ChatSimulator, EmergencyPage, EmergencyForm) into focused modules (completed 2026-03-16)
+- [x] **Phase 3: Security Hardening** - Stress-test encryption edge cases, audit PIN caching, verify legacy migration and CSP headers (completed 2026-03-16)
+- [x] **Phase 4: TypeScript Strictness** - Add runtime type guards at storage boundaries and exhaustive switch assertions on all unions (completed 2026-03-16)
 - [ ] **Phase 5: AI Simulation Audit** - Verify all simulation scenarios match the validator contract and have correct choice-point structure
 - [ ] **Phase 6: Accessibility** - Full WCAG 2.2 AA audit for elderly/vulnerable users, screen reader verification, touch target compliance
 
@@ -92,10 +92,10 @@ Plans:
 **Success Criteria** (what must be TRUE):
   1. Every simulation scenario passes validation against the useAISimulation.ts validator contract — no missing fields, no type mismatches, no orphan branches
   2. Each choice point in every scenario has exactly 2 correct options, verified by automated check or manual audit of all scenario data files
-**Plans**: TBD
+**Plans**: 1 plan
 
 Plans:
-- [ ] 05-01: TBD
+- [ ] 05-01-PLAN.md — Install Vitest, create simulation validator with 9 structural rules, test all 3 scenarios
 
 ### Phase 6: Accessibility
 **Goal**: The tool is fully usable by elderly and vulnerable users regardless of assistive technology
@@ -120,7 +120,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 |-------|----------------|--------|-----------|
 | 1. Dead Code & Bundle | 2/2 | Complete   | 2026-03-16 |
 | 2. Component Refactoring | 4/4 | Complete   | 2026-03-16 |
-| 3. Security Hardening | 0/0 | Not started | - |
-| 4. TypeScript Strictness | 0/0 | Not started | - |
-| 5. AI Simulation Audit | 0/0 | Not started | - |
+| 3. Security Hardening | 2/2 | Complete   | 2026-03-16 |
+| 4. TypeScript Strictness | 2/2 | Complete   | 2026-03-16 |
+| 5. AI Simulation Audit | 0/1 | Planning complete | - |
 | 6. Accessibility | 0/0 | Not started | - |

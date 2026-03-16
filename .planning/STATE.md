@@ -3,15 +3,30 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: planning
-stopped_at: Completed 03-security-hardening/03-02-PLAN.md
-last_updated: "2026-03-16T16:39:11.523Z"
+stopped_at: Completed 05-ai-simulation-audit/05-01-PLAN.md
+last_updated: "2026-03-16T23:20:00.018Z"
 last_activity: 2026-03-16 — Roadmap created
 progress:
   total_phases: 6
-  completed_phases: 3
-  total_plans: 9
-  completed_plans: 9
-  percent: 89
+  completed_phases: 5
+  total_plans: 12
+  completed_plans: 12
+---
+
+---
+gsd_state_version: 1.0
+milestone: v1.0
+milestone_name: milestone
+status: planning
+stopped_at: Completed 04-typescript-strictness/04-02-PLAN.md
+last_updated: "2026-03-16T22:32:00Z"
+last_activity: 2026-03-16 — Phase 4 complete
+progress:
+  total_phases: 6
+  completed_phases: 4
+  total_plans: 11
+  completed_plans: 11
+  percent: 100
 ---
 
 ---
@@ -103,6 +118,9 @@ Progress: [█████░░░░░] 50%
 | Phase 02-component-refactoring P05 | 10min | 3 tasks | 3 files |
 | Phase 03-security-hardening P01 | 7min | 2 tasks | 3 files |
 | Phase 03-security-hardening P02 | 8min | 3 tasks | 5 files |
+| Phase 04-typescript-strictness P01 | 5min | 3 tasks | 5 files |
+| Phase 04-typescript-strictness P02 | 3min | 2 tasks | 3 files |
+| Phase 05-ai-simulation-audit P01 | 6min | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -130,6 +148,14 @@ Recent decisions affecting current work:
 - [Phase 03-security-hardening]: PinDialog at 256 lines due to required security additions; CorruptionAlert extracted as inline component
 - [Phase 03-security-hardening]: EmergencyPage at 222 lines due to brute-force guard, corruption handling, crypto banner, reset callback
 - [Phase 03-security-hardening]: CSP hardened: object-src none, worker-src self, connect-src with AI Worker domain
+- [Phase 04-typescript-strictness]: validateEmergencyData never throws -- returns defaults for any unrecoverable shape, merges missing fields
+- [Phase 04-typescript-strictness]: invalid-json added as CorruptionKind discriminant so UI can distinguish parse failures from wrong PIN
+- [Phase 04-typescript-strictness]: Inner try-catch in analytics.ts alongside outer try-catch: inner handles corrupt JSON specifically, outer handles all other failures
+- [Phase 04-typescript-strictness]: assertNever(action) not assertNever(action.type) -- after exhausting all Action cases, action narrows to never (accessing .type on never is a TS error)
+- [Phase 04-typescript-strictness]: Feedback step explicitly handled in processStep switch (advance past it) instead of silently skipping as in the previous if-else chain
+- [Phase 04-typescript-strictness]: Removed as SimMessage and as SimChoice casts -- switch narrowing provides correct types automatically
+- [Phase 05-ai-simulation-audit]: min-arc-length threshold set to 7 (not 8) matching smallest valid 2-arc scenario structure
+- [Phase 05-ai-simulation-audit]: Vitest configured inline in vite.config.ts with explicit imports (no globals) per verbatimModuleSyntax
 
 ### Pending Todos
 
@@ -141,6 +167,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-16T16:39:11.519Z
-Stopped at: Completed 03-security-hardening/03-02-PLAN.md
+Last session: 2026-03-16T23:20:00.011Z
+Stopped at: Completed 05-ai-simulation-audit/05-01-PLAN.md
 Resume file: None

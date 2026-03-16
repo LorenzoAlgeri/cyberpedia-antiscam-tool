@@ -30,13 +30,13 @@ Requirements for this hardening milestone. Each maps to a roadmap phase with a s
 
 ### TypeScript Strictness
 
-- [ ] **TS-01**: Add runtime type guards at localStorage read boundaries (corrupted data, schema changes)
-- [ ] **TS-02**: Add exhaustive switch statements with `never` assertions on all discriminated unions
+- [x] **TS-01**: Add runtime type guards at localStorage read boundaries (corrupted data, schema changes)
+- [x] **TS-02**: Add exhaustive switch statements with `never` assertions on all discriminated unions
 
 ### AI Simulation Audit
 
-- [ ] **SIM-01**: Audit all simulation scenarios against useAISimulation.ts validator contract
-- [ ] **SIM-02**: Verify each scenario has exactly 2 correct options per choice point
+- [x] **SIM-01**: Audit all simulation scenarios against useAISimulation.ts validator contract
+- [x] **SIM-02**: Verify each scenario has exactly 2 correct options per choice point
 
 ### Accessibility
 
@@ -86,10 +86,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SEC-02 | Phase 3: Security Hardening | Complete |
 | SEC-03 | Phase 3: Security Hardening | Complete |
 | SEC-04 | Phase 3: Security Hardening | Complete |
-| TS-01 | Phase 4: TypeScript Strictness | Pending |
-| TS-02 | Phase 4: TypeScript Strictness | Pending |
-| SIM-01 | Phase 5: AI Simulation Audit | Pending |
-| SIM-02 | Phase 5: AI Simulation Audit | Pending |
+| TS-01 | Phase 4: TypeScript Strictness | Complete |
+| TS-02 | Phase 4: TypeScript Strictness | Complete |
+| SIM-01 | Phase 5: AI Simulation Audit | Complete |
+| SIM-02 | Phase 5: AI Simulation Audit | Complete |
 | A11Y-01 | Phase 6: Accessibility | Pending |
 | A11Y-02 | Phase 6: Accessibility | Pending |
 | A11Y-03 | Phase 6: Accessibility | Pending |
