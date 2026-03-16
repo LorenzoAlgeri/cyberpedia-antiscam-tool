@@ -13,8 +13,7 @@ This milestone hardens the existing cyberpedia-antiscam-tool SPA through six foc
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Dead Code & Bundle** - Audit all 53 source files, remove unused code, verify bundle stays under 150KB gzipped (completed 2026-03-16)
-- [x] **Phase 2: Component Refactoring** - Split four oversized components (TodoChecklist, ChatSimulator, EmergencyPage, EmergencyForm) into focused modules
- (completed 2026-03-16)
+- [x] **Phase 2: Component Refactoring** - Split four oversized components (TodoChecklist, ChatSimulator, EmergencyPage, EmergencyForm) into focused modules (completed 2026-03-16)
 - [ ] **Phase 3: Security Hardening** - Stress-test encryption edge cases, audit PIN caching, verify legacy migration and CSP headers
 - [ ] **Phase 4: TypeScript Strictness** - Add runtime type guards at storage boundaries and exhaustive switch assertions on all unions
 - [ ] **Phase 5: AI Simulation Audit** - Verify all simulation scenarios match the validator contract and have correct choice-point structure
@@ -67,11 +66,10 @@ Plans:
   2. PIN session cache in sessionStorage enforces TTL expiration, is scoped to the current tab, and clears on logout/close
   3. Legacy migration path securely erases old insecure key storage after migrating — old keys are not recoverable from localStorage
   4. Content-Security-Policy headers correctly restrict iframe embedding to cyberpedia.it only, verified by attempting embed from unauthorized origin
-**Plans**: 2 plans
+**Plans**: TBD
 
 Plans:
-- [ ] 03-01-PLAN.md -- Harden encryption.ts and storage.ts with corruption detection, safe base64, legacy migration audit, crypto availability check
-- [ ] 03-02-PLAN.md -- Brute-force PIN protection with progressive delay, PinDialog corruption UI, CSP header audit
+- [ ] 03-01: TBD
 
 ### Phase 4: TypeScript Strictness
 **Goal**: Runtime boundaries validate data shape so corrupted storage or schema changes never cause silent failures
@@ -121,8 +119,8 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Dead Code & Bundle | 2/2 | Complete   | 2026-03-16 |
-| 2. Component Refactoring | 5/5 | Complete   | 2026-03-16 |
-| 3. Security Hardening | 0/2 | In progress | - |
+| 2. Component Refactoring | 4/4 | Complete   | 2026-03-16 |
+| 3. Security Hardening | 0/0 | Not started | - |
 | 4. TypeScript Strictness | 0/0 | Not started | - |
 | 5. AI Simulation Audit | 0/0 | Not started | - |
 | 6. Accessibility | 0/0 | Not started | - |
