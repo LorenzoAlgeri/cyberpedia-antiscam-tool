@@ -8,7 +8,8 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "deadcode": "knip --no-progress"
+    "deadcode": "knip --no-progress",
+    "build:size": "vite build 2>&1 | grep -E 'gzip|built'"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.2.1",
