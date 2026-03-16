@@ -6,17 +6,8 @@
  * no side effects -- collects ALL errors before returning.
  */
 
-import type {
-  Simulation,
-  SimChoice,
-  SimFeedback,
-  SimMessage,
-} from '@/types/simulation';
+import type { Simulation, SimChoice, SimFeedback, SimMessage } from '@/types/simulation';
 import { assertNever } from '@/lib/guards';
-
-// ---------------------------------------------------------------------------
-// Public types
-// ---------------------------------------------------------------------------
 
 export interface ValidationError {
   readonly rule: string;
@@ -30,179 +21,104 @@ export interface ValidationResult {
   readonly errors: readonly ValidationError[];
 }
 
-// ---------------------------------------------------------------------------
-// Internal helpers
-// ---------------------------------------------------------------------------
+type Errors = ValidationError[];
 
-function err(
-  errors: ValidationError[],
-  rule: string,
-  scenarioId: string,
-  stepIndex: number,
-  description: string,
-): void {
-  errors.push({
-    rule,
-    scenarioId,
-    stepIndex,
-    message: `${scenarioId}: step[${stepIndex}] ${description}`,
-  });
+function push(es: Errors, rule: string, id: string, idx: number, desc: string): void {
+  es.push({ rule, scenarioId: id, stepIndex: idx, message: `${id}: step[${idx}] ${desc}` });
 }
 
-// ---------------------------------------------------------------------------
-// Rule implementations
-// ---------------------------------------------------------------------------
-
 /** Rule 1: Every choice must be immediately followed by a feedback step. */
-function checkChoiceFeedbackPairs(
-  sim: Simulation,
-  errors: ValidationError[],
-): void {
+function checkChoiceFeedbackPairs(sim: Simulation, es: Errors): void {
   for (let i = 0; i < sim.steps.length; i++) {
     const step = sim.steps[i];
-    if (!step) continue;
-    if (step.type === 'choice') {
-      const next = sim.steps[i + 1];
-      if (!next || next.type !== 'feedback') {
-        err(errors, 'choice-feedback-pair', sim.id, i,
-          'choice is not followed by a feedback step');
-      }
-    }
+    if (!step || step.type !== 'choice') continue;
+    const next = sim.steps[i + 1];
+    if (!next || next.type !== 'feedback')
+      push(es, 'choice-feedback-pair', sim.id, i, 'choice is not followed by a feedback step');
   }
 }
 
 /** Rule 2: Every choice must have >= 2 correct options. */
-function checkMinCorrectOptions(
-  sim: Simulation,
-  errors: ValidationError[],
-): void {
+function checkMinCorrectOptions(sim: Simulation, es: Errors): void {
   for (let i = 0; i < sim.steps.length; i++) {
     const step = sim.steps[i];
-    if (!step) continue;
-    if (step.type === 'choice') {
-      const correct = (step as SimChoice).options.filter((o) => o.correct);
-      if (correct.length < 2) {
-        err(errors, 'min-correct-options', sim.id, i,
-          `choice has only ${correct.length} correct option -- expected >=2`);
-      }
-    }
+    if (!step || step.type !== 'choice') continue;
+    const correct = (step as SimChoice).options.filter((o) => o.correct);
+    if (correct.length < 2)
+      push(es, 'min-correct-options', sim.id, i, `choice has only ${correct.length} correct option -- expected >=2`);
   }
 }
 
-/** Rule 3: Correct options in a choice must cover different ChoiceSkill values. */
-function checkSkillDiversity(
-  sim: Simulation,
-  errors: ValidationError[],
-): void {
+/** Rule 3: Correct options must cover different ChoiceSkill values. */
+function checkSkillDiversity(sim: Simulation, es: Errors): void {
   for (let i = 0; i < sim.steps.length; i++) {
     const step = sim.steps[i];
-    if (!step) continue;
-    if (step.type === 'choice') {
-      const correctOpts = (step as SimChoice).options.filter((o) => o.correct);
-      for (const opt of correctOpts) {
-        if (opt.skill === undefined) {
-          err(errors, 'skill-diversity', sim.id, i,
-            `correct option "${opt.id}" is missing skill field`);
-        }
-      }
-      const skills = correctOpts
-        .map((o) => o.skill)
-        .filter((s): s is NonNullable<typeof s> => s !== undefined);
-      const unique = new Set(skills);
-      if (unique.size < skills.length) {
-        err(errors, 'skill-diversity', sim.id, i,
-          'correct options have duplicate skill values');
-      }
+    if (!step || step.type !== 'choice') continue;
+    const correctOpts = (step as SimChoice).options.filter((o) => o.correct);
+    for (const opt of correctOpts) {
+      if (opt.skill === undefined)
+        push(es, 'skill-diversity', sim.id, i, `correct option "${opt.id}" is missing skill field`);
     }
+    const skills = correctOpts.map((o) => o.skill).filter((s): s is NonNullable<typeof s> => s !== undefined);
+    if (new Set(skills).size < skills.length)
+      push(es, 'skill-diversity', sim.id, i, 'correct options have duplicate skill values');
   }
 }
 
 /** Rule 4: All option IDs must be unique across the entire scenario. */
-function checkUniqueOptionIds(
-  sim: Simulation,
-  errors: ValidationError[],
-): void {
+function checkUniqueOptionIds(sim: Simulation, es: Errors): void {
   const seen = new Set<string>();
   for (let i = 0; i < sim.steps.length; i++) {
     const step = sim.steps[i];
-    if (!step) continue;
-    if (step.type === 'choice') {
-      for (const opt of (step as SimChoice).options) {
-        if (seen.has(opt.id)) {
-          err(errors, 'unique-option-ids', sim.id, i,
-            `duplicate option ID "${opt.id}"`);
-        }
-        seen.add(opt.id);
-      }
+    if (!step || step.type !== 'choice') continue;
+    for (const opt of (step as SimChoice).options) {
+      if (seen.has(opt.id)) push(es, 'unique-option-ids', sim.id, i, `duplicate option ID "${opt.id}"`);
+      seen.add(opt.id);
     }
   }
 }
 
 /** Rule 5: Sequential walk must reach every step (no orphans). */
-function checkNoOrphanSteps(
-  sim: Simulation,
-  errors: ValidationError[],
-): void {
+function checkNoOrphanSteps(sim: Simulation, es: Errors): void {
   let i = 0;
   while (i < sim.steps.length) {
     const step = sim.steps[i];
     if (!step) break;
-    if (step.type === 'choice') {
-      // Engine reads choice + feedback as a pair, advance by 2
-      i += 2;
-    } else {
-      i += 1;
-    }
+    i += step.type === 'choice' ? 2 : 1;
   }
-  if (i < sim.steps.length) {
-    err(errors, 'no-orphan-steps', sim.id, i,
-      `step is unreachable from sequential processing`);
-  }
+  if (i < sim.steps.length)
+    push(es, 'no-orphan-steps', sim.id, i, 'step is unreachable from sequential processing');
 }
 
-/** Rule 6: Scenario must have >= 8 steps. */
-function checkMinArcLength(
-  sim: Simulation,
-  errors: ValidationError[],
-): void {
-  if (sim.steps.length < 8) {
-    err(errors, 'min-arc-length', sim.id, 0,
-      `scenario has ${sim.steps.length} steps -- expected >=8`);
-  }
+/**
+ * Rule 6: Minimum top-level steps. Threshold 7 matches the smallest valid
+ * 2-arc scenario (3 opening messages + 2 choice-feedback pairs).
+ */
+function checkMinArcLength(sim: Simulation, es: Errors): void {
+  if (sim.steps.length < 7)
+    push(es, 'min-arc-length', sim.id, 0, `scenario has ${sim.steps.length} steps -- expected >=7`);
 }
 
 /** Rule 7: Required fields must be present and non-empty per step type. */
-function checkRequiredFields(
-  sim: Simulation,
-  errors: ValidationError[],
-): void {
+function checkRequiredFields(sim: Simulation, es: Errors): void {
   for (let i = 0; i < sim.steps.length; i++) {
     const step = sim.steps[i];
     if (!step) continue;
     switch (step.type) {
       case 'message': {
         const msg = step as SimMessage;
-        if (!msg.sender || msg.sender.length === 0) {
-          err(errors, 'required-fields', sim.id, i, 'message has empty sender');
-        }
-        if (!msg.text || msg.text.length === 0) {
-          err(errors, 'required-fields', sim.id, i, 'message has empty text');
-        }
+        if (!msg.sender || msg.sender.length === 0) push(es, 'required-fields', sim.id, i, 'message has empty sender');
+        if (!msg.text || msg.text.length === 0) push(es, 'required-fields', sim.id, i, 'message has empty text');
         break;
       }
       case 'choice': {
         const choice = step as SimChoice;
-        if (!choice.options || choice.options.length === 0) {
-          err(errors, 'required-fields', sim.id, i, 'choice has no options');
-        }
+        if (!choice.options || choice.options.length === 0) push(es, 'required-fields', sim.id, i, 'choice has no options');
         break;
       }
       case 'feedback': {
         const fb = step as SimFeedback;
-        if (!fb.explanation || fb.explanation.length === 0) {
-          err(errors, 'required-fields', sim.id, i,
-            'feedback has empty explanation');
-        }
+        if (!fb.explanation || fb.explanation.length === 0) push(es, 'required-fields', sim.id, i, 'feedback has empty explanation');
         break;
       }
       default:
@@ -212,54 +128,33 @@ function checkRequiredFields(
 }
 
 /** Rule 8: Wrong options must have retry coverage (option or feedback level). */
-function checkRetryCoverage(
-  sim: Simulation,
-  errors: ValidationError[],
-): void {
+function checkRetryCoverage(sim: Simulation, es: Errors): void {
   for (let i = 0; i < sim.steps.length; i++) {
     const step = sim.steps[i];
-    if (!step) continue;
-    if (step.type === 'choice') {
-      const next = sim.steps[i + 1];
-      if (!next || next.type !== 'feedback') continue;
-      const fb = next as SimFeedback;
-      const wrongOpts = (step as SimChoice).options.filter((o) => !o.correct);
-      for (const opt of wrongOpts) {
-        if (opt.retryMessage === undefined && fb.retryMessage === undefined) {
-          err(errors, 'retry-coverage', sim.id, i,
-            `wrong option "${opt.id}" has no retryMessage and feedback has none either`);
-        }
-      }
+    if (!step || step.type !== 'choice') continue;
+    const next = sim.steps[i + 1];
+    if (!next || next.type !== 'feedback') continue;
+    const fb = next as SimFeedback;
+    for (const opt of (step as SimChoice).options.filter((o) => !o.correct)) {
+      if (opt.retryMessage === undefined && fb.retryMessage === undefined)
+        push(es, 'retry-coverage', sim.id, i, `wrong option "${opt.id}" has no retryMessage and feedback has none either`);
     }
   }
 }
 
 /** Rule 9: Every feedback step must have a non-empty followUp array. */
-function checkFollowUpNonEmpty(
-  sim: Simulation,
-  errors: ValidationError[],
-): void {
+function checkFollowUpNonEmpty(sim: Simulation, es: Errors): void {
   for (let i = 0; i < sim.steps.length; i++) {
     const step = sim.steps[i];
-    if (!step) continue;
-    if (step.type === 'feedback') {
-      const fb = step as SimFeedback;
-      if (fb.followUp.length === 0) {
-        err(errors, 'followup-non-empty', sim.id, i,
-          'feedback has empty followUp array');
-      }
-    }
+    if (!step || step.type !== 'feedback') continue;
+    if ((step as SimFeedback).followUp.length === 0)
+      push(es, 'followup-non-empty', sim.id, i, 'feedback has empty followUp array');
   }
 }
 
-// ---------------------------------------------------------------------------
-// Public API
-// ---------------------------------------------------------------------------
-
 /** Validate a simulation scenario against all 9 structural rules. */
 export function validateSimulation(sim: Simulation): ValidationResult {
-  const errors: ValidationError[] = [];
-
+  const errors: Errors = [];
   checkChoiceFeedbackPairs(sim, errors);
   checkMinCorrectOptions(sim, errors);
   checkSkillDiversity(sim, errors);
@@ -269,6 +164,5 @@ export function validateSimulation(sim: Simulation): ValidationResult {
   checkRequiredFields(sim, errors);
   checkRetryCoverage(sim, errors);
   checkFollowUpNonEmpty(sim, errors);
-
   return { valid: errors.length === 0, errors };
 }
