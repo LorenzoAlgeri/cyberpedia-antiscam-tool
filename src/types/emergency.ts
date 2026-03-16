@@ -57,7 +57,7 @@ export interface EmergencyData {
   lastSaved: string;
 }
 
-/** Factory for a blank EmergencyData record */
+/** @public Factory for a blank EmergencyData record */
 export function createEmptyEmergencyData(): EmergencyData {
   return {
     bankName: '',

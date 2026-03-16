@@ -150,8 +150,53 @@ export async function loadEmergencyData(
  * Remove all stored data from localStorage, including any legacy entries.
  * Call this for a full reset / "forget my data" flow.
  */
+/** @public Intentional public API for future "forget my data" feature */
 export function clearStoredData(): void {
   localStorage.removeItem(STORAGE_KEY_SALT);
   localStorage.removeItem(STORAGE_KEY_DATA);
   localStorage.removeItem(STORAGE_KEY_LEGACY_KEY);
+  clearPinCache();
+}
+
+// ---------------------------------------------------------------------------
+// PIN session cache — sessionStorage (tab-scoped, cleared on tab close)
+// ---------------------------------------------------------------------------
+
+const SESSION_KEY_PIN = 'antiscam-session-pin' as const;
+const SESSION_KEY_EXPIRY = 'antiscam-session-expiry' as const;
+
+/** 1 hour in milliseconds */
+const PIN_SESSION_TTL_MS = 60 * 60 * 1000;
+
+/**
+ * Cache the PIN in sessionStorage for up to 1 hour.
+ *
+ * sessionStorage is tab-scoped and cleared on tab close, making it
+ * significantly safer than localStorage for short-lived credentials.
+ * The PIN is still in plaintext — acceptable trade-off: the decrypted
+ * data is already in memory once unlocked, and the session clears on close.
+ */
+export function cachePin(pin: string): void {
+  const expiry = Date.now() + PIN_SESSION_TTL_MS;
+  sessionStorage.setItem(SESSION_KEY_PIN, pin);
+  sessionStorage.setItem(SESSION_KEY_EXPIRY, String(expiry));
+}
+
+/**
+ * Return the cached PIN if the session is still valid, otherwise null.
+ * Automatically clears expired cache entries.
+ */
+export function getCachedPin(): string | null {
+  const expiry = sessionStorage.getItem(SESSION_KEY_EXPIRY);
+  if (!expiry || Date.now() > parseInt(expiry, 10)) {
+    clearPinCache();
+    return null;
+  }
+  return sessionStorage.getItem(SESSION_KEY_PIN);
+}
+
+/** Remove the cached PIN and its expiry from sessionStorage. */
+export function clearPinCache(): void {
+  sessionStorage.removeItem(SESSION_KEY_PIN);
+  sessionStorage.removeItem(SESSION_KEY_EXPIRY);
 }

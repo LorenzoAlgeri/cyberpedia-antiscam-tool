@@ -12,6 +12,7 @@ export function writeVictimStatus(value: VictimStatus): void {
   localStorage.setItem(KEY, value);
 }
 
+/** @public Intentional public API for future "reset" feature */
 export function clearVictimStatus(): void {
   localStorage.removeItem(KEY);
 }

@@ -17,6 +17,7 @@
 
 import { useCallback, useMemo } from 'react';
 
+/** @public Contact data returned by the native Contact Picker API */
 export interface PickedContact {
   /** Trimmed display name from the contact record. Empty string if not present. */
   readonly name: string;
@@ -24,6 +25,7 @@ export interface PickedContact {
   readonly phone: string;
 }
 
+/** @public Hook return type — exported for consumer type inference */
 export interface ContactPickerResult {
   readonly isSupported: boolean;
   readonly pickContact: () => Promise<PickedContact | null>;

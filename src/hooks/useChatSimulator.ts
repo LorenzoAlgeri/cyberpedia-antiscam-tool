@@ -135,6 +135,14 @@ function reducer(state: EngineState, action: Action): EngineState {
 // Typing delay calculator (interaction-design: 100-300ms range)
 // ---------------------------------------------------------------------------
 
+/**
+ * Sorts choice options so correct answers come first, wrong answer last.
+ * Deterministic (no random shuffle) — wrong option is always position 3.
+ */
+function sortChoices(opts: readonly ChoiceOption[]): readonly ChoiceOption[] {
+  return [...opts].sort((a, b) => (b.correct ? 1 : 0) - (a.correct ? 1 : 0));
+}
+
 /** Calculates a realistic typing delay based on message length */
 function calcTypingDelay(text: string): number {
   const base = 600;
@@ -149,6 +157,7 @@ const MESSAGE_GAP = 300;
 // Hook
 // ---------------------------------------------------------------------------
 
+/** @public Hook return type — exported for consumer type inference */
 export interface ChatSimulatorResult {
   phase: EnginePhase;
   entries: readonly ChatEntry[];
@@ -237,7 +246,7 @@ export function useChatSimulator(
         const opts = isFirstSimRef.current
           ? choice.options.filter((o) => o.correct)
           : choice.options;
-        dispatch({ type: 'SHOW_CHOICE', options: opts });
+        dispatch({ type: 'SHOW_CHOICE', options: sortChoices(opts) });
       }
       // 'feedback' steps are handled via selectChoice, not auto-processed
     },
@@ -343,6 +352,7 @@ export function useChatSimulator(
           sender: 'feedback',
           text: fb.explanation,
           correct: true,
+          ...(fb.explanationDetail !== undefined && { detail: fb.explanationDetail }),
         };
         timerRef.current = setTimeout(() => {
           dispatch({ type: 'SHOW_FEEDBACK', entry: feedbackEntry });
@@ -372,6 +382,7 @@ export function useChatSimulator(
           sender: 'feedback',
           text: wrongText,
           correct: false,
+          ...(fb.wrongExplanationDetail !== undefined && { detail: fb.wrongExplanationDetail }),
         };
 
         timerRef.current = setTimeout(() => {
@@ -383,9 +394,12 @@ export function useChatSimulator(
           }
           dispatch({ type: 'RECORD_WRONG' });
 
-          if (fb.retryMessage) {
+          // Per-option retryMessage takes priority over the feedback-level one.
+          // This lets the scammer respond to what the user actually said.
+          const retryMsg = option.retryMessage ?? fb.retryMessage;
+
+          if (retryMsg) {
             // Scammer stays in character — type, show, then re-present choice
-            const retryMsg = fb.retryMessage; // capture for closure
             timerRef.current = setTimeout(() => {
               dispatch({ type: 'SHOW_TYPING' });
               const delay = retryMsg.delay ?? calcTypingDelay(retryMsg.text);
@@ -400,17 +414,18 @@ export function useChatSimulator(
                   const retryOpts = isFirstSimRef.current
                     ? choice.options.filter((o) => o.correct)
                     : choice.options;
-                  dispatch({ type: 'SHOW_CHOICE', options: retryOpts });
+                  dispatch({ type: 'SHOW_CHOICE', options: sortChoices(retryOpts) });
                 }, MESSAGE_GAP);
               }, delay);
             }, 800);
+
           } else {
             // No retry message — re-present choice after short pause
             timerRef.current = setTimeout(() => {
               const retryOpts = isFirstSimRef.current
                 ? choice.options.filter((o) => o.correct)
                 : choice.options;
-              dispatch({ type: 'SHOW_CHOICE', options: retryOpts });
+              dispatch({ type: 'SHOW_CHOICE', options: sortChoices(retryOpts) });
             }, 800);
           }
         }, 500);

@@ -181,10 +181,10 @@ export async function decrypt(
 // PIN validation
 // ---------------------------------------------------------------------------
 
-/** Minimum PIN length */
+/** @public Minimum PIN length */
 export const PIN_MIN_LENGTH = 4;
 
-/** Maximum PIN length */
+/** @public Maximum PIN length */
 export const PIN_MAX_LENGTH = 6;
 
 /** Validate that a PIN is 4–6 numeric digits. */

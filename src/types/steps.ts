@@ -8,6 +8,7 @@
  * Step 4: Need Mode — on-demand quick actions (post-wizard)
  */
 
+/** @public Total number of wizard steps */
 export const STEP_COUNT = 5 as const;
 
 export type StepIndex = 0 | 1 | 2 | 3 | 4;
@@ -21,9 +22,10 @@ export const STEP_HASHES = [
   '#need',
 ] as const satisfies readonly string[];
 
+/** @public Union type of all valid step hash fragments */
 export type StepHash = (typeof STEP_HASHES)[number];
 
-/** Step metadata for indicators and a11y labels */
+/** @public Step metadata for indicators and a11y labels */
 export interface StepMeta {
   readonly index: StepIndex;
   readonly hash: StepHash;

@@ -38,6 +38,7 @@ interface BeforeInstallPromptEvent extends Event {
 // Hook return type
 // ---------------------------------------------------------------------------
 
+/** @public Hook return type — exported for consumer type inference */
 export interface InstallPromptState {
   /** True when the native install prompt is available */
   readonly isInstallReady: boolean;

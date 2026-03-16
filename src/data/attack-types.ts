@@ -8,7 +8,7 @@
  * Sources referenced: Polizia Postale, ENISA, FBI IC3
  */
 
-import type { AttackType, AttackTypeMeta } from '@/types/emergency';
+import type { AttackTypeMeta } from '@/types/emergency';
 
 export const ATTACK_TYPES: readonly AttackTypeMeta[] = [
   {
@@ -49,7 +49,3 @@ export const ATTACK_TYPES: readonly AttackTypeMeta[] = [
   },
 ] as const;
 
-/** Quick lookup map by attack type ID */
-export const ATTACK_TYPE_MAP = new Map<AttackType, AttackTypeMeta>(
-  ATTACK_TYPES.map((t) => [t.id, t]),
-);

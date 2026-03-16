@@ -1,25 +1,21 @@
 /**
  * Barrel export for all simulation scripts.
  *
- * 4 scenarios per CLAUDE.md spec:
- * S1: Romance scam
- * S2: Urgent loan from "friend"
- * S3: Fake bank operator
- * S4: Fake relative WhatsApp
+ * 3 scenarios per I6 spec:
+ * S1: Romance scam — carta clonata all'estero
+ * S2: Dogana / pacco (smishing)
+ * S3: Ti mando i documenti (vishing)
  */
 
 import { romanceScam } from './romance-scam';
-import { urgentLoan } from './urgent-loan';
-import { fakeBankOperator } from './fake-bank-operator';
-import { fakeRelative } from './fake-relative';
+import { doganaPacco } from './dogana-pacco';
+import { documenti } from './documenti';
 import type { Simulation } from '@/types/simulation';
 
 /** All simulations in display order */
 export const simulations: readonly Simulation[] = [
   romanceScam,
-  urgentLoan,
-  fakeBankOperator,
-  fakeRelative,
+  doganaPacco,
+  documenti,
 ] as const;
 
-export { romanceScam, urgentLoan, fakeBankOperator, fakeRelative };
