@@ -23,10 +23,10 @@ Requirements for this hardening milestone. Each maps to a roadmap phase with a s
 
 ### Security Hardening
 
-- [ ] **SEC-01**: Stress-test encryption with edge cases (empty data, corrupt storage, wrong PIN, missing salt)
-- [ ] **SEC-02**: Audit PIN session caching in sessionStorage (TTL enforcement, tab-scope isolation, clearance)
-- [ ] **SEC-03**: Verify legacy migration path securely erases old insecure key storage
-- [ ] **SEC-04**: Audit Content-Security-Policy headers for iframe embed on cyberpedia.it
+- [x] **SEC-01**: Stress-test encryption with edge cases (empty data, corrupt storage, wrong PIN, missing salt)
+- [x] **SEC-02**: Audit PIN session caching in sessionStorage (TTL enforcement, tab-scope isolation, clearance)
+- [x] **SEC-03**: Verify legacy migration path securely erases old insecure key storage
+- [x] **SEC-04**: Audit Content-Security-Policy headers for iframe embed on cyberpedia.it
 
 ### TypeScript Strictness
 
@@ -82,10 +82,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | REFAC-02 | Phase 2: Component Refactoring | Complete |
 | REFAC-03 | Phase 2: Component Refactoring | Complete |
 | REFAC-04 | Phase 2: Component Refactoring | Complete |
-| SEC-01 | Phase 3: Security Hardening | Pending |
-| SEC-02 | Phase 3: Security Hardening | Pending |
-| SEC-03 | Phase 3: Security Hardening | Pending |
-| SEC-04 | Phase 3: Security Hardening | Pending |
+| SEC-01 | Phase 3: Security Hardening | Complete |
+| SEC-02 | Phase 3: Security Hardening | Complete |
+| SEC-03 | Phase 3: Security Hardening | Complete |
+| SEC-04 | Phase 3: Security Hardening | Complete |
 | TS-01 | Phase 4: TypeScript Strictness | Pending |
 | TS-02 | Phase 4: TypeScript Strictness | Pending |
 | SIM-01 | Phase 5: AI Simulation Audit | Pending |

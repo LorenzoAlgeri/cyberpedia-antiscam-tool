@@ -3,14 +3,30 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: planning
-stopped_at: Completed 02-component-refactoring/02-04-PLAN.md
-last_updated: "2026-03-16T13:32:32.904Z"
+stopped_at: Completed 03-security-hardening/03-02-PLAN.md
+last_updated: "2026-03-16T16:39:11.523Z"
 last_activity: 2026-03-16 — Roadmap created
 progress:
   total_phases: 6
+  completed_phases: 3
+  total_plans: 9
+  completed_plans: 9
+  percent: 89
+---
+
+---
+gsd_state_version: 1.0
+milestone: v1.0
+milestone_name: milestone
+status: planning
+stopped_at: Phase 3 context gathered
+last_updated: "2026-03-16T14:33:58.789Z"
+last_activity: 2026-03-16 — Roadmap created
+progress:
+  [█████████░] 89%
   completed_phases: 2
-  total_plans: 6
-  completed_plans: 6
+  total_plans: 7
+  completed_plans: 7
   percent: 83
 ---
 
@@ -84,6 +100,9 @@ Progress: [█████░░░░░] 50%
 | Phase 01-dead-code-bundle P01 | 25min | 2 tasks | 15 files |
 | Phase 01-dead-code-bundle P02 | 9min | 2 tasks | 19 files |
 | Phase 02-component-refactoring P03 | 8min | 2 tasks | 4 files |
+| Phase 02-component-refactoring P05 | 10min | 3 tasks | 3 files |
+| Phase 03-security-hardening P01 | 7min | 2 tasks | 3 files |
+| Phase 03-security-hardening P02 | 8min | 3 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -103,6 +122,14 @@ Recent decisions affecting current work:
 - [Phase 02-component-refactoring]: chatSimulatorSelectChoice.ts added to achieve sub-200-line target for useChatSimulator.ts — selectChoice handler extracted as pure TypeScript function
 - [Phase 02-component-refactoring]: EmergencyPage inline JSX comments condensed to achieve 172-line target; ChecklistTrigger uses completedCount (pre-summed) not two separate arrays
 - [Phase 02-component-refactoring]: EmergencyPage inline JSX comments condensed to achieve 172-line target; ChecklistTrigger uses completedCount (pre-summed) not two separate arrays
+- [Phase 02-component-refactoring]: exactOptionalPropertyTypes spread pattern: pass optional callbacks via spread to avoid undefined assignability errors in TypeScript strict mode
+- [Phase 02-component-refactoring]: Scenario pane kept inline in TodoChecklist (~45 lines) — no further extraction needed; activeSevereId prop-drilled to TodoBasePane
+- [Phase 03-security-hardening]: PBKDF2 kept at 100k iterations; documented OWASP 600k gap in code comment, deferred migration to v2
+- [Phase 03-security-hardening]: StorageCorruptionError uses CorruptionKind discriminant for structured UI error handling, distinguishing corruption from wrong PIN
+- [Phase 03-security-hardening]: Plaintext fallback uses separate localStorage key (antiscam-data-plain) to avoid collision with encrypted data
+- [Phase 03-security-hardening]: PinDialog at 256 lines due to required security additions; CorruptionAlert extracted as inline component
+- [Phase 03-security-hardening]: EmergencyPage at 222 lines due to brute-force guard, corruption handling, crypto banner, reset callback
+- [Phase 03-security-hardening]: CSP hardened: object-src none, worker-src self, connect-src with AI Worker domain
 
 ### Pending Todos
 
@@ -114,6 +141,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-16T13:32:27.638Z
-Stopped at: Completed 02-component-refactoring/02-04-PLAN.md
+Last session: 2026-03-16T16:39:11.519Z
+Stopped at: Completed 03-security-hardening/03-02-PLAN.md
 Resume file: None
