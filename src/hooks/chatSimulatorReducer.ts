@@ -64,7 +64,7 @@ export function reducer(state: EngineState, action: Action): EngineState {
     case 'RESET':
       return initialState;
     default:
-      return assertNever(action.type);
+      return assertNever(action);
   }
 }
 

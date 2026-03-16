@@ -9,6 +9,7 @@ import { LandingPage } from '@/pages/LandingPage';
 import { VictimStatusModal } from '@/components/layout/VictimStatusModal';
 import { readVictimStatus, writeVictimStatus, type VictimStatus } from '@/lib/victimStatus';
 import type { EmergencyData } from '@/types/emergency';
+import { assertNever } from '@/lib/guards';
 
 /* ── Lazy-loaded pages (code-split chunks) ──────────── */
 const EmergencyPage = lazy(() =>
@@ -153,6 +154,8 @@ function App() {
             />
           </Suspense>
         );
+      default:
+        return assertNever(currentStep);
     }
   }
 
