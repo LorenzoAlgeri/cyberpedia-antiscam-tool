@@ -17,7 +17,7 @@ Requirements for this hardening milestone. Each maps to a roadmap phase with a s
 ### Component Refactoring
 
 - [x] **REFAC-01**: Split TodoChecklist.tsx (497L) into sub-components (tabs, severity banner, progress tracker)
-- [ ] **REFAC-02**: Split ChatSimulator.tsx + useChatSimulator.ts (456L each) into focused modules
+- [x] **REFAC-02**: Split ChatSimulator.tsx + useChatSimulator.ts (456L each) into focused modules
 - [ ] **REFAC-03**: Split EmergencyPage.tsx (421L) into orchestration + sub-sections
 - [x] **REFAC-04**: Split EmergencyForm.tsx (385L) into bank section + contacts section
 
@@ -79,7 +79,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | AUDIT-03 | Phase 1: Dead Code & Bundle | Complete |
 | AUDIT-04 | Phase 1: Dead Code & Bundle | Complete |
 | REFAC-01 | Phase 2: Component Refactoring | Complete |
-| REFAC-02 | Phase 2: Component Refactoring | Pending |
+| REFAC-02 | Phase 2: Component Refactoring | Complete |
 | REFAC-03 | Phase 2: Component Refactoring | Pending |
 | REFAC-04 | Phase 2: Component Refactoring | Complete |
 | SEC-01 | Phase 3: Security Hardening | Pending |
