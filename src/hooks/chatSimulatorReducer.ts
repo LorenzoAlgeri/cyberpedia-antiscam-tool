@@ -8,6 +8,7 @@
 import type { EngineState, Action } from './chatSimulatorTypes';
 import { initialState } from './chatSimulatorTypes';
 import type { ChoiceOption } from '@/types/simulation';
+import { assertNever } from '@/lib/guards';
 
 // ---------------------------------------------------------------------------
 // Reducer
@@ -63,7 +64,7 @@ export function reducer(state: EngineState, action: Action): EngineState {
     case 'RESET':
       return initialState;
     default:
-      return state;
+      return assertNever(action.type);
   }
 }
 

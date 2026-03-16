@@ -11,8 +11,6 @@
 
 import { useCallback, useEffect, useReducer, useRef } from 'react';
 import type {
-  SimChoice,
-  SimMessage,
   SimScore,
   Simulation,
 } from '@/types/simulation';
@@ -20,6 +18,7 @@ import type { ChatSimulatorResult } from './chatSimulatorTypes';
 import { initialState } from './chatSimulatorTypes';
 import { reducer, sortChoices, calcTypingDelay, MESSAGE_GAP } from './chatSimulatorReducer';
 import { handleSelectChoice } from './chatSimulatorSelectChoice';
+import { assertNever } from '@/lib/guards';
 
 export type { ChatSimulatorResult } from './chatSimulatorTypes';
 
@@ -58,18 +57,29 @@ export function useChatSimulator(
       }
 
       const step = sim.steps[stepIndex];
-      if (step.type === 'message') {
-        const msg = step as SimMessage;
-        dispatch({ type: 'SHOW_TYPING' });
-        timerRef.current = setTimeout(() => {
-          dispatch({ type: 'SHOW_MESSAGE', entry: { id: `msg-${stepIndex}-${Date.now()}`, sender: msg.sender, text: msg.text } });
+      switch (step.type) {
+        case 'message': {
+          dispatch({ type: 'SHOW_TYPING' });
+          timerRef.current = setTimeout(() => {
+            dispatch({ type: 'SHOW_MESSAGE', entry: { id: `msg-${stepIndex}-${Date.now()}`, sender: step.sender, text: step.text } });
+            dispatch({ type: 'ADVANCE' });
+            timerRef.current = setTimeout(() => { processStepRef.current(stepIndex + 1); }, MESSAGE_GAP);
+          }, step.delay ?? calcTypingDelay(step.text));
+          break;
+        }
+        case 'choice': {
+          const opts = isFirstSimRef.current ? step.options.filter((o) => o.correct) : step.options;
+          dispatch({ type: 'SHOW_CHOICE', options: sortChoices(opts) });
+          break;
+        }
+        case 'feedback':
+          // Feedback steps are handled by handleSelectChoice, not by processStep.
+          // Advance past them if encountered during sequential processing.
           dispatch({ type: 'ADVANCE' });
-          timerRef.current = setTimeout(() => { processStepRef.current(stepIndex + 1); }, MESSAGE_GAP);
-        }, msg.delay ?? calcTypingDelay(msg.text));
-      } else if (step.type === 'choice') {
-        const choice = step as SimChoice;
-        const opts = isFirstSimRef.current ? choice.options.filter((o) => o.correct) : choice.options;
-        dispatch({ type: 'SHOW_CHOICE', options: sortChoices(opts) });
+          timerRef.current = setTimeout(() => { processStepRef.current(stepIndex + 1); }, 0);
+          break;
+        default:
+          assertNever(step);
       }
     },
     [state.followUpQueue.length],
