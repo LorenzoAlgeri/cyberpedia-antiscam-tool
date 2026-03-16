@@ -149,7 +149,7 @@ export function PinDialog({
             aria-labelledby="pin-dialog-title"
           >
             {corruptionDetected ? (
-              <CorruptionAlert onReset={onResetData} onCancel={onCancel} />
+              <CorruptionAlert {...(onResetData !== undefined ? { onReset: onResetData } : {})} onCancel={onCancel} />
             ) : (
             <>
             {/* Icon + heading */}
