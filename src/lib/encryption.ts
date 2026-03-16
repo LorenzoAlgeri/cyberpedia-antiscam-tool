@@ -20,7 +20,12 @@
 // Constants
 // ---------------------------------------------------------------------------
 
-/** PBKDF2 iteration count — OWASP 2024 minimum for SHA-256 */
+/**
+ * PBKDF2 iteration count -- 100,000. OWASP 2024 recommends 600,000 for
+ * PBKDF2-HMAC-SHA256, but upgrading requires a data migration (decrypt
+ * with old count, re-encrypt with new). Deferred to v2. The PIN keyspace
+ * (4-6 digits) is the primary brute-force bottleneck, not iteration count.
+ */
 const PBKDF2_ITERATIONS = 100_000;
 
 /** Salt length in bytes */
@@ -55,6 +60,19 @@ function fromBase64(b64: string): Uint8Array {
   return bytes;
 }
 
+/**
+ * Safely decode a base64 string to Uint8Array.
+ * Returns null if the string is not valid base64 (atob throws DOMException).
+ */
+export function safeFromBase64(b64: string): Uint8Array | null {
+  try {
+    return fromBase64(b64);
+  } catch {
+    // atob throws DOMException for invalid base64 characters
+    return null;
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Salt generation
 // ---------------------------------------------------------------------------
@@ -72,6 +90,35 @@ export function encodeSalt(salt: Uint8Array): string {
 /** Decode a base64-encoded salt back to bytes. */
 export function decodeSalt(encoded: string): Uint8Array {
   return fromBase64(encoded);
+}
+
+/**
+ * Safely decode a base64-encoded salt. Returns null on invalid base64.
+ */
+export function safeDecodeSalt(encoded: string): Uint8Array | null {
+  try {
+    return decodeSalt(encoded);
+  } catch {
+    return null;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Ciphertext validation
+// ---------------------------------------------------------------------------
+
+/**
+ * Minimum valid ciphertext size in bytes: 12-byte IV + 16-byte GCM auth tag.
+ * Any ciphertext shorter than this is structurally invalid.
+ */
+export const MIN_CIPHERTEXT_BYTES = IV_BYTES + 16;
+
+/**
+ * Validate that a decoded ciphertext byte array has the minimum expected length.
+ * This distinguishes corrupt/truncated data from a wrong-PIN decryption failure.
+ */
+export function isValidCiphertextStructure(combined: Uint8Array): boolean {
+  return combined.length >= MIN_CIPHERTEXT_BYTES;
 }
 
 // ---------------------------------------------------------------------------
