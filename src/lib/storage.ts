@@ -1,18 +1,21 @@
 /**
  * Encrypted storage layer for emergency data.
  *
- * localStorage layout:
- *   "antiscam-salt"  → base64-encoded 16-byte PBKDF2 salt
- *   "antiscam-data"  → base64(IV ‖ AES-256-GCM ciphertext)
+ * localStorage layout (encrypted mode):
+ *   "antiscam-salt"  -> base64-encoded 16-byte PBKDF2 salt
+ *   "antiscam-data"  -> base64(IV || AES-256-GCM ciphertext)
  *
- * The encryption key is NEVER persisted — it is derived at
+ * localStorage layout (plaintext fallback -- no Web Crypto API):
+ *   "antiscam-data-plain" -> JSON string of EmergencyData
+ *
+ * The encryption key is NEVER persisted -- it is derived at
  * runtime from the user's PIN via PBKDF2 (see encryption.ts).
  *
  * Public API:
- *   hasStoredData()         → boolean (quick check, no PIN needed)
- *   saveEmergencyData(…)    → encrypt & persist
- *   loadEmergencyData(…)    → decrypt & return
- *   clearStoredData()       → wipe all known keys from localStorage
+ *   hasStoredData()         -> boolean (quick check, no PIN needed)
+ *   saveEmergencyData(...)  -> encrypt & persist
+ *   loadEmergencyData(...)  -> decrypt & return
+ *   clearStoredData()       -> wipe all known keys from localStorage
  */
 
 import type { EmergencyData } from '@/types/emergency';
@@ -23,7 +26,11 @@ import {
   generateSalt,
   encodeSalt,
   decodeSalt,
+  safeFromBase64,
+  safeDecodeSalt,
+  isValidCiphertextStructure,
 } from '@/lib/encryption';
+import { isCryptoAvailable } from '@/lib/crypto-support';
 
 // ---------------------------------------------------------------------------
 // localStorage key names
@@ -34,6 +41,31 @@ const STORAGE_KEY_DATA = 'antiscam-data' as const;
 // Legacy key written by an old implementation that exported a raw AES key.
 // The current scheme derives the key from PIN+PBKDF2 and never persists it.
 const STORAGE_KEY_LEGACY_KEY = 'antiscam-key' as const;
+/** Key for plaintext fallback data (used when Web Crypto API is unavailable). */
+const STORAGE_KEY_PLAINTEXT = 'antiscam-data-plain' as const;
+
+// ---------------------------------------------------------------------------
+// Error types
+// ---------------------------------------------------------------------------
+
+/** Corruption kind for structured error handling in UI. */
+type CorruptionKind = 'missing-pair' | 'invalid-salt' | 'invalid-ciphertext';
+
+/**
+ * Thrown when localStorage data is structurally invalid (as opposed to
+ * a wrong-PIN OperationError from AES-GCM auth failure).
+ *
+ * Callers (EmergencyPage, NeedModePage) use `instanceof StorageCorruptionError`
+ * to distinguish corruption from wrong PIN and show the appropriate Italian message.
+ */
+export class StorageCorruptionError extends Error {
+  readonly kind: CorruptionKind;
+  constructor(kind: CorruptionKind) {
+    super(`Storage corruption: ${kind}`);
+    this.name = 'StorageCorruptionError';
+    this.kind = kind;
+  }
+}
 
 // ---------------------------------------------------------------------------
 // Security migration
@@ -43,17 +75,9 @@ const STORAGE_KEY_LEGACY_KEY = 'antiscam-key' as const;
  * Erase any legacy raw CryptoKey from localStorage.
  *
  * An early prototype stored an extractable AES-256-GCM key directly in
- * localStorage under "antiscam-key".  That entry is a security risk: any
- * XSS can read it and decrypt all saved data without knowing the PIN.
- *
- * If the entry is found:
- *   1. Remove the key itself (immediate security fix).
- *   2. Remove associated ciphertext — it was encrypted with the raw key,
- *      which is incompatible with the current PBKDF2 scheme.
- *   3. Remove the salt — no longer valid without the matching ciphertext.
- *
- * The user will be treated as a first-time visitor and asked to re-enter
- * their data with the secure PIN-based flow.
+ * localStorage under "antiscam-key". If found, remove the key, associated
+ * ciphertext, and the salt (incompatible with PBKDF2 scheme). The user
+ * will be treated as a first-time visitor.
  */
 function eraseLegacyKey(): void {
   if (localStorage.getItem(STORAGE_KEY_LEGACY_KEY) !== null) {
@@ -68,11 +92,14 @@ function eraseLegacyKey(): void {
 // ---------------------------------------------------------------------------
 
 /**
- * Check whether encrypted emergency data already exists.
- * Does NOT require the PIN — just checks if the keys are present.
+ * Check whether emergency data already exists (encrypted or plaintext).
+ * Does NOT require the PIN -- just checks if the keys are present.
  */
 export function hasStoredData(): boolean {
   eraseLegacyKey();
+  if (!isCryptoAvailable()) {
+    return localStorage.getItem(STORAGE_KEY_PLAINTEXT) !== null;
+  }
   return (
     localStorage.getItem(STORAGE_KEY_SALT) !== null &&
     localStorage.getItem(STORAGE_KEY_DATA) !== null
@@ -82,17 +109,31 @@ export function hasStoredData(): boolean {
 /**
  * Encrypt and persist emergency data.
  *
- * - If no salt exists yet (first save), a fresh one is generated.
- * - Overwrites any previous ciphertext.
- *
  * @param data - The emergency data payload to encrypt
- * @param pin  - The user's 4–6 digit PIN (never stored)
+ * @param pin  - The user's 4-6 digit PIN (ignored in plaintext fallback)
  */
 export async function saveEmergencyData(
   data: EmergencyData,
   pin: string,
 ): Promise<void> {
   eraseLegacyKey();
+
+  // Stamp the save time
+  const stamped: EmergencyData = {
+    ...data,
+    lastSaved: new Date().toISOString(),
+  };
+
+  // --- Plaintext fallback (no Web Crypto API) ---
+  // Per CONTEXT.md: "store data in plaintext localStorage if crypto.subtle
+  // is unavailable. Tool remains fully functional."
+  if (!isCryptoAvailable()) {
+    localStorage.setItem(STORAGE_KEY_PLAINTEXT, JSON.stringify(stamped));
+    return;
+  }
+
+  // --- Encrypted path (normal) ---
+  // Empty/default EmergencyData is allowed -- user may save with no fields filled.
 
   // Retrieve or generate the PBKDF2 salt
   let salt: Uint8Array;
@@ -105,16 +146,7 @@ export async function saveEmergencyData(
     localStorage.setItem(STORAGE_KEY_SALT, encodeSalt(salt));
   }
 
-  // Derive key from PIN + salt
   const key = await deriveKey(pin, salt);
-
-  // Stamp the save time
-  const stamped: EmergencyData = {
-    ...data,
-    lastSaved: new Date().toISOString(),
-  };
-
-  // Encrypt and persist
   const ciphertext = await encrypt(JSON.stringify(stamped), key);
   localStorage.setItem(STORAGE_KEY_DATA, ciphertext);
 }
@@ -124,24 +156,48 @@ export async function saveEmergencyData(
  *
  * @param pin - The user's PIN to re-derive the decryption key
  * @returns The decrypted data, or `null` if nothing is stored
- * @throws {Error} If the PIN is wrong (AES-GCM auth tag mismatch)
+ * @throws {StorageCorruptionError} If localStorage data is structurally invalid
+ * @throws {DOMException} OperationError if the PIN is wrong (GCM auth failure)
  */
 export async function loadEmergencyData(
   pin: string,
 ): Promise<EmergencyData | null> {
   eraseLegacyKey();
 
+  // --- Plaintext fallback (no Web Crypto API) ---
+  if (!isCryptoAvailable()) {
+    const plain = localStorage.getItem(STORAGE_KEY_PLAINTEXT);
+    if (!plain) return null;
+    return JSON.parse(plain) as EmergencyData;
+  }
+
+  // --- Encrypted path (normal) ---
   const saltB64 = localStorage.getItem(STORAGE_KEY_SALT);
   const ciphertext = localStorage.getItem(STORAGE_KEY_DATA);
 
+  // Case 1: No data stored at all
+  if (!saltB64 && !ciphertext) return null;
+
+  // Case 2: Inconsistent state (salt without data or vice versa)
   if (!saltB64 || !ciphertext) {
-    return null;
+    throw new StorageCorruptionError('missing-pair');
   }
 
-  const salt = decodeSalt(saltB64);
-  const key = await deriveKey(pin, salt);
+  // Case 3: Invalid base64 in salt
+  const salt = safeDecodeSalt(saltB64);
+  if (!salt) {
+    throw new StorageCorruptionError('invalid-salt');
+  }
 
-  // decrypt() throws DOMException on wrong PIN (GCM auth failure)
+  // Case 4: Invalid base64 or too-short ciphertext
+  const cipherBytes = safeFromBase64(ciphertext);
+  if (!cipherBytes || !isValidCiphertextStructure(cipherBytes)) {
+    throw new StorageCorruptionError('invalid-ciphertext');
+  }
+
+  // Case 5: Derive key and attempt decryption
+  // decrypt() throws OperationError (DOMException) on wrong PIN
+  const key = await deriveKey(pin, salt);
   const json = await decrypt(ciphertext, key);
   return JSON.parse(json) as EmergencyData;
 }
@@ -155,11 +211,13 @@ export function clearStoredData(): void {
   localStorage.removeItem(STORAGE_KEY_SALT);
   localStorage.removeItem(STORAGE_KEY_DATA);
   localStorage.removeItem(STORAGE_KEY_LEGACY_KEY);
+  localStorage.removeItem(STORAGE_KEY_PLAINTEXT);
+  clearPersistedAttempts();
   clearPinCache();
 }
 
 // ---------------------------------------------------------------------------
-// PIN session cache — sessionStorage (tab-scoped, cleared on tab close)
+// PIN session cache -- sessionStorage (tab-scoped, cleared on tab close)
 // ---------------------------------------------------------------------------
 
 const SESSION_KEY_PIN = 'antiscam-session-pin' as const;
@@ -173,8 +231,6 @@ const PIN_SESSION_TTL_MS = 60 * 60 * 1000;
  *
  * sessionStorage is tab-scoped and cleared on tab close, making it
  * significantly safer than localStorage for short-lived credentials.
- * The PIN is still in plaintext — acceptable trade-off: the decrypted
- * data is already in memory once unlocked, and the session clears on close.
  */
 export function cachePin(pin: string): void {
   const expiry = Date.now() + PIN_SESSION_TTL_MS;
@@ -188,7 +244,8 @@ export function cachePin(pin: string): void {
  */
 export function getCachedPin(): string | null {
   const expiry = sessionStorage.getItem(SESSION_KEY_EXPIRY);
-  if (!expiry || Date.now() > parseInt(expiry, 10)) {
+  const expiryMs = parseInt(expiry ?? '', 10);
+  if (!expiry || Number.isNaN(expiryMs) || Date.now() > expiryMs) {
     clearPinCache();
     return null;
   }
@@ -199,4 +256,31 @@ export function getCachedPin(): string | null {
 export function clearPinCache(): void {
   sessionStorage.removeItem(SESSION_KEY_PIN);
   sessionStorage.removeItem(SESSION_KEY_EXPIRY);
+}
+
+// ---------------------------------------------------------------------------
+// Brute-force attempt counter -- localStorage (survives refresh/tab close)
+// ---------------------------------------------------------------------------
+
+const ATTEMPTS_KEY = 'antiscam-attempts' as const;
+const ATTEMPTS_TS_KEY = 'antiscam-attempts-ts' as const;
+
+/** Read persisted attempt count. Returns 0 if missing or corrupt. */
+export function getPersistedAttempts(): number {
+  const raw = localStorage.getItem(ATTEMPTS_KEY);
+  if (!raw) return 0;
+  const n = parseInt(raw, 10);
+  return Number.isNaN(n) ? 0 : n;
+}
+
+/** Persist updated attempt count and timestamp. */
+export function persistAttempts(count: number): void {
+  localStorage.setItem(ATTEMPTS_KEY, String(count));
+  localStorage.setItem(ATTEMPTS_TS_KEY, String(Date.now()));
+}
+
+/** Clear persisted attempt counter (called on successful unlock). */
+export function clearPersistedAttempts(): void {
+  localStorage.removeItem(ATTEMPTS_KEY);
+  localStorage.removeItem(ATTEMPTS_TS_KEY);
 }
