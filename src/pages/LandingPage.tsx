@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
+import * as m from 'motion/react-m';
+import { AnimatePresence } from 'motion/react';
 import { Lock, ShieldCheck, X } from 'lucide-react';
 import { CyberpediaLogo } from '@/components/layout/CyberpediaLogo';
 import { useFocusTrap } from '@/hooks/useFocusTrap';
@@ -53,7 +54,7 @@ function PrivacyDialog({ open, onClose }: { open: boolean; onClose: () => void }
   return (
     <AnimatePresence>
       {open && (
-        <motion.div
+        <m.div
           className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto p-4 py-8"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -61,14 +62,14 @@ function PrivacyDialog({ open, onClose }: { open: boolean; onClose: () => void }
           transition={{ duration: 0.2 }}
         >
           {/* Backdrop */}
-          <motion.div
+          <m.div
             className="fixed inset-0 bg-black/60 backdrop-blur-sm"
             onClick={onClose}
             aria-hidden="true"
           />
 
           {/* Dialog card */}
-          <motion.div
+          <m.div
             ref={dialogRef}
             role="dialog"
             aria-modal="true"
@@ -136,8 +137,8 @@ function PrivacyDialog({ open, onClose }: { open: boolean; onClose: () => void }
             >
               Capito
             </button>
-          </motion.div>
-        </motion.div>
+          </m.div>
+        </m.div>
       )}
     </AnimatePresence>
   );
@@ -156,7 +157,7 @@ export function LandingPage({
   return (
     <div className="flex flex-1 flex-col items-center justify-center gap-10 py-12 text-center">
       {/* Cyberpedia brand logo */}
-      <motion.div
+      <m.div
         initial={{ opacity: 0, scale: 0.8 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
@@ -179,10 +180,10 @@ export function LandingPage({
             />
           </div>
         </div>
-      </motion.div>
+      </m.div>
 
       {/* Headline — staggered entrance */}
-      <motion.div
+      <m.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.15, ease: [0.16, 1, 0.3, 1] }}
@@ -202,15 +203,15 @@ export function LandingPage({
           Ti aiutiamo a vedere i segnali e fare la prossima mossa giusta,
           prima che il danno diventi reale.
         </p>
-      </motion.div>
+      </m.div>
 
       {/* CTA — single large button */}
-      <motion.div
+      <m.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
       >
-        <motion.button
+        <m.button
           type="button"
           onClick={onNext}
           whileHover={{ scale: 1.02, y: -2 }}
@@ -219,11 +220,11 @@ export function LandingPage({
           className="btn-primary text-xl"
         >
           {isReturningUser ? 'Apri la tua difesa' : 'Inizia il check (60 sec)'}
-        </motion.button>
-      </motion.div>
+        </m.button>
+      </m.div>
 
       {/* Trust signal — NO emoji, Lucide Lock icon */}
-      <motion.div
+      <m.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.5, delay: 0.5 }}
@@ -240,18 +241,18 @@ export function LandingPage({
             (Dettagli)
           </button>
         </span>
-      </motion.div>
+      </m.div>
 
       {/* Returning user hint */}
       {isReturningUser && (
-        <motion.p
+        <m.p
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.4, delay: 0.6 }}
           className="text-sm text-cyan-brand/70"
         >
           Bentornato — i tuoi dati salvati sono al sicuro.
-        </motion.p>
+        </m.p>
       )}
 
       {/* A4 — Privacy detail dialog */}

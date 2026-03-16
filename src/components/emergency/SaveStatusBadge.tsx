@@ -10,7 +10,8 @@
  * Uses AnimatePresence mode="wait" for smooth cross-fade.
  */
 
-import { motion, AnimatePresence } from 'motion/react';
+import * as m from 'motion/react-m';
+import { AnimatePresence } from 'motion/react';
 import { Loader2, Check, AlertCircle } from 'lucide-react';
 import type { SaveStatus } from '@/hooks/useAutoSave';
 
@@ -23,7 +24,7 @@ export function SaveStatusBadge({ status }: SaveStatusBadgeProps) {
     <div className="flex min-h-[24px] items-center" aria-live="polite">
       <AnimatePresence mode="wait">
         {status === 'saving' && (
-          <motion.span
+          <m.span
             key="saving"
             className="inline-flex items-center gap-1.5 text-sm text-muted-foreground"
             initial={{ opacity: 0 }}
@@ -33,11 +34,11 @@ export function SaveStatusBadge({ status }: SaveStatusBadgeProps) {
           >
             <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
             Salvataggio…
-          </motion.span>
+          </m.span>
         )}
 
         {status === 'saved' && (
-          <motion.span
+          <m.span
             key="saved"
             className="inline-flex items-center gap-1.5 text-sm text-primary"
             initial={{ opacity: 0, scale: 0.85 }}
@@ -47,11 +48,11 @@ export function SaveStatusBadge({ status }: SaveStatusBadgeProps) {
           >
             <Check className="h-4 w-4" aria-hidden="true" />
             Salvato
-          </motion.span>
+          </m.span>
         )}
 
         {status === 'error' && (
-          <motion.span
+          <m.span
             key="error"
             className="inline-flex items-center gap-1.5 text-sm text-destructive"
             initial={{ opacity: 0 }}
@@ -60,7 +61,7 @@ export function SaveStatusBadge({ status }: SaveStatusBadgeProps) {
           >
             <AlertCircle className="h-4 w-4" aria-hidden="true" />
             Errore
-          </motion.span>
+          </m.span>
         )}
 
 

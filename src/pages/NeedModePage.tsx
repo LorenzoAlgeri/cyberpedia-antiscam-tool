@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from 'react';
-import { motion } from 'motion/react';
+import * as m from 'motion/react-m';
 import { FileText, Phone } from 'lucide-react';
 import { PinDialog } from '@/components/emergency/PinDialog';
 import { TodoChecklist } from '@/components/emergency/TodoChecklist';
@@ -187,7 +187,7 @@ export function NeedModePage({ onBack, pin: pinProp = null, unlockedData = null,
 
       {/* CTAs */}
       <div className="mt-auto grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <motion.button
+        <m.button
           type="button"
           onClick={handleCreateReport}
           disabled={!data}
@@ -198,7 +198,7 @@ export function NeedModePage({ onBack, pin: pinProp = null, unlockedData = null,
         >
           <FileText className="h-5 w-5" aria-hidden="true" />
           Crea report
-        </motion.button>
+        </m.button>
 
         {bankTel ? (
           <a

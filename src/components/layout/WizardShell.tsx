@@ -1,4 +1,5 @@
-import { AnimatePresence, motion } from 'motion/react';
+import * as m from 'motion/react-m';
+import { AnimatePresence } from 'motion/react';
 import type { ReactNode } from 'react';
 import type { StepIndex } from '@/types/steps';
 import { StepIndicator } from './StepIndicator';
@@ -29,7 +30,7 @@ export function WizardShell({
     <div className="mx-auto flex min-h-dvh max-w-2xl flex-col px-4 md:px-8 lg:max-w-4xl lg:px-12">
       {/* Step indicator — hidden on landing (step 0) */}
       {currentStep > 0 && (
-        <motion.div
+        <m.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.2 }}
@@ -38,14 +39,14 @@ export function WizardShell({
             currentStep={currentStep}
             onStepClick={onStepClick}
           />
-        </motion.div>
+        </m.div>
       )}
 
       {/* Step content with animated transitions. overflow-hidden clips the ±60px
           horizontal slide so it never triggers a viewport-level scrollbar. */}
       <main className="relative flex flex-1 flex-col overflow-hidden">
         <AnimatePresence mode="wait" custom={direction}>
-          <motion.div
+          <m.div
             key={currentStep}
             custom={direction}
             initial="enter"
@@ -59,7 +60,7 @@ export function WizardShell({
             className="flex flex-1 flex-col"
           >
             {children}
-          </motion.div>
+          </m.div>
         </AnimatePresence>
       </main>
     </div>

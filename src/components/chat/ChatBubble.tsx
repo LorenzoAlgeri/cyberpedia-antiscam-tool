@@ -9,48 +9,99 @@
  * Motion: slides in from left/right with fade.
  */
 
-import { motion } from 'motion/react';
-import { CheckCircle, XCircle } from 'lucide-react';
+import { useState } from 'react';
+import * as m from 'motion/react-m';
+import { AnimatePresence } from 'motion/react';
+import { CheckCircle, ChevronDown, XCircle } from 'lucide-react';
 import type { ChatEntry } from '@/types/simulation';
+
+/** Feedback bubble with short text + optional "Approfondisci" collapsible */
+function FeedbackBubble({ entry }: { entry: ChatEntry }) {
+  const [open, setOpen] = useState(false);
+  const isCorrect = entry.correct === true;
+  const Icon = isCorrect ? CheckCircle : XCircle;
+
+  return (
+    <m.div
+      initial={{ opacity: 0, scale: 0.9 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ duration: 0.3, ease: 'easeOut' }}
+      className={`mx-auto w-full max-w-[85%] rounded-2xl border p-4 text-sm ${
+        isCorrect
+          ? 'border-emerald-500/40 bg-emerald-950/40 text-emerald-200'
+          : 'border-amber-500/40 bg-amber-950/40 text-amber-200'
+      }`}
+      role="status"
+      aria-live="polite"
+    >
+      {/* Title */}
+      <div className="mb-2 flex items-center gap-2 font-bold">
+        <Icon className="size-4 shrink-0" aria-hidden="true" />
+        <span>{isCorrect ? 'Corretto.' : 'Stop. Questa è la trappola.'}</span>
+      </div>
+
+      {/* Short text — max 2 lines */}
+      <p className="leading-snug">{entry.text}</p>
+
+      {/* Approfondisci collapsible */}
+      {entry.detail && (
+        <div className="mt-3">
+          <button
+            type="button"
+            onClick={() => setOpen((v) => !v)}
+            className={`flex items-center gap-1 text-xs font-medium underline-offset-2 hover:underline ${
+              isCorrect ? 'text-emerald-300' : 'text-amber-300'
+            }`}
+            aria-expanded={open}
+          >
+            <ChevronDown
+              className={`size-3.5 transition-transform ${open ? 'rotate-180' : ''}`}
+              aria-hidden="true"
+            />
+            {open ? 'Chiudi' : 'Approfondisci'}
+          </button>
+          <AnimatePresence>
+            {open && (
+              <m.p
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.2 }}
+                className={`mt-2 overflow-hidden text-xs leading-relaxed ${
+                  isCorrect ? 'text-emerald-300/80' : 'text-amber-300/80'
+                }`}
+              >
+                {entry.detail}
+              </m.p>
+            )}
+          </AnimatePresence>
+        </div>
+      )}
+
+      {/* CTA label */}
+      <p className={`mt-3 text-xs font-semibold ${isCorrect ? 'text-emerald-300' : 'text-amber-300'}`}>
+        {isCorrect ? 'Avanti →' : 'Riprova'}
+      </p>
+    </m.div>
+  );
+}
 
 interface ChatBubbleProps {
   entry: ChatEntry;
 }
 
 export function ChatBubble({ entry }: ChatBubbleProps) {
-  const { sender, text, correct } = entry;
+  const { sender, text } = entry;
 
   // Feedback bubble
   if (sender === 'feedback') {
-    const isCorrect = correct === true;
-    const Icon = isCorrect ? CheckCircle : XCircle;
-
-    return (
-      <motion.div
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.3, ease: 'easeOut' }}
-        className={`mx-auto max-w-[85%] rounded-2xl border p-4 text-sm ${
-          isCorrect
-            ? 'border-emerald-500/40 bg-emerald-950/40 text-emerald-200'
-            : 'border-amber-500/40 bg-amber-950/40 text-amber-200'
-        }`}
-        role="status"
-        aria-live="polite"
-      >
-        <div className="mb-1 flex items-center gap-2 font-semibold">
-          <Icon className="size-4 shrink-0" aria-hidden="true" />
-          <span>{isCorrect ? 'Corretto!' : 'Attenzione!'}</span>
-        </div>
-        <p>{text}</p>
-      </motion.div>
-    );
+    return <FeedbackBubble entry={entry} />;
   }
 
   // System message
   if (sender === 'system') {
     return (
-      <motion.div
+      <m.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.25 }}
@@ -58,7 +109,7 @@ export function ChatBubble({ entry }: ChatBubbleProps) {
         role="status"
       >
         {text}
-      </motion.div>
+      </m.div>
     );
   }
 
@@ -66,7 +117,7 @@ export function ChatBubble({ entry }: ChatBubbleProps) {
   const isUser = sender === 'user';
 
   return (
-    <motion.div
+    <m.div
       initial={{ opacity: 0, x: isUser ? 20 : -20, y: 4 }}
       animate={{ opacity: 1, x: 0, y: 0 }}
       transition={{ duration: 0.25, ease: 'easeOut' }}
@@ -82,6 +133,6 @@ export function ChatBubble({ entry }: ChatBubbleProps) {
         <span className="sr-only">{isUser ? 'Tu: ' : 'Truffatore: '}</span>
         {text}
       </div>
-    </motion.div>
+    </m.div>
   );
 }

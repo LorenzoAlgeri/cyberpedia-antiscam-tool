@@ -9,7 +9,7 @@
  * Each step has a numbered badge, text, and optional hint.
  */
 
-import { motion } from 'motion/react';
+import * as m from 'motion/react-m';
 import { Monitor, Smartphone } from 'lucide-react';
 import type { InstallGuideData } from '@/data/install-guides';
 
@@ -29,7 +29,7 @@ export function InstallGuide({ guide }: InstallGuideProps) {
   return (
     <div className="w-full max-w-md">
       {/* Guide header */}
-      <motion.div
+      <m.div
         className="mb-6 flex items-center gap-3"
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
@@ -41,12 +41,12 @@ export function InstallGuide({ guide }: InstallGuideProps) {
         <h3 className="text-lg font-semibold text-foreground">
           {guide.title}
         </h3>
-      </motion.div>
+      </m.div>
 
       {/* Steps list */}
       <ol className="flex flex-col gap-4">
         {guide.steps.map((step, index) => (
-          <motion.li
+          <m.li
             key={index}
             className="flex gap-4"
             initial={{ opacity: 0, x: -16 }}
@@ -73,7 +73,7 @@ export function InstallGuide({ guide }: InstallGuideProps) {
                 </p>
               )}
             </div>
-          </motion.li>
+          </m.li>
         ))}
       </ol>
     </div>

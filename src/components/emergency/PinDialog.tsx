@@ -14,7 +14,8 @@
  */
 
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
+import * as m from 'motion/react-m';
+import { AnimatePresence } from 'motion/react';
 import { Lock, AlertCircle, KeyRound } from 'lucide-react';
 import { isValidPin } from '@/lib/encryption';
 import { useFocusTrap } from '@/hooks/useFocusTrap';
@@ -87,7 +88,7 @@ export function PinDialog({ open, mode, error, onSubmit, onCancel }: PinDialogPr
   return (
     <AnimatePresence>
       {open && (
-        <motion.div
+        <m.div
           className="fixed inset-0 z-50 flex items-center justify-center p-4"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -95,7 +96,7 @@ export function PinDialog({ open, mode, error, onSubmit, onCancel }: PinDialogPr
           transition={{ duration: 0.2 }}
         >
           {/* Backdrop */}
-          <motion.div
+          <m.div
             className="absolute inset-0 bg-black/60 backdrop-blur-sm"
             onClick={onCancel}
             initial={{ opacity: 0 }}
@@ -104,7 +105,7 @@ export function PinDialog({ open, mode, error, onSubmit, onCancel }: PinDialogPr
           />
 
           {/* Dialog card */}
-          <motion.div
+          <m.div
             ref={dialogRef}
             className="glass-card relative z-10 w-full max-w-sm p-6 sm:p-8"
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
@@ -156,14 +157,14 @@ export function PinDialog({ open, mode, error, onSubmit, onCancel }: PinDialogPr
                   autoComplete="off"
                 />
                 {error && (
-                  <motion.p
+                  <m.p
                     className="mt-2 flex items-center gap-1.5 text-sm text-destructive"
                     initial={{ opacity: 0, y: -4 }}
                     animate={{ opacity: 1, y: 0 }}
                   >
                     <AlertCircle className="h-4 w-4 shrink-0" aria-hidden="true" />
                     {error}
-                  </motion.p>
+                  </m.p>
                 )}
               </div>
 
@@ -184,8 +185,8 @@ export function PinDialog({ open, mode, error, onSubmit, onCancel }: PinDialogPr
                 Annulla
               </button>
             </form>
-          </motion.div>
-        </motion.div>
+          </m.div>
+        </m.div>
       )}
     </AnimatePresence>
   );

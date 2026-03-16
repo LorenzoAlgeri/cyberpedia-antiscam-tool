@@ -12,7 +12,7 @@
  */
 
 import { useRef, useCallback } from 'react';
-import { motion } from 'motion/react';
+import * as m from 'motion/react-m';
 import {
   Banknote,
   Heart,
@@ -99,7 +99,7 @@ export function AttackTypeSelector({
           const isSelected = selected === attack.id;
 
           return (
-            <motion.button
+            <m.button
               key={attack.id}
               type="button"
               role="radio"
@@ -142,7 +142,7 @@ export function AttackTypeSelector({
                   {attack.description}
                 </span>
               </div>
-            </motion.button>
+            </m.button>
           );
         })}
       </div>

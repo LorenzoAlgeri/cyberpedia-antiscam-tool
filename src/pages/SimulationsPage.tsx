@@ -1,7 +1,8 @@
 import { useState, useCallback, useMemo, useEffect } from 'react';
 import type { KeyboardEvent } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
-import { Building2, Heart, Loader2, Sparkles, Users, Wallet } from 'lucide-react';
+import * as m from 'motion/react-m';
+import { AnimatePresence } from 'motion/react';
+import { FileText, Heart, Loader2, Package, Sparkles } from 'lucide-react';
 import { simulations } from '@/data/simulations';
 import { ChatSimulator } from '@/components/chat/ChatSimulator';
 import { useAISimulation } from '@/hooks/useAISimulation';
@@ -10,9 +11,8 @@ import type { Simulation } from '@/types/simulation';
 /** Map icon string from simulation data to Lucide component */
 const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
   Heart,
-  Wallet,
-  Building2,
-  Users,
+  Package,
+  FileText,
 };
 
 interface SimulationsPageProps {
@@ -104,11 +104,10 @@ export function SimulationsPage({
       }
       if (event.key === 'ArrowRight' || event.key === 'ArrowDown' || event.key === 'ArrowLeft' || event.key === 'ArrowUp') {
         event.preventDefault();
-        const enabled = simulations.filter((_, index) => index === 0);
-        const currentIndex = enabled.findIndex((s) => s.id === selectedId);
+        const currentIndex = simulations.findIndex((s) => s.id === selectedId);
         const delta = event.key === 'ArrowLeft' || event.key === 'ArrowUp' ? -1 : 1;
-        const nextIndex = (currentIndex + delta + enabled.length) % enabled.length;
-        setSelectedId(enabled[nextIndex]?.id ?? simId);
+        const nextIndex = (currentIndex + delta + simulations.length) % simulations.length;
+        setSelectedId(simulations[nextIndex]?.id ?? simId);
       }
     },
     [selectedId],
@@ -118,7 +117,7 @@ export function SimulationsPage({
   if (activeSim) {
     return (
       <AnimatePresence mode="wait">
-        <motion.div
+        <m.div
           key={activeSim.id}
           initial={{ opacity: 0, x: 40 }}
           animate={{ opacity: 1, x: 0 }}
@@ -132,7 +131,7 @@ export function SimulationsPage({
             isFirstSimulation={simulationCount === 0}
             onComplete={handleSimComplete}
           />
-        </motion.div>
+        </m.div>
       </AnimatePresence>
     );
   }
@@ -152,7 +151,7 @@ export function SimulationsPage({
       {/* Realism hint — shown after first simulation completion */}
       <AnimatePresence>
         {showRealismHint && (
-          <motion.div
+          <m.div
             key="realism-hint"
             initial={{ opacity: 0, y: -8 }}
             animate={{ opacity: 1, y: 0 }}
@@ -164,7 +163,7 @@ export function SimulationsPage({
             <p className="text-sm leading-relaxed text-cyan-100">
               Ottimo! Prova ora un&apos;opzione più realistica — questa volta vedrai anche risposte sbagliate da evitare.
             </p>
-          </motion.div>
+          </m.div>
         )}
       </AnimatePresence>
 
@@ -176,41 +175,24 @@ export function SimulationsPage({
       >
         {simulations.map((sim, i) => {
           const Icon = ICON_MAP[sim.icon];
-          const isRomance = i === 0;
           const isSelected = selectedId === sim.id;
-          const isDisabled = !isRomance;
-          const badgeText = !isRomance ? 'Prossimamente' : null;
 
           return (
-            <motion.button
+            <m.button
               key={sim.id}
               type="button"
               role="radio"
               aria-checked={isSelected}
-              tabIndex={isDisabled ? -1 : isSelected ? 0 : -1}
-              onKeyDown={(event) => handleKeyDownRadio(event, sim.id, isDisabled)}
-              onClick={
-                isDisabled
-                  ? undefined
-                  : () => {
-                      setSelectedId(sim.id);
-                    }
-              }
-              disabled={selectingId !== null || isDisabled}
+              tabIndex={isSelected ? 0 : -1}
+              onKeyDown={(event) => handleKeyDownRadio(event, sim.id, false)}
+              onClick={() => setSelectedId(sim.id)}
+              disabled={selectingId !== null}
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3, delay: i * 0.08 }}
-              whileHover={
-                selectingId === null && !isDisabled ? { scale: 1.02, y: -2 } : {}
-              }
-              whileTap={
-                selectingId === null && !isDisabled ? { scale: 0.98 } : {}
-              }
-              className={`glass-card group flex flex-col items-start gap-3 p-6 text-left transition-shadow ${
-                isSelected && !isDisabled
-                  ? 'ring-2 ring-cyan-brand shadow-cyan-500/20'
-                  : 'hover:shadow-cyan-500/20'
-              } ${isDisabled ? 'cursor-default opacity-60' : 'cursor-pointer'}`}
+              whileHover={selectingId === null ? { scale: 1.02, y: -2 } : {}}
+              whileTap={selectingId === null ? { scale: 0.98 } : {}}
+              className="glass-card group flex flex-col items-start gap-3 p-6 text-left transition-shadow cursor-pointer"
               style={{ minHeight: 44 }}
             >
               {/* Icon circle — swaps to spinner while this card loads */}
@@ -238,25 +220,19 @@ export function SimulationsPage({
                 <p className="text-sm leading-relaxed text-muted-foreground">
                   {sim.description}
                 </p>
-                {badgeText && (
-                  <span className="inline-flex items-center rounded-full bg-white/5 px-2 py-0.5 text-xs font-medium text-muted-foreground">
-                    {badgeText}
-                  </span>
-                )}
               </div>
-            </motion.button>
+            </m.button>
           );
         })}
       </div>
 
       {/* CTAs: try simulation + advance */}
       <div className="mt-auto flex flex-col gap-3 pt-4 sm:flex-row">
-        {/* Tertiary — ghost/link style */}
+        {/* Tertiary — ghost */}
         <button
           type="button"
           onClick={onBack}
-          className="flex flex-1 items-center justify-center rounded-2xl px-4 py-3 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground sm:order-first"
-          style={{ minHeight: 44 }}
+          className="btn-ghost sm:order-first"
         >
           Indietro
         </button>

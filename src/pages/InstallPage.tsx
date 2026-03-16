@@ -1,4 +1,4 @@
-import { motion } from 'motion/react';
+import * as m from 'motion/react-m';
 import { CheckCircle, Download, Zap } from 'lucide-react';
 import { useDeviceInfo } from '@/hooks/useDeviceInfo';
 import { useInstallPrompt } from '@/hooks/useInstallPrompt';
@@ -32,7 +32,7 @@ export function InstallPage({ onNext, onBack }: InstallPageProps) {
   return (
     <div className="flex flex-col items-center gap-8 px-4 py-8 text-center">
       {/* Header icon */}
-      <motion.div
+      <m.div
         className="flex h-16 w-16 items-center justify-center rounded-full bg-cyan-brand/10"
         initial={{ scale: 0.8, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
@@ -43,10 +43,10 @@ export function InstallPage({ onNext, onBack }: InstallPageProps) {
         ) : (
           <Download className="h-8 w-8 text-cyan-brand" strokeWidth={1.5} />
         )}
-      </motion.div>
+      </m.div>
 
       {/* Title + subtitle */}
-      <motion.div
+      <m.div
         className="flex flex-col gap-2"
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
@@ -60,11 +60,11 @@ export function InstallPage({ onNext, onBack }: InstallPageProps) {
             ? 'Hai già accesso rapido al tool dal tuo dispositivo.'
             : 'In caso di truffa, lo aprirai in 2 secondi.'}
         </p>
-      </motion.div>
+      </m.div>
 
       {/* Native install button (Chrome/Edge on Android/Desktop) */}
       {isInstallReady && !showSuccess && (
-        <motion.button
+        <m.button
           type="button"
           onClick={() => void promptInstall()}
           className="flex items-center gap-3 rounded-2xl bg-gradient-to-r from-cyan-500 to-cyan-400 px-8 py-4 text-lg font-semibold text-primary-foreground shadow-xl shadow-cyan-500/25 transition-transform active:scale-[0.98]"
@@ -75,11 +75,11 @@ export function InstallPage({ onNext, onBack }: InstallPageProps) {
         >
           <Zap className="h-5 w-5" strokeWidth={2} />
           Installa con un click
-        </motion.button>
+        </m.button>
       )}
 
       {/* Install guide or success card */}
-      <motion.div
+      <m.div
         className="glass-card w-full max-w-md p-6"
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
@@ -101,23 +101,23 @@ export function InstallPage({ onNext, onBack }: InstallPageProps) {
             <InstallGuide guide={guide} />
           </>
         )}
-      </motion.div>
+      </m.div>
 
       {/* Device info badge */}
       {!showSuccess && (
-        <motion.p
+        <m.p
           className="text-xs text-muted-foreground/60"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.4 }}
         >
           Rilevato: {guide.title}
-        </motion.p>
+        </m.p>
       )}
 
       {/* Back button */}
       <div className="flex w-full max-w-md gap-3">
-        <motion.button
+        <m.button
           type="button"
           onClick={onBack}
           className="btn-secondary flex-1"
@@ -127,8 +127,8 @@ export function InstallPage({ onNext, onBack }: InstallPageProps) {
           transition={{ delay: 0.2 }}
         >
           Indietro
-        </motion.button>
-        <motion.button
+        </m.button>
+        <m.button
           type="button"
           onClick={onNext}
           className="btn-primary flex-1"
@@ -138,7 +138,7 @@ export function InstallPage({ onNext, onBack }: InstallPageProps) {
           transition={{ delay: 0.22 }}
         >
           Modalità al bisogno
-        </motion.button>
+        </m.button>
       </div>
     </div>
   );

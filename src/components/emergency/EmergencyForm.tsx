@@ -12,7 +12,8 @@
 
 import { useCallback, useState } from 'react';
 import { BookUser, Check, Edit2, Phone, Plus, Trash2 } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
+import * as m from 'motion/react-m';
+import { AnimatePresence } from 'motion/react';
 import { useContactPicker } from '@/hooks/useContactPicker';
 import type { TrustedContact } from '@/types/emergency';
 import { MAX_CONTACTS } from '@/types/emergency';
@@ -92,10 +93,10 @@ export function EmergencyForm({
   const [pickingIndex, setPickingIndex] = useState<number | null>(null);
 
   // C3: local edit/view toggle for the bank section.
-  // Always starts in edit mode — user explicitly clicks ✓ to confirm
-  // (works for both new and returning users; returning users review
-  // their loaded data then confirm before the CTA appears).
-  const [isBankEditing, setIsBankEditing] = useState(true);
+  // Starts in view mode if bankPhone already has a value (returning user /
+  // auto-loaded session) so the confirm button doesn't re-appear on remount.
+  // Starts in edit mode only when the field is empty (new user).
+  const [isBankEditing, setIsBankEditing] = useState(() => bankPhone.trim() === '');
 
   const confirmBankEdit = useCallback(() => {
     setIsBankEditing(false);
@@ -136,7 +137,7 @@ export function EmergencyForm({
         <AnimatePresence mode="wait">
           {isBankEditing ? (
             /* ── EDIT MODE ── */
-            <motion.div
+            <m.div
               key="bank-edit"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -161,7 +162,7 @@ export function EmergencyForm({
                 disponibile in caso di emergenza.
               </p>
 
-              {/* Country code + phone + confirm button */}
+              {/* Country code + phone */}
               <div className="flex items-stretch gap-2">
                 <select
                   value={bankCountryCode}
@@ -191,30 +192,33 @@ export function EmergencyForm({
                   onChange={(e) => onBankPhoneChange(e.target.value)}
                   aria-label="Numero assistenza banca/carta"
                 />
-
-                {/* C3: Confirm / save icon */}
-                <button
-                  type="button"
-                  onClick={confirmBankEdit}
-                  className="flex h-auto w-14 shrink-0 items-center justify-center
-                             rounded-2xl border-2 border-success/40 bg-success/10
-                             text-success transition-colors hover:bg-success/20
-                             focus-visible:outline focus-visible:outline-2
-                             focus-visible:outline-success"
-                  style={{ minHeight: 44 }}
-                  aria-label="Conferma numero banca"
-                >
-                  <Check className="h-5 w-5" strokeWidth={2} />
-                </button>
               </div>
+
+              {/* C3: Full-width confirm button — feels mandatory */}
+              <button
+                type="button"
+                onClick={confirmBankEdit}
+                className="flex w-full items-center justify-center gap-2
+                           rounded-2xl bg-success px-5 py-4
+                           text-base font-semibold text-white shadow-lg
+                           shadow-success/25 transition-colors
+                           hover:opacity-90 active:scale-[0.98]
+                           focus-visible:outline focus-visible:outline-2
+                           focus-visible:outline-success"
+                style={{ minHeight: 44 }}
+                aria-label="Conferma numero banca"
+              >
+                <Check className="h-5 w-5 shrink-0" strokeWidth={2.5} />
+                Conferma numero banca
+              </button>
 
               <p className="px-2 text-sm text-muted-foreground">
                 Lo trovi sul retro della carta o sull&apos;app della banca.
               </p>
-            </motion.div>
+            </m.div>
           ) : (
             /* ── VIEW MODE ── */
-            <motion.div
+            <m.div
               key="bank-view"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -254,7 +258,7 @@ export function EmergencyForm({
               {/* C4: Green CTA — only when phone is saved */}
               <AnimatePresence>
                 {phoneHasSavedValue && (
-                  <motion.div
+                  <m.div
                     initial={{ opacity: 0, y: -4 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -4 }}
@@ -274,10 +278,10 @@ export function EmergencyForm({
                       <Phone className="h-5 w-5 shrink-0" strokeWidth={2} />
                       Allerta la banca
                     </a>
-                  </motion.div>
+                  </m.div>
                 )}
               </AnimatePresence>
-            </motion.div>
+            </m.div>
           )}
         </AnimatePresence>
       </section>
@@ -293,7 +297,7 @@ export function EmergencyForm({
 
         <AnimatePresence initial={false}>
           {contacts.map((contact, index) => (
-            <motion.div
+            <m.div
               key={index}
               variants={contactVariants}
               initial="initial"
@@ -356,12 +360,12 @@ export function EmergencyForm({
                   <Trash2 className="h-5 w-5" strokeWidth={1.5} />
                 </button>
               </div>
-            </motion.div>
+            </m.div>
           ))}
         </AnimatePresence>
 
         {canAddMore && (
-          <motion.button
+          <m.button
             type="button"
             onClick={onAddContact}
             whileHover={{ scale: 1.01 }}
@@ -374,7 +378,7 @@ export function EmergencyForm({
           >
             <Plus className="h-5 w-5" strokeWidth={1.5} />
             Aggiungi contatto
-          </motion.button>
+          </m.button>
         )}
       </section>
     </div>

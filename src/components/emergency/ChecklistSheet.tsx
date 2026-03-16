@@ -13,7 +13,8 @@
  */
 
 import { useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
+import * as m from 'motion/react-m';
+import { AnimatePresence } from 'motion/react';
 import { X, ClipboardList } from 'lucide-react';
 import { TodoChecklist } from '@/components/emergency/TodoChecklist';
 import type { AttackType } from '@/types/emergency';
@@ -81,7 +82,7 @@ export function ChecklistSheet({
       {open && (
         <>
           {/* Backdrop */}
-          <motion.div
+          <m.div
             key="backdrop"
             className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
             initial={{ opacity: 0 }}
@@ -93,7 +94,7 @@ export function ChecklistSheet({
           />
 
           {/* Sheet panel */}
-          <motion.div
+          <m.div
             key="sheet"
             role="dialog"
             aria-modal="true"
@@ -150,7 +151,7 @@ export function ChecklistSheet({
                 {...(onIncidentChange !== undefined ? { onIncidentChange } : {})}
               />
             </div>
-          </motion.div>
+          </m.div>
         </>
       )}
     </AnimatePresence>

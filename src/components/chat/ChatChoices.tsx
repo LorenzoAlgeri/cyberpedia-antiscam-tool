@@ -6,7 +6,7 @@
  * Touch target ≥ 44px.
  */
 
-import { motion } from 'motion/react';
+import * as m from 'motion/react-m';
 import type { ChoiceOption } from '@/types/simulation';
 
 interface ChatChoicesProps {
@@ -29,7 +29,7 @@ const item = {
 
 export function ChatChoices({ options, onSelect }: ChatChoicesProps) {
   return (
-    <motion.div
+    <m.div
       variants={container}
       initial="hidden"
       animate="show"
@@ -38,21 +38,29 @@ export function ChatChoices({ options, onSelect }: ChatChoicesProps) {
       aria-label="Scegli una risposta"
     >
       {options.map((option) => (
-        <motion.button
+        <m.button
           key={option.id}
           variants={item}
           whileTap={{ scale: 0.97 }}
           onClick={() => onSelect(option.id)}
-          className="min-h-[44px] cursor-pointer rounded-2xl border border-cyan-500/30
-                     bg-cyan-950/30 px-4 py-3 text-left text-sm font-medium
-                     text-cyan-100 transition-colors hover:border-cyan-400/50
-                     hover:bg-cyan-900/40 focus-visible:outline-none
-                     focus-visible:ring-2 focus-visible:ring-cyan-400"
+          className={
+            option.correct
+              ? `min-h-[44px] cursor-pointer rounded-2xl border border-cyan-500/30
+                 bg-cyan-950/30 px-4 py-3 text-left text-sm font-medium
+                 text-cyan-100 transition-colors hover:border-cyan-400/50
+                 hover:bg-cyan-900/40 focus-visible:outline-none
+                 focus-visible:ring-2 focus-visible:ring-cyan-400`
+              : `min-h-[44px] cursor-pointer rounded-2xl border border-slate-600/30
+                 bg-slate-800/20 px-4 py-3 text-left text-sm font-medium
+                 text-slate-400 opacity-70 transition-colors hover:border-slate-500/40
+                 hover:bg-slate-700/25 focus-visible:outline-none
+                 focus-visible:ring-2 focus-visible:ring-slate-500`
+          }
           type="button"
         >
           {option.text}
-        </motion.button>
+        </m.button>
       ))}
-    </motion.div>
+    </m.div>
   );
 }

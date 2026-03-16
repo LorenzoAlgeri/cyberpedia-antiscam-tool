@@ -1,4 +1,5 @@
 import { lazy, Suspense, useState } from 'react';
+import { LazyMotion, domAnimation } from 'motion/react';
 import { useHashRouter } from '@/hooks/useHashRouter';
 import { useIframeResize } from '@/hooks/useIframeResize';
 import { useReturningUser } from '@/hooks/useReturningUser';
@@ -156,13 +157,15 @@ function App() {
   }
 
   return (
-    <WizardShell
-      currentStep={currentStep}
-      direction={direction}
-      onStepClick={goTo}
-    >
-      {renderStep()}
-    </WizardShell>
+    <LazyMotion features={domAnimation} strict>
+      <WizardShell
+        currentStep={currentStep}
+        direction={direction}
+        onStepClick={goTo}
+      >
+        {renderStep()}
+      </WizardShell>
+    </LazyMotion>
   );
 }
 

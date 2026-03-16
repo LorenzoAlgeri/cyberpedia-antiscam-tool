@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
+import * as m from 'motion/react-m';
+import { AnimatePresence } from 'motion/react';
 import { ShieldCheck, AlertTriangle } from 'lucide-react';
 import type { VictimStatus } from '@/lib/victimStatus';
 
@@ -26,7 +27,7 @@ export function VictimStatusModal({ open, onSelect, onClose }: VictimStatusModal
     <AnimatePresence>
       {open && (
         <>
-          <motion.div
+          <m.div
             key="backdrop"
             className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm"
             initial={{ opacity: 0 }}
@@ -37,7 +38,7 @@ export function VictimStatusModal({ open, onSelect, onClose }: VictimStatusModal
             aria-hidden="true"
           />
 
-          <motion.div
+          <m.div
             key="panel"
             role="dialog"
             aria-modal="true"
@@ -90,7 +91,7 @@ export function VictimStatusModal({ open, onSelect, onClose }: VictimStatusModal
             <p className="mt-4 text-xs text-muted-foreground/70">
               Puoi cambiare risposta in seguito.
             </p>
-          </motion.div>
+          </m.div>
         </>
       )}
     </AnimatePresence>

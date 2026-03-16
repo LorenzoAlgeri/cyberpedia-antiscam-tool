@@ -63,8 +63,8 @@ export default defineConfig({
         manualChunks: {
           /* Vendor: React core (rarely changes → long cache) */
           'vendor-react': ['react', 'react-dom'],
-          /* Vendor: Animation library */
-          'vendor-motion': ['motion'],
+          /* Vendor: Animation library (LazyMotion domAnimation only) */
+          'vendor-motion': ['motion/react-m'],
         },
       },
     },

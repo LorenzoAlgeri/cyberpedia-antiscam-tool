@@ -13,7 +13,8 @@
  */
 
 import { useState } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
+import * as m from 'motion/react-m';
+import { AnimatePresence } from 'motion/react';
 import { CheckCircle2, Circle, AlertTriangle, Crosshair, X, Phone } from 'lucide-react';
 import type { AttackType } from '@/types/emergency';
 import type { TodoItem, TodoScope } from '@/types/todo';
@@ -81,7 +82,7 @@ function SevereActionBanner({
   };
 
   return (
-    <motion.div
+    <m.div
       initial={{ opacity: 0, y: -6 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -6 }}
@@ -121,7 +122,7 @@ function SevereActionBanner({
           {copied ? 'Copiato!' : 'Copia numero'}
         </button>
       </div>
-    </motion.div>
+    </m.div>
   );
 }
 
@@ -156,7 +157,7 @@ function ProgressBar({
         aria-valuemax={total}
         aria-label={`${label}: ${completed} di ${total} completati`}
       >
-        <motion.div
+        <m.div
           className="h-full rounded-full bg-gradient-to-r from-cyan-brand to-cyan-brand-light"
           initial={{ width: 0 }}
           animate={{ width: `${pct}%` }}
@@ -349,7 +350,7 @@ export function TodoChecklist({
       {/* Tab content */}
       <AnimatePresence mode="wait">
         {resolvedTab === 'base' && (
-          <motion.div
+          <m.div
             key="base"
             initial={{ opacity: 0, x: -8 }}
             animate={{ opacity: 1, x: 0 }}
@@ -436,11 +437,11 @@ export function TodoChecklist({
                   );
                 })}
             </div>
-          </motion.div>
+          </m.div>
         )}
 
         {resolvedTab === 'scenario' && (
-          <motion.div
+          <m.div
             key="scenario"
             initial={{ opacity: 0, x: 8 }}
             animate={{ opacity: 1, x: 0 }}
@@ -489,7 +490,7 @@ export function TodoChecklist({
                 </p>
               </div>
             )}
-          </motion.div>
+          </m.div>
         )}
       </AnimatePresence>
     </section>

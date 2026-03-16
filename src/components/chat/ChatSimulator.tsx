@@ -6,7 +6,8 @@
  */
 
 import { useEffect, useRef } from 'react';
-import { AnimatePresence, motion } from 'motion/react';
+import * as m from 'motion/react-m';
+import { AnimatePresence } from 'motion/react';
 import { ArrowLeft, CircleCheck, MessageCircle } from 'lucide-react';
 import { useChatSimulator } from '@/hooks/useChatSimulator';
 import { ChatBubble } from '@/components/chat/ChatBubble';
@@ -79,7 +80,7 @@ export function ChatSimulator({ simulation, onBack, isFirstSimulation = false, o
             </p>
             <AnimatePresence mode="wait">
               {phase === 'typing' && (
-                <motion.p
+                <m.p
                   key="typing-label"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
@@ -87,7 +88,7 @@ export function ChatSimulator({ simulation, onBack, isFirstSimulation = false, o
                   className="text-xs text-cyan-400"
                 >
                   sta scrivendo...
-                </motion.p>
+                </m.p>
               )}
             </AnimatePresence>
           </div>
@@ -115,7 +116,7 @@ export function ChatSimulator({ simulation, onBack, isFirstSimulation = false, o
 
         {/* Completion + score */}
         {phase === 'complete' && score !== null && (
-          <motion.div
+          <m.div
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             className="flex flex-col items-center gap-3 py-6 text-center"
@@ -129,7 +130,7 @@ export function ChatSimulator({ simulation, onBack, isFirstSimulation = false, o
                 ? 'Hai risposto correttamente al primo tentativo tutte le volte.'
                 : `Hai risposto correttamente al primo tentativo ${score.correctAnswers} volt${score.correctAnswers === 1 ? 'a' : 'e'} su ${score.totalAttempts}.`}
             </p>
-          </motion.div>
+          </m.div>
         )}
       </div>
     </div>
