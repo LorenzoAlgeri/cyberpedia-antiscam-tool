@@ -36,6 +36,8 @@ interface ChecklistSheetProps {
   readonly bankPhone?: string;
   readonly bankCountryCode?: string;
   readonly bankName?: string;
+  /** Called when user clicks the shortcut to select an attack type */
+  readonly onRequestAttackSelect?: () => void;
 }
 
 export function ChecklistSheet({
@@ -48,6 +50,7 @@ export function ChecklistSheet({
   onToggleAttack,
   victimStatus = null,
   onIncidentChange,
+  onRequestAttackSelect,
 }: ChecklistSheetProps) {
   const closeRef = useRef<HTMLButtonElement>(null);
   const sheetRef = useRef<HTMLDivElement>(null);
@@ -97,7 +100,7 @@ export function ChecklistSheet({
             initial={{ y: '100%' }}
             animate={{ y: 0 }}
             exit={{ y: '100%' }}
-            transition={{ type: 'spring', stiffness: 380, damping: 38 }}
+            transition={{ type: 'tween', duration: 0.3, ease: [0.32, 0.72, 0, 1] }}
           >
             {/* Sheet header */}
             <div className="flex items-center justify-between border-b border-slate-700/50 px-5 py-4 shrink-0">
@@ -140,6 +143,7 @@ export function ChecklistSheet({
                 incidentStatus={victimStatus === 'yes' ? 'yes' : 'no'}
                 showIncidentToggle={true}
                 {...(onIncidentChange !== undefined ? { onIncidentChange } : {})}
+                {...(onRequestAttackSelect !== undefined ? { onRequestAttackSelect } : {})}
               />
             </div>
           </m.div>

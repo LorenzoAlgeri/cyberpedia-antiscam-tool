@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { EmergencyForm } from '@/components/emergency/EmergencyForm';
 import { AttackTypeSelector } from '@/components/emergency/AttackTypeSelector';
 import { ChecklistSheet } from '@/components/emergency/ChecklistSheet';
@@ -43,6 +43,7 @@ export function EmergencyPage({ onNext, onBack, visitCount, victimStatus = null,
   const bruteForce = useBruteForceGuard();
   // C6: set true to execute onNext() after first save completes.
   const [pendingNavigation, setPendingNavigation] = useState(false);
+  const attackSelectorRef = useRef<HTMLDivElement>(null);
 
   // Silent auto-load when a valid PIN session cache exists (≤1h window).
   useEffect(() => {
@@ -169,6 +170,13 @@ export function EmergencyPage({ onNext, onBack, visitCount, victimStatus = null,
     if (!pin) { setPinMode('create'); setShowPinDialog(true); } else { void triggerSave(); }
   }, [pin, triggerSave]);
 
+  const handleRequestAttackSelect = useCallback(() => {
+    setShowChecklist(false);
+    setTimeout(() => {
+      attackSelectorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 350);
+  }, []);
+
   // C6: guard — if no PIN and data exists, defer navigation until after first save.
   const handleNext = useCallback(() => {
     if (!pin && hasUnsavedData) { setPendingNavigation(true); setPinMode('create'); setShowPinDialog(true); }
@@ -198,7 +206,9 @@ export function EmergencyPage({ onNext, onBack, visitCount, victimStatus = null,
       {visitCount >= 2 && (
         <>
           {visitCount === 2 && <p className="px-1 text-sm text-muted-foreground">Seleziona il tipo di truffa per una checklist più mirata.</p>}
-          <AttackTypeSelector selected={selectedAttack} onSelect={handleAttackSelect} />
+          <div ref={attackSelectorRef}>
+            <AttackTypeSelector selected={selectedAttack} onSelect={handleAttackSelect} />
+          </div>
         </>
       )}
       <ChecklistTrigger completedCount={completedGenericTodos.length + completedAttackTodos.length} onClick={() => setShowChecklist(true)} />
@@ -209,6 +219,7 @@ export function EmergencyPage({ onNext, onBack, visitCount, victimStatus = null,
         onToggleGeneric={handleToggleGeneric} onToggleAttack={handleToggleAttack}
         victimStatus={victimStatus} {...(onChangeVictimStatus !== undefined ? { onIncidentChange: onChangeVictimStatus } : {})}
         bankPhone={bankPhone} bankCountryCode={bankCountryCode} bankName={bankName}
+        onRequestAttackSelect={handleRequestAttackSelect}
       />
       <PinDialog
         open={showPinDialog} mode={pinMode} error={pinError}

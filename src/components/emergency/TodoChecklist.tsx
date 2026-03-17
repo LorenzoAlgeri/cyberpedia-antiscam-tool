@@ -51,6 +51,8 @@ interface TodoChecklistProps {
   readonly bankPhone?: string;
   readonly bankCountryCode?: string;
   readonly bankName?: string;
+  /** Called when user clicks the shortcut to select an attack type from the mirato placeholder */
+  readonly onRequestAttackSelect?: () => void;
 }
 
 // ---------------------------------------------------------------------------
@@ -72,6 +74,7 @@ export function TodoChecklist({
   bankPhone,
   bankCountryCode,
   bankName,
+  onRequestAttackSelect,
 }: TodoChecklistProps) {
   const [uncontrolledTab, setUncontrolledTab] = useState<'base' | 'scenario'>('base');
   const [uncontrolledIncident, setUncontrolledIncident] = useState<'no' | 'yes'>('no');
@@ -180,6 +183,16 @@ export function TodoChecklist({
                   <br />
                   le azioni mirate.
                 </p>
+                {onRequestAttackSelect && (
+                  <button
+                    type="button"
+                    onClick={onRequestAttackSelect}
+                    className="mt-1 rounded-xl bg-cyan-brand/15 px-4 py-2.5 text-sm font-medium text-cyan-brand transition-colors hover:bg-cyan-brand/25 active:scale-[0.98]"
+                    style={{ minHeight: 44 }}
+                  >
+                    Scegli tipo di truffa
+                  </button>
+                )}
               </div>
             )}
           </m.div>

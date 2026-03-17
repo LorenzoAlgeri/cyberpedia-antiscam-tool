@@ -8,7 +8,7 @@
  *     Opens tel: link; on non-mobile shows window.confirm first.
  */
 
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Check, Edit2, Phone } from 'lucide-react';
 import * as m from 'motion/react-m';
 import { AnimatePresence } from 'motion/react';
@@ -48,6 +48,11 @@ export function BankSection({
   // C3: Starts in view mode if bankPhone already has a value (returning user /
   // auto-loaded session). Starts in edit mode only when the field is empty (new user).
   const [isBankEditing, setIsBankEditing] = useState(() => bankPhone.trim() === '');
+
+  // When async data loads and bankPhone goes from '' to a value, switch to view mode.
+  useEffect(() => {
+    if (bankPhone.trim() !== '') setIsBankEditing(false);
+  }, [bankPhone]);
 
   const confirmBankEdit = useCallback(() => {
     setIsBankEditing(false);
