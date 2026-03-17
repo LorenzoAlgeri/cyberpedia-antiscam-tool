@@ -1,5 +1,6 @@
 import * as m from 'motion/react-m';
 import { AnimatePresence } from 'motion/react';
+import { useEffect } from 'react';
 import type { ReactNode } from 'react';
 import type { StepIndex } from '@/types/steps';
 import { StepIndicator } from './StepIndicator';
@@ -10,6 +11,14 @@ interface WizardShellProps {
   readonly onStepClick: (step: StepIndex) => void;
   readonly children: ReactNode;
 }
+
+const STEP_NAMES: Record<StepIndex, string> = {
+  0: 'Benvenuto',
+  1: 'Dati di emergenza',
+  2: 'Simulazioni',
+  3: 'Installa',
+  4: 'Modalita emergenza',
+};
 
 /**
  * Main wizard shell — wraps step content with StepIndicator
@@ -26,7 +35,21 @@ export function WizardShell({
   onStepClick,
   children,
 }: WizardShellProps) {
+  useEffect(() => {
+    if (currentStep > 0) {
+      const heading = document.querySelector('h1, h2, [data-step-heading]');
+      if (heading instanceof HTMLElement) {
+        heading.setAttribute('tabindex', '-1');
+        heading.focus({ preventScroll: true });
+      }
+    }
+  }, [currentStep]);
+
   return (
+    <>
+    <div aria-live="polite" aria-atomic="true" className="sr-only" role="status">
+      {currentStep > 0 ? `Passo ${currentStep} di 4: ${STEP_NAMES[currentStep]}` : ''}
+    </div>
     <div className="mx-auto flex min-h-dvh max-w-2xl flex-col px-4 md:px-8 lg:max-w-4xl lg:px-12">
       {/* Step indicator — hidden on landing (step 0) */}
       {currentStep > 0 && (
@@ -64,6 +87,7 @@ export function WizardShell({
         </AnimatePresence>
       </main>
     </div>
+    </>
   );
 }
 

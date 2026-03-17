@@ -99,7 +99,9 @@ export function TrustedContactsSection({
               )}
 
               <div className="flex flex-1 flex-col gap-3 sm:flex-row">
+                <label htmlFor={`contact-name-${index}`} className="sr-only">{`Nome contatto ${index + 1}`}</label>
                 <input
+                  id={`contact-name-${index}`}
                   type="text"
                   className="input-glass flex-1"
                   placeholder={`Nome contatto ${index + 1}`}
@@ -107,9 +109,10 @@ export function TrustedContactsSection({
                   onChange={(e) =>
                     onContactChange(index, 'name', e.target.value)
                   }
-                  aria-label={`Nome contatto ${index + 1}`}
                 />
+                <label htmlFor={`contact-phone-${index}`} className="sr-only">{`Telefono contatto ${index + 1}`}</label>
                 <input
+                  id={`contact-phone-${index}`}
                   type="tel"
                   inputMode="tel"
                   autoComplete="tel"
@@ -119,7 +122,6 @@ export function TrustedContactsSection({
                   onChange={(e) =>
                     onContactChange(index, 'phone', e.target.value)
                   }
-                  aria-label={`Telefono contatto ${index + 1}`}
                 />
               </div>
 

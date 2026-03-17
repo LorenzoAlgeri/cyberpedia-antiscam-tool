@@ -21,7 +21,7 @@ interface SaveStatusBadgeProps {
 
 export function SaveStatusBadge({ status }: SaveStatusBadgeProps) {
   return (
-    <div className="flex min-h-[24px] items-center" aria-live="polite">
+    <div className="flex min-h-[24px] items-center">
       <AnimatePresence mode="wait">
         {status === 'saving' && (
           <m.span
@@ -66,6 +66,9 @@ export function SaveStatusBadge({ status }: SaveStatusBadgeProps) {
 
 
       </AnimatePresence>
+      <div aria-live="assertive" className="sr-only">
+        {status === 'error' ? 'Salvataggio fallito' : ''}
+      </div>
     </div>
   );
 }

@@ -31,8 +31,6 @@ function FeedbackBubble({ entry }: { entry: ChatEntry }) {
           ? 'border-emerald-500/40 bg-emerald-950/40 text-emerald-200'
           : 'border-amber-500/40 bg-amber-950/40 text-amber-200'
       }`}
-      role="status"
-      aria-live="polite"
     >
       {/* Title */}
       <div className="mb-2 flex items-center gap-2 font-bold">
@@ -49,7 +47,7 @@ function FeedbackBubble({ entry }: { entry: ChatEntry }) {
           <button
             type="button"
             onClick={() => setOpen((v) => !v)}
-            className={`flex items-center gap-1 text-xs font-medium underline-offset-2 hover:underline ${
+            className={`flex items-center gap-1 text-sm font-medium underline-offset-2 hover:underline ${
               isCorrect ? 'text-emerald-300' : 'text-amber-300'
             }`}
             aria-expanded={open}
@@ -67,7 +65,7 @@ function FeedbackBubble({ entry }: { entry: ChatEntry }) {
                 animate={{ opacity: 1, height: 'auto' }}
                 exit={{ opacity: 0, height: 0 }}
                 transition={{ duration: 0.2 }}
-                className={`mt-2 overflow-hidden text-xs leading-relaxed ${
+                className={`mt-2 overflow-hidden text-sm leading-relaxed ${
                   isCorrect ? 'text-emerald-300/80' : 'text-amber-300/80'
                 }`}
               >
@@ -79,7 +77,7 @@ function FeedbackBubble({ entry }: { entry: ChatEntry }) {
       )}
 
       {/* CTA label */}
-      <p className={`mt-3 text-xs font-semibold ${isCorrect ? 'text-emerald-300' : 'text-amber-300'}`}>
+      <p className={`mt-3 text-sm font-semibold ${isCorrect ? 'text-emerald-300' : 'text-amber-300'}`}>
         {isCorrect ? 'Avanti →' : 'Riprova'}
       </p>
     </m.div>
@@ -105,7 +103,7 @@ export function ChatBubble({ entry }: ChatBubbleProps) {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.25 }}
-        className="mx-auto max-w-[70%] text-center text-xs text-slate-400"
+        className="mx-auto max-w-[70%] text-center text-sm text-slate-400"
         role="status"
       >
         {text}

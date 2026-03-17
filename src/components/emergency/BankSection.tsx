@@ -81,13 +81,14 @@ export function BankSection({
             transition={{ duration: 0.15 }}
             className="space-y-3"
           >
+            <label htmlFor="bank-name" className="sr-only">Nome banca</label>
             <input
+              id="bank-name"
               type="text"
               className="input-glass"
               placeholder="Nome banca (es. Intesa Sanpaolo)"
               value={bankName}
               onChange={(e) => onBankNameChange(e.target.value)}
-              aria-label="Nome banca"
               autoComplete="organization"
             />
             <p className="px-2 text-sm text-muted-foreground">
@@ -95,10 +96,11 @@ export function BankSection({
               disponibile in caso di emergenza.
             </p>
             <div className="flex items-stretch gap-2">
+              <label htmlFor="bank-country-code" className="sr-only">Prefisso internazionale</label>
               <select
+                id="bank-country-code"
                 value={bankCountryCode}
                 onChange={(e) => onBankCountryCodeChange(e.target.value)}
-                aria-label="Prefisso internazionale"
                 className="w-24 shrink-0 cursor-pointer rounded-2xl border-2 border-white/10 bg-slate-900/60 px-3 font-medium text-foreground transition-colors duration-200 focus-visible:border-cyan-brand focus-visible:outline-none focus-visible:ring-4"
                 style={{ minHeight: 44 }}
               >
@@ -108,7 +110,9 @@ export function BankSection({
                   </option>
                 ))}
               </select>
+              <label htmlFor="bank-phone" className="sr-only">Numero assistenza banca/carta</label>
               <input
+                id="bank-phone"
                 type="tel"
                 inputMode="tel"
                 autoComplete="tel-national"
@@ -116,7 +120,6 @@ export function BankSection({
                 placeholder="Numero assistenza banca/carta"
                 value={bankPhone}
                 onChange={(e) => onBankPhoneChange(e.target.value)}
-                aria-label="Numero assistenza banca/carta"
               />
             </div>
             {/* C3: Full-width confirm button — feels mandatory */}
@@ -159,7 +162,7 @@ export function BankSection({
               <button
                 type="button"
                 onClick={() => setIsBankEditing(true)}
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-secondary text-muted-foreground transition-colors hover:border-cyan-brand/30 hover:text-cyan-brand focus-visible:outline focus-visible:outline-2 focus-visible:outline-cyan-brand"
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-secondary text-muted-foreground transition-colors hover:border-cyan-brand/30 hover:text-cyan-brand focus-visible:outline focus-visible:outline-2 focus-visible:outline-cyan-brand"
                 aria-label="Modifica numero banca"
               >
                 <Edit2 className="h-4 w-4" strokeWidth={1.5} />

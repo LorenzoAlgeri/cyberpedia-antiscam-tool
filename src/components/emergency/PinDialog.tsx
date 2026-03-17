@@ -191,10 +191,13 @@ export function PinDialog({
                   className="input-glass w-full text-center text-2xl tracking-[0.5em]"
                   placeholder="• • • •"
                   aria-label="PIN di sicurezza"
+                  aria-describedby={error ? 'pin-error' : isLocked ? 'pin-lockout' : undefined}
                   autoComplete="off"
                 />
                 {error && (
                   <m.p
+                    id="pin-error"
+                    role="alert"
                     className="mt-2 flex items-center gap-1.5 text-sm text-destructive"
                     initial={{ opacity: 0, y: -4 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -205,6 +208,8 @@ export function PinDialog({
                 )}
                 {isLocked && remainingMs > 0 && (
                   <m.p
+                    id="pin-lockout"
+                    role="alert"
                     className="mt-2 flex items-center gap-1.5 text-sm text-amber-400"
                     initial={{ opacity: 0, y: -4 }}
                     animate={{ opacity: 1, y: 0 }}
