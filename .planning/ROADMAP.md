@@ -106,10 +106,12 @@ Plans:
   1. A full WCAG 2.2 AA audit passes with zero critical or major violations, with specific attention to patterns used by elderly/vulnerable users (large text, clear labels, forgiving inputs)
   2. All interactive elements (buttons, form fields, checkboxes, simulation choices) are fully operable via screen reader — each has an accessible name, role, and state
   3. Every touch target measures at least 44x44px and body font size is at least 16px on mobile viewports (375px+)
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 06-01: TBD
+- [ ] 06-01-PLAN.md — ARIA labels, screen reader flow, reduced motion, colorblind icons, focus traps, and sizing fixes on interactive components
+- [ ] 06-02-PLAN.md — Touch targets, text-xs elimination, and glass card contrast on pages and visual components
+- [ ] 06-03-PLAN.md — Install vitest-axe and create automated WCAG audit test suite
 
 ## Progress
 
@@ -123,4 +125,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | 3. Security Hardening | 2/2 | Complete   | 2026-03-16 |
 | 4. TypeScript Strictness | 2/2 | Complete   | 2026-03-16 |
 | 5. AI Simulation Audit | 0/1 | Planning complete | - |
-| 6. Accessibility | 0/0 | Not started | - |
+| 6. Accessibility | 0/3 | Planning complete | - |
