@@ -6,6 +6,7 @@
  */
 
 import * as m from 'motion/react-m';
+import { useReducedMotion } from 'motion/react';
 
 const DOT_VARIANTS = {
   initial: { y: 0 },
@@ -13,6 +14,18 @@ const DOT_VARIANTS = {
 };
 
 export function ChatTyping() {
+  const shouldReduce = useReducedMotion();
+
+  if (shouldReduce) {
+    return (
+      <div className="flex justify-start" role="status" aria-label="Sta scrivendo...">
+        <div className="rounded-2xl rounded-bl-md bg-slate-800/80 px-4 py-2.5 text-sm text-slate-400">
+          Sta scrivendo...
+        </div>
+      </div>
+    );
+  }
+
   return (
     <m.div
       initial={{ opacity: 0, x: -12 }}

@@ -12,10 +12,11 @@
  * /accessibility-compliance: focus trap, aria-modal, role="dialog"
  */
 
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import * as m from 'motion/react-m';
 import { AnimatePresence } from 'motion/react';
 import { X, ClipboardList } from 'lucide-react';
+import { useFocusTrap } from '@/hooks/useFocusTrap';
 import { TodoChecklist } from '@/components/emergency/TodoChecklist';
 import type { AttackType } from '@/types/emergency';
 
@@ -49,29 +50,18 @@ export function ChecklistSheet({
   onIncidentChange,
 }: ChecklistSheetProps) {
   const closeRef = useRef<HTMLButtonElement>(null);
+  const sheetRef = useRef<HTMLDivElement>(null);
+
+  const stableClose = useCallback(() => onClose(), [onClose]);
+  useFocusTrap(sheetRef, open, stableClose);
 
   // Lock body scroll while open
   useEffect(() => {
     if (open) {
       document.body.style.overflow = 'hidden';
-      // Focus the close button after entrance
-      const t = setTimeout(() => closeRef.current?.focus(), 200);
-      return () => {
-        clearTimeout(t);
-        document.body.style.overflow = '';
-      };
+      return () => { document.body.style.overflow = ''; };
     }
   }, [open]);
-
-  // Close on Escape key
-  useEffect(() => {
-    if (!open) return;
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-    };
-    document.addEventListener('keydown', handler);
-    return () => document.removeEventListener('keydown', handler);
-  }, [open, onClose]);
 
   const doneGeneric = completedGeneric.length;
   const doneAttack = completedAttack.length;
@@ -95,6 +85,7 @@ export function ChecklistSheet({
 
           {/* Sheet panel */}
           <m.div
+            ref={sheetRef}
             key="sheet"
             role="dialog"
             aria-modal="true"
@@ -119,7 +110,7 @@ export function ChecklistSheet({
                   Checklist azioni
                 </h2>
                 {totalDone > 0 && (
-                  <span className="rounded-full bg-success/20 px-2 py-0.5 text-xs font-medium text-success">
+                  <span className="rounded-full bg-success/20 px-2 py-0.5 text-sm font-medium text-success">
                     {totalDone} fatte
                   </span>
                 )}
@@ -128,7 +119,7 @@ export function ChecklistSheet({
                 ref={closeRef}
                 type="button"
                 onClick={onClose}
-                className="flex h-9 w-9 items-center justify-center rounded-full
+                className="flex h-11 w-11 items-center justify-center rounded-full
                            text-muted-foreground transition-colors hover:bg-white/10
                            hover:text-foreground focus-visible:outline focus-visible:outline-2
                            focus-visible:outline-cyan-brand"

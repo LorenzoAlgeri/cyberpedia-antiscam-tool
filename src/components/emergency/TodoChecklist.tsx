@@ -12,13 +12,16 @@
  * - Tab state is local — parent state (completed IDs) is never reset on switch
  */
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import * as m from 'motion/react-m';
 import { AnimatePresence } from 'motion/react';
 import { Crosshair } from 'lucide-react';
 import type { AttackType } from '@/types/emergency';
 import type { TodoItem } from '@/types/todo';
 import { ATTACK_TODOS } from '@/data/todo-by-attack';
+import { GENERIC_TODOS } from '@/data/todo-generic';
+
+const MILESTONES = [25, 50, 75, 100] as const;
 import { SevereActionBanner } from './SevereActionBanner';
 import { TodoProgressBar } from './TodoProgressBar';
 import { TodoRow } from './TodoRow';
@@ -74,6 +77,7 @@ export function TodoChecklist({
   const [uncontrolledIncident, setUncontrolledIncident] = useState<'no' | 'yes'>('no');
   /** ID of the severe item most recently checked — drives the micro-action banner. */
   const [activeSevereId, setActiveSevereId] = useState<string | null>(null);
+  const announcementRef = useRef<HTMLDivElement>(null);
 
   const resolvedTab = activeTab ?? uncontrolledTab;
   const resolvedIncident = incidentStatus ?? uncontrolledIncident;
@@ -93,8 +97,20 @@ export function TodoChecklist({
   const doneAttack = completedAttack.length;
   const totalAttack = attackTodos.length;
 
+  useEffect(() => {
+    const total = GENERIC_TODOS.length + attackTodos.length;
+    if (total === 0) return;
+    const completed = completedGeneric.length + completedAttack.length;
+    const percent = Math.round((completed / total) * 100);
+    const milestone = MILESTONES.find(m => m === percent);
+    if (milestone !== undefined && announcementRef.current) {
+      announcementRef.current.textContent = `${milestone}% completato`;
+    }
+  }, [completedGeneric.length, completedAttack.length, attackTodos.length]);
+
   return (
     <section className="space-y-4">
+      <div ref={announcementRef} aria-live="polite" className="sr-only" />
       {/* Tab bar */}
       {showTabs && (
         <TodoTabBar resolvedTab={resolvedTab} setTab={setTab} doneGeneric={doneGeneric} doneAttack={doneAttack} />

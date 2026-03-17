@@ -7,6 +7,7 @@
  */
 
 import * as m from 'motion/react-m';
+import { CheckCircle2, XCircle } from 'lucide-react';
 import type { ChoiceOption } from '@/types/simulation';
 
 interface ChatChoicesProps {
@@ -59,6 +60,14 @@ export function ChatChoices({ options, onSelect }: ChatChoicesProps) {
           type="button"
         >
           {option.text}
+          <span className="ml-auto flex items-center gap-1.5">
+            <span className="sr-only">{option.correct ? 'Risposta corretta' : 'Risposta sbagliata'}</span>
+            {option.correct ? (
+              <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-400" aria-hidden="true" />
+            ) : (
+              <XCircle className="h-4 w-4 shrink-0 text-amber-400" aria-hidden="true" />
+            )}
+          </span>
         </m.button>
       ))}
     </m.div>

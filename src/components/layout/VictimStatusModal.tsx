@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef } from 'react';
 import * as m from 'motion/react-m';
 import { AnimatePresence } from 'motion/react';
 import { ShieldCheck, AlertTriangle } from 'lucide-react';
+import { useFocusTrap } from '@/hooks/useFocusTrap';
 import type { VictimStatus } from '@/lib/victimStatus';
 
 interface VictimStatusModalProps {
@@ -12,6 +13,7 @@ interface VictimStatusModalProps {
 
 export function VictimStatusModal({ open, onSelect, onClose }: VictimStatusModalProps) {
   const firstBtnRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -22,6 +24,9 @@ export function VictimStatusModal({ open, onSelect, onClose }: VictimStatusModal
   const handleBackdrop = useCallback(() => {
     onClose?.();
   }, [onClose]);
+
+  const stableOnClose = useCallback(() => onClose?.(), [onClose]);
+  useFocusTrap(panelRef, open, stableOnClose);
 
   return (
     <AnimatePresence>
@@ -39,6 +44,7 @@ export function VictimStatusModal({ open, onSelect, onClose }: VictimStatusModal
           />
 
           <m.div
+            ref={panelRef}
             key="panel"
             role="dialog"
             aria-modal="true"
@@ -88,7 +94,7 @@ export function VictimStatusModal({ open, onSelect, onClose }: VictimStatusModal
               </button>
             </div>
 
-            <p className="mt-4 text-xs text-muted-foreground/70">
+            <p className="mt-4 text-sm text-muted-foreground/70">
               Puoi cambiare risposta in seguito.
             </p>
           </m.div>
