@@ -59,7 +59,9 @@ export default defineConfig({
     },
   },
   test: {
-    include: ['src/**/*.test.ts'],
+    include: ['src/**/*.test.{ts,tsx}'],
+    environment: 'jsdom',
+    setupFiles: ['src/__tests__/setup.ts'],
   },
   build: {
     rollupOptions: {
