@@ -98,7 +98,7 @@ function PrivacyDialog({ open, onClose }: { open: boolean; onClose: () => void }
                 type="button"
                 onClick={onClose}
                 aria-label="Chiudi"
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full
                            text-muted-foreground transition-colors hover:bg-white/10
                            hover:text-foreground focus-visible:outline focus-visible:outline-2
                            focus-visible:outline-cyan-brand"
