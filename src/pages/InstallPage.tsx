@@ -106,7 +106,7 @@ export function InstallPage({ onNext, onBack }: InstallPageProps) {
       {/* Device info badge */}
       {!showSuccess && (
         <m.p
-          className="text-xs text-muted-foreground/60"
+          className="text-sm text-muted-foreground/60"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.4 }}

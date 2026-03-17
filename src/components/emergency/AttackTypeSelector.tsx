@@ -138,7 +138,7 @@ export function AttackTypeSelector({
                 >
                   {attack.label}
                 </span>
-                <span className="mt-1 block text-xs text-muted-foreground sm:text-sm">
+                <span className="mt-1 block text-sm text-muted-foreground">
                   {attack.description}
                 </span>
               </div>

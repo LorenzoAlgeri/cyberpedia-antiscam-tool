@@ -69,7 +69,7 @@ export function TodoRow({
           {item.text}
         </span>
         {label && (
-          <span className="inline-flex items-center rounded-full bg-white/5 px-2 py-0.5 text-xs font-medium text-muted-foreground">
+          <span className="inline-flex items-center rounded-full bg-white/5 px-2 py-0.5 text-sm font-medium text-muted-foreground">
             {label}
           </span>
         )}

@@ -18,7 +18,7 @@ export function TodoTabBar({ resolvedTab, setTab, doneGeneric, doneAttack }: Tod
         <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden="true" />
         Base (sempre)
         {doneGeneric > 0 && (
-          <span className="ml-1 rounded-full bg-success/20 px-1.5 py-0.5 text-xs text-success">{doneGeneric}</span>
+          <span className="ml-1 rounded-full bg-success/20 px-1.5 py-0.5 text-sm text-success">{doneGeneric}</span>
         )}
       </button>
       <button type="button" role="tab" aria-selected={scenarioActive} onClick={() => setTab('scenario')}
@@ -26,7 +26,7 @@ export function TodoTabBar({ resolvedTab, setTab, doneGeneric, doneAttack }: Tod
         <Crosshair className="h-4 w-4 shrink-0" aria-hidden="true" />
         Scenario (mirato)
         {doneAttack > 0 && (
-          <span className="ml-1 rounded-full bg-cyan-brand/20 px-1.5 py-0.5 text-xs text-cyan-brand">{doneAttack}</span>
+          <span className="ml-1 rounded-full bg-cyan-brand/20 px-1.5 py-0.5 text-sm text-cyan-brand">{doneAttack}</span>
         )}
       </button>
     </div>

@@ -49,7 +49,7 @@ export function StepIndicator({
             {/* Label — visible on md+ */}
             <span
               className={[
-                'hidden text-xs font-medium transition-colors duration-200 md:block',
+                'hidden text-sm font-medium transition-colors duration-200 md:block',
                 isActive
                   ? 'text-cyan-brand'
                   : isCompleted

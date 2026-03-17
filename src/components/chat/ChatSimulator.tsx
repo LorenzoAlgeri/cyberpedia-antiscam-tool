@@ -85,7 +85,7 @@ export function ChatSimulator({ simulation, onBack, isFirstSimulation = false, o
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
-                  className="text-xs text-cyan-400"
+                  className="text-sm text-cyan-400"
                 >
                   sta scrivendo...
                 </m.p>

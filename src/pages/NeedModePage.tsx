@@ -115,7 +115,7 @@ export function NeedModePage({ onBack, pin: pinProp = null, unlockedData = null,
             Azioni rapide e report. Nessun dato viene inviato online.
           </p>
           {attackMetaLabel && (
-            <p className="mt-2 text-xs text-muted-foreground/70">
+            <p className="mt-2 text-sm text-muted-foreground/70">
               Scenario: {attackMetaLabel}
             </p>
           )}

@@ -32,7 +32,7 @@ export function ChecklistTrigger({ completedCount, onClick }: ChecklistTriggerPr
           </p>
         </div>
       </div>
-      <span className="text-xs text-muted-foreground">Apri →</span>
+      <span className="text-sm text-muted-foreground">Apri →</span>
     </button>
   );
 }
