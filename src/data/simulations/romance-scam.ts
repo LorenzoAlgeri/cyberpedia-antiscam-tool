@@ -29,7 +29,7 @@ export const romanceScam: Simulation = {
     {
       type: 'message',
       sender: 'scammer',
-      text: 'Ciao tesoro, pensavo a te. Come stai oggi?',
+      text: 'Ciao tesoro, penso sempre a te. Come stai?',
     },
     {
       type: 'message',
@@ -52,13 +52,8 @@ export const romanceScam: Simulation = {
       type: 'choice',
       options: [
         {
-          id: 'r1-send',
-          text: 'Certo, ti invio i soldi subito. Dimmi come.',
-          correct: false,
-        },
-        {
           id: 'r1-doubt',
-          text: 'Mi dispiace, ma non posso inviare soldi a qualcuno che non ho mai incontrato.',
+          text: 'No. Non invio denaro a chi non ho mai incontrato di persona.',
           correct: true,
           skill: 'limite',
         },
@@ -69,18 +64,27 @@ export const romanceScam: Simulation = {
           skill: 'verifica',
         },
         {
-          id: 'r1-half',
-          text: 'Non posso darti 500€, ma forse riesco a mandarti qualcosa di meno.',
+          id: 'r1-send',
+          text: 'Certo, te li mando subito. Dimmi come fare.',
           correct: false,
+          retryMessage: {
+            type: 'message',
+            sender: 'scammer',
+            text: 'Grazie tesoro, sapevo che mi avresti aiutato. Puoi fare un bonifico su questo IBAN: IT60 X054 2811 1010 0000 0123 456? Te li restituisco appena torno, promesso.',
+          },
         },
       ],
     },
     {
       type: 'feedback',
       explanation:
-        'Giusto. Mai inviare denaro a qualcuno conosciuto solo online, nemmeno una cifra piccola. I truffatori creano legami emotivi intensi per manipolarti. Chiedere una videochiamata è un ottimo modo per smascherarli.',
+        'Non si inviano soldi a chi non si è mai incontrato di persona.\nLa richiesta urgente combinata con una storia emotiva è il segnale più classico di romance scam.',
+      explanationDetail:
+        'I truffatori investono settimane a costruire un legame affettivo reale — poi usano quella fiducia come leva. Una videochiamata o la verifica di dettagli concreti (nome, luogo, struttura) è sufficiente per smascherarli: nessun truffatore regge a una verifica diretta.',
       wrongExplanation:
-        'Inviare soldi — anche una cifra minore — a qualcuno mai incontrato di persona è sempre una trappola.',
+        'Urgenza + richiesta di denaro = rischio alto. Anche una cifra piccola conferma che la manipolazione funziona.\nRifiuta sempre: non esiste una somma sicura da inviare a chi non hai mai incontrato.',
+      wrongExplanationDetail:
+        'Il truffatore usa l\'urgenza e l\'imbarazzo per bypassare il tuo giudizio. Una volta inviato anche un piccolo importo, la richiesta successiva sarà più alta e accompagnata da pressione emotiva ancora maggiore.',
       retryMessage: {
         type: 'message',
         sender: 'scammer',
@@ -90,7 +94,7 @@ export const romanceScam: Simulation = {
         {
           type: 'message',
           sender: 'scammer',
-          text: 'Ma come puoi non fidarti di me dopo tutto quello che ci siamo detti? Mi fai sentire come se i miei sentimenti non contassero nulla.',
+          text: 'Mi fai sentire come se non ti fidassi di me. Dopo tutto quello che ci siamo detti...',
         },
         {
           type: 'message',
@@ -105,11 +109,6 @@ export const romanceScam: Simulation = {
       type: 'choice',
       options: [
         {
-          id: 'r2-give-in',
-          text: 'Hai ragione, scusami. Ti mando i soldi.',
-          correct: false,
-        },
-        {
           id: 'r2-block',
           text: 'Mi dispiace, ma preferisco non continuare questa conversazione.',
           correct: true,
@@ -122,18 +121,27 @@ export const romanceScam: Simulation = {
           skill: 'verifica',
         },
         {
-          id: 'r2-maybe',
-          text: 'Fammi pensare... forse domani riesco ad aiutarti un po\'.',
+          id: 'r2-give-in',
+          text: 'Hai ragione, scusami. Ti mando i soldi.',
           correct: false,
+          retryMessage: {
+            type: 'message',
+            sender: 'scammer',
+            text: 'Lo sapevo che mi volevi bene davvero. Puoi mandare tramite Western Union? Intestalo a: Erik Johansson, Stoccolma. Ti mando l\'indirizzo esatto.',
+          },
         },
       ],
     },
     {
       type: 'feedback',
       explanation:
-        'Il senso di colpa e l\'urgenza sono le armi principali delle truffe sentimentali. Mettere alla prova chiedendo dettagli verificabili — nome dell\'hotel, numero della struttura — smonta subito un impostore: non avrà queste informazioni.',
+        'Il senso di colpa costruito ad arte è l\'arma principale di questa truffa.\nChiedere dettagli verificabili (nome hotel, numero struttura) smonta subito l\'impostore: non li avrà.',
+      explanationDetail:
+        'Quando una persona reale chiede aiuto, può fornire informazioni concrete e verificabili. Un truffatore invece ha solo una storia generica — non nomi di hotel, non indirizzi, non numeri diretti. Questa asimmetria è la sua debolezza.',
       wrongExplanation:
-        'Cedere alla pressione emotiva — anche parzialmente — conferma al truffatore che la manipolazione funziona.',
+        'Cedere anche parzialmente alimenta il meccanismo e segnala che la pressione emotiva funziona.\nRifiuta: la persona reale capirà, il truffatore insisterà.',
+      wrongExplanationDetail:
+        'Il truffatore interpreta ogni cedimento come un segnale positivo. Anche rispondere "forse" o "dammi tempo" prolunga la manipolazione e aumenta la probabilità di una perdita economica.',
       retryMessage: {
         type: 'message',
         sender: 'scammer',
@@ -156,6 +164,11 @@ export const romanceScam: Simulation = {
           id: 'r3-send-son',
           text: 'Se è per tuo figlio, ti mando qualcosa subito. Come faccio?',
           correct: false,
+          retryMessage: {
+            type: 'message',
+            sender: 'scammer',
+            text: 'Grazie, sei un angelo. Manda quello che puoi su questo PayPal: alex.help2024@gmail.com. Ogni minuto conta per mio figlio.',
+          },
         },
         {
           id: 'r3-end',
@@ -174,9 +187,13 @@ export const romanceScam: Simulation = {
     {
       type: 'feedback',
       explanation:
-        'Perfetto. Cambiare storia inventando nuove crisi è una tecnica classica: il truffatore sfrutta la compassione dopo che la pressione diretta non ha funzionato. Una persona reale non ha problemi a farti verificare.',
+        'Cambiare storia inventando nuove crisi è la tecnica di escalation classica.\nChiamare direttamente l\'ospedale è la verifica che nessun truffatore regge.',
+      explanationDetail:
+        'Quando la pressione diretta non funziona, il truffatore introduce una terza persona — spesso un figlio, un familiare — per sfruttare la compassione invece dell\'urgenza personale. La risposta è sempre la stessa: verifica concreta e indipendente.',
       wrongExplanation:
-        'Inventare una crisi di terzi è una tecnica per aggirare la tua resistenza sfruttando la compassione.',
+        'La crisi del figlio è un espediente per aggirare la tua resistenza sfruttando la compassione.\nNessuna emergenza reale richiede il tuo denaro tramite chat.',
+      wrongExplanationDetail:
+        'Questo schema — prima pressione personale, poi crisi di un terzo — è documentato nelle truffe sentimentali a livello internazionale (FBI IC3). L\'escalation continuerà finché non interrompi il contatto.',
       retryMessage: {
         type: 'message',
         sender: 'scammer',

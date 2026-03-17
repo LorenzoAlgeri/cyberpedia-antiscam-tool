@@ -51,6 +51,13 @@ export interface ChoiceOption {
    * Each SimChoice must have ≥ 2 correct options covering DIFFERENT skills (I2 rule).
    */
   readonly skill?: ChoiceSkill;
+  /**
+   * Scammer reply specific to THIS wrong option.
+   * If present, overrides SimFeedback.retryMessage so the scammer
+   * responds to what the user actually said (not a generic message).
+   * Only meaningful on correct:false options.
+   */
+  readonly retryMessage?: SimMessage;
 }
 
 /** A decision point where the user picks a response */
@@ -64,15 +71,32 @@ export interface SimChoice {
 export interface SimFeedback {
   readonly type: 'feedback';
 
-  /** Explanation shown when the user picks a correct option (green). */
+  /**
+   * Short explanation shown when the user picks a correct option (green).
+   * I4 rule: max 2 lines — 1 regola + 1 rinforzo.
+   * Title "Corretto." is injected by the UI component.
+   */
   readonly explanation: string;
+
+  /**
+   * Optional longer text shown under "Approfondisci" collapsible (correct path).
+   * I4 rule: long content goes here, not in explanation.
+   */
+  readonly explanationDetail?: string;
 
   /**
    * Brief message shown on a wrong answer (amber — never red, UX rule:
    * red triggers panic in stressed users).
+   * I4 rule: max 2 lines — 1 riga rischio + 1 riga mossa giusta.
+   * Title "Stop. Questa è la trappola." is injected by the UI component.
    * If omitted, falls back to a generic amber message.
    */
   readonly wrongExplanation?: string;
+
+  /**
+   * Optional longer text shown under "Approfondisci" collapsible (wrong path).
+   */
+  readonly wrongExplanationDetail?: string;
 
   /**
    * Scammer "stays in character" after a wrong answer.
@@ -129,6 +153,8 @@ export interface ChatEntry {
   readonly text: string;
   /** For feedback entries: true = correct (green), false = wrong (amber) */
   readonly correct?: boolean;
+  /** Optional long text shown under "Approfondisci" collapsible (feedback entries only) */
+  readonly detail?: string;
 }
 
 // ---------------------------------------------------------------------------
