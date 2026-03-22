@@ -203,17 +203,29 @@ export function SimulationsPage({
             <m.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="absolute inset-x-0 bottom-0 border-t border-amber-500/30 bg-slate-900/95 px-4 py-6 text-center backdrop-blur-sm"
+              className={`absolute inset-x-0 bottom-0 border-t bg-slate-900/95 px-4 py-6 text-center backdrop-blur-sm ${
+                trainingState.interruptReason === 'max_turns'
+                  ? 'border-cyan-500/30'
+                  : 'border-amber-500/30'
+              }`}
             >
-              <p className="mb-3 text-sm font-medium text-amber-300">
-                Sessione interrotta — il livello di rischio ha superato la soglia.
+              <p className={`mb-3 text-sm font-medium ${
+                trainingState.interruptReason === 'max_turns'
+                  ? 'text-cyan-300'
+                  : 'text-amber-300'
+              }`}>
+                {trainingState.interruptReason === 'max_turns'
+                  ? 'Simulazione completata — ottimo lavoro! Passiamo alla riflessione.'
+                  : 'Sessione interrotta — il livello di rischio ha superato la soglia.'}
               </p>
               <button
                 type="button"
                 onClick={training.beginReflection}
                 className="btn-primary"
               >
-                Inizia riflessione guidata
+                {trainingState.interruptReason === 'max_turns'
+                  ? 'Analizza le tue scelte'
+                  : 'Inizia riflessione guidata'}
               </button>
             </m.div>
           )}

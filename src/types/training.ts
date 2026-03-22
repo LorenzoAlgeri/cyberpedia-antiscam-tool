@@ -110,6 +110,9 @@ export interface ScammerPersona {
   readonly tone: string;
 }
 
+/** Reason why the training session was interrupted */
+export type InterruptReason = 'high_risk' | 'max_turns';
+
 /** Scenario parameters for a training session */
 export interface ScenarioConfig {
   readonly scenarioId: string;
@@ -121,6 +124,8 @@ export interface ScenarioConfig {
   readonly interruptThreshold: number;
   /** Minimum turns before interruption can trigger (default 3) */
   readonly minTurnsBeforeInterrupt: number;
+  /** Maximum user turns before forced interruption */
+  readonly maxTurns: number;
 }
 
 // ---------------------------------------------------------------------------
@@ -228,6 +233,7 @@ export interface SendMessageResponse {
   readonly aiMessage: string;
   readonly behaviorScores: BehaviorScores;
   readonly shouldInterrupt: boolean;
+  readonly interruptReason?: InterruptReason;
   readonly nextPhase: NarrativePhase;
 }
 

@@ -17,6 +17,7 @@ import type {
   BehaviorScores,
   ReflectionAnswer,
   ReflectionStep,
+  InterruptReason,
   NarrativePhase,
   StartSessionRequest,
 } from '@/types/training';
@@ -36,6 +37,7 @@ export interface TrainingState {
   latestScores: BehaviorScores | null;
   finalScores: BehaviorScores | null;
   interruptedAtTurn: number | null;
+  interruptReason: InterruptReason | null;
   triggerMessage: string | null;
   isLoading: boolean;
   error: string | null;
@@ -53,6 +55,7 @@ const initialState: TrainingState = {
   latestScores: null,
   finalScores: null,
   interruptedAtTurn: null,
+  interruptReason: null,
   triggerMessage: null,
   isLoading: false,
   error: null,
@@ -70,7 +73,7 @@ type Action =
   | { type: 'SESSION_STARTED'; scenarioConfig: ScenarioConfig; firstMessage: string }
   | { type: 'USER_MESSAGE_SENT'; turn: ConversationTurn }
   | { type: 'AI_RESPONSE'; turn: ConversationTurn; scores: BehaviorScores; nextPhase: NarrativePhase }
-  | { type: 'INTERRUPTED'; triggerMessage: string }
+  | { type: 'INTERRUPTED'; triggerMessage: string; interruptReason: InterruptReason }
   | { type: 'REFLECTION_STARTED'; question: string }
   | { type: 'REFLECTION_ANSWER'; answer: ReflectionAnswer; nextStep: ReflectionStep | null; nextQuestion: string | null }
   | { type: 'SHOW_SUMMARY'; finalScores: BehaviorScores }
@@ -128,6 +131,7 @@ function reducer(state: TrainingState, action: Action): TrainingState {
         ...state,
         phase: 'interrupted',
         interruptedAtTurn: state.turns.length - 1,
+        interruptReason: action.interruptReason,
         triggerMessage: action.triggerMessage,
         isLoading: false,
       };
@@ -304,7 +308,11 @@ export function useTrainingSession(): UseTrainingSessionResult {
         });
 
         if (result.shouldInterrupt) {
-          dispatch({ type: 'INTERRUPTED', triggerMessage: trimmed });
+          dispatch({
+            type: 'INTERRUPTED',
+            triggerMessage: trimmed,
+            interruptReason: result.interruptReason ?? 'high_risk',
+          });
         }
       } catch (e) {
         stopWaitTimer();
@@ -318,9 +326,9 @@ export function useTrainingSession(): UseTrainingSessionResult {
   );
 
   const beginReflection = useCallback(() => {
-    const question = getReflectionQuestion('R1');
+    const question = getReflectionQuestion('R1', state.interruptReason);
     dispatch({ type: 'REFLECTION_STARTED', question });
-  }, []);
+  }, [state.interruptReason]);
 
   const submitReflection = useCallback(
     async (answer: string) => {
@@ -356,7 +364,7 @@ export function useTrainingSession(): UseTrainingSessionResult {
       const stepOrder: ReflectionStep[] = ['R1', 'R2', 'R3', 'R4'];
       const currentIdx = stepOrder.indexOf(state.currentReflectionStep);
       const nextStep = currentIdx < stepOrder.length - 1 ? stepOrder[currentIdx + 1] : null;
-      const nextQuestion = nextStep ? (result.nextQuestion ?? getReflectionQuestion(nextStep)) : null;
+      const nextQuestion = nextStep ? (result.nextQuestion ?? getReflectionQuestion(nextStep, state.interruptReason)) : null;
 
       dispatch({
         type: 'REFLECTION_ANSWER',
