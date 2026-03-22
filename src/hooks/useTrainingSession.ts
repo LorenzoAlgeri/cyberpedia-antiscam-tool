@@ -355,43 +355,48 @@ export function useTrainingSession(): UseTrainingSessionResult {
       dispatch({ type: 'START_LOADING' });
       startWaitTimer();
 
-      const result = await api.submitReflection(
-        state.scenarioConfig,
-        state.triggerMessage,
-        state.currentReflectionStep,
-        trimmed,
-        state.reflections,
-      );
-      stopWaitTimer();
+      try {
+        const result = await api.submitReflection(
+          state.scenarioConfig,
+          state.triggerMessage,
+          state.currentReflectionStep,
+          trimmed,
+          state.reflections,
+        );
+        stopWaitTimer();
 
-      if (!result) {
-        dispatch({ type: 'SET_ERROR', error: 'Errore nella riflessione. Riprova.' });
-        return;
-      }
+        if (!result) {
+          dispatch({ type: 'SET_ERROR', error: 'Errore nella riflessione. Riprova.' });
+          return;
+        }
 
-      const currentAnswer: ReflectionAnswer = {
-        step: state.currentReflectionStep,
-        question: state.currentReflectionQuestion,
-        userAnswer: trimmed,
-        aiAnalysis: result.aiAnalysis,
-      };
+        const currentAnswer: ReflectionAnswer = {
+          step: state.currentReflectionStep,
+          question: state.currentReflectionQuestion,
+          userAnswer: trimmed,
+          aiAnalysis: result.aiAnalysis,
+        };
 
-      // MVP: R1 → R2 → R3, then summary
-      const stepOrder: ReflectionStep[] = ['R1', 'R2', 'R3', 'R4'];
-      const currentIdx = stepOrder.indexOf(state.currentReflectionStep);
-      const nextStep = currentIdx < stepOrder.length - 1 ? stepOrder[currentIdx + 1] : null;
-      const nextQuestion = nextStep ? (result.nextQuestion ?? getReflectionQuestion(nextStep, state.interruptReason)) : null;
+        // R1 → R2 → R3 → R4, then summary
+        const stepOrder: ReflectionStep[] = ['R1', 'R2', 'R3', 'R4'];
+        const currentIdx = stepOrder.indexOf(state.currentReflectionStep);
+        const nextStep = currentIdx < stepOrder.length - 1 ? stepOrder[currentIdx + 1] : null;
+        const nextQuestion = nextStep ? (result.nextQuestion ?? getReflectionQuestion(nextStep, state.interruptReason)) : null;
 
-      dispatch({
-        type: 'REFLECTION_ANSWER',
-        answer: currentAnswer,
-        nextStep: nextStep ?? null,
-        nextQuestion: nextQuestion ?? null,
-      });
+        dispatch({
+          type: 'REFLECTION_ANSWER',
+          answer: currentAnswer,
+          nextStep: nextStep ?? null,
+          nextQuestion: nextQuestion ?? null,
+        });
 
-      // If reflection is complete, compute final scores from latest
-      if (nextStep === null && state.latestScores) {
-        dispatch({ type: 'SHOW_SUMMARY', finalScores: state.latestScores });
+        // If reflection is complete, compute final scores from latest
+        if (nextStep === null && state.latestScores) {
+          dispatch({ type: 'SHOW_SUMMARY', finalScores: state.latestScores });
+        }
+      } catch (e) {
+        stopWaitTimer();
+        dispatch({ type: 'SET_ERROR', error: translateError(e) });
       }
     },
     [state, api, startWaitTimer, stopWaitTimer],
