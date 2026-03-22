@@ -88,6 +88,10 @@ export function ChatInput({
         disabled={disabled}
         placeholder={placeholder}
         rows={1}
+        autoComplete="off"
+        autoCorrect="off"
+        data-1p-ignore
+        data-lpignore="true"
         aria-label="Scrivi il tuo messaggio"
         className="min-h-[44px] flex-1 resize-none rounded-2xl bg-slate-800/60 px-4 py-3
                    text-base text-slate-100 placeholder-slate-500
