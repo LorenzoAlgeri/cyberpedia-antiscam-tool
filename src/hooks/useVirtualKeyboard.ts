@@ -1,13 +1,14 @@
 /**
  * useVirtualKeyboard — handles mobile virtual keyboard resizing.
  *
- * Problem: iOS Safari scrolls the entire page up when the keyboard opens,
- * pushing the chat header off-screen. The layout viewport doesn't resize.
+ * Problem: iOS Safari scrolls the page and doesn't resize the layout
+ * when the keyboard opens. The input gets hidden behind the keyboard.
  *
- * Solution: Listen to visualViewport resize/scroll events and:
- * 1. Set --app-height to the visible height (excluding keyboard)
- * 2. Scroll window back to top to counteract iOS scroll behavior
- * 3. Position the chat container using the visual viewport offset
+ * Solution:
+ * 1. Listen to visualViewport resize events
+ * 2. Set --app-height to visible height
+ * 3. Scroll window back to top to counteract iOS scroll
+ * 4. After keyboard opens, scroll the input into view
  *
  * Works on both iOS Safari and Android Chrome.
  */
@@ -19,37 +20,45 @@ export function useVirtualKeyboard(): void {
     const vv = window.visualViewport;
     if (!vv) return;
 
+    let prevHeight = vv.height;
+
     function update() {
       if (!window.visualViewport) return;
 
       const height = window.visualViewport.height;
-      const offsetTop = window.visualViewport.offsetTop;
 
       // Set the visible height (excludes keyboard)
       document.documentElement.style.setProperty('--app-height', `${height}px`);
 
-      // Counteract iOS Safari scrolling the page up when keyboard opens:
-      // Translate the app container down by the offset amount so it stays
-      // visually in the same position
-      document.documentElement.style.setProperty('--app-offset', `${offsetTop}px`);
+      // Detect keyboard opening (height decreased significantly)
+      const keyboardOpened = prevHeight - height > 100;
 
-      // Force scroll back to top — iOS scrolls the page to show the input,
-      // but we want the container to handle its own scrolling
-      if (offsetTop > 0) {
-        window.scrollTo(0, 0);
+      if (keyboardOpened) {
+        // Counteract iOS Safari scrolling the page up
+        requestAnimationFrame(() => {
+          window.scrollTo(0, 0);
+
+          // Scroll the focused input into view within the chat container
+          const focused = document.activeElement;
+          if (focused && (focused.tagName === 'TEXTAREA' || focused.tagName === 'INPUT')) {
+            // Small delay to let iOS finish animation
+            setTimeout(() => {
+              focused.scrollIntoView({ block: 'end', behavior: 'smooth' });
+            }, 100);
+          }
+        });
       }
+
+      prevHeight = height;
     }
 
     update();
 
     vv.addEventListener('resize', update);
-    vv.addEventListener('scroll', update);
 
     return () => {
       vv.removeEventListener('resize', update);
-      vv.removeEventListener('scroll', update);
       document.documentElement.style.removeProperty('--app-height');
-      document.documentElement.style.removeProperty('--app-offset');
     };
   }, []);
 }
