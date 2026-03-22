@@ -10,6 +10,7 @@ import * as m from 'motion/react-m';
 import { AnimatePresence } from 'motion/react';
 import { Brain, Loader2 } from 'lucide-react';
 import { ChatInput } from './ChatInput';
+import { useVirtualKeyboard } from '@/hooks/useVirtualKeyboard';
 import type { ReflectionAnswer, ReflectionStep } from '@/types/training';
 
 interface ReflectionViewProps {
@@ -50,11 +51,17 @@ export function ReflectionView({
 }: ReflectionViewProps) {
   const stepNumber = getStepNumber(currentStep);
 
+  // Handle virtual keyboard on iOS + Android
+  useVirtualKeyboard();
+
   // Show the latest analysis before moving to next question
   const latestReflection = reflections.at(-1);
 
   return (
-    <div className="flex flex-1 flex-col overflow-hidden">
+    <div
+      className="flex flex-col overflow-hidden"
+      style={{ height: 'var(--app-height, 100dvh)' }}
+    >
       {/* Header */}
       <div className="flex items-center justify-between border-b border-slate-700/50 bg-slate-900/80 px-4 py-3">
         <button
