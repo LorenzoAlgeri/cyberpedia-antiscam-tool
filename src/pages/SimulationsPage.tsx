@@ -182,11 +182,11 @@ export function SimulationsPage({
       <AnimatePresence mode="wait">
         <m.div
           key="training-chat"
-          initial={{ opacity: 0, x: 40 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: -40 }}
-          transition={{ duration: 0.25 }}
-          className="relative flex flex-1 flex-col"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.2 }}
+          className="fixed inset-0 z-50 flex flex-col bg-background"
         >
           <TrainingChat
             scammerName={trainingState.scenarioConfig?.scammerPersona.name ?? 'Truffatore'}
@@ -239,11 +239,11 @@ export function SimulationsPage({
       <AnimatePresence mode="wait">
         <m.div
           key="training-reflection"
-          initial={{ opacity: 0, x: 40 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: -40 }}
-          transition={{ duration: 0.25 }}
-          className="flex flex-1 flex-col"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.2 }}
+          className="fixed inset-0 z-50 flex flex-col bg-background"
         >
           <ReflectionView
             currentStep={trainingState.currentReflectionStep}
@@ -265,11 +265,11 @@ export function SimulationsPage({
       <AnimatePresence mode="wait">
         <m.div
           key="training-report"
-          initial={{ opacity: 0, x: 40 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: -40 }}
-          transition={{ duration: 0.25 }}
-          className="flex flex-1 flex-col"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.2 }}
+          className="fixed inset-0 z-50 flex flex-col bg-background overflow-y-auto"
         >
           <SessionReport
             scores={trainingState.finalScores ?? trainingState.latestScores}
