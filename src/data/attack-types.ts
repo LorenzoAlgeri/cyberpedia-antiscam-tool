@@ -24,28 +24,31 @@ export const ATTACK_TYPES: readonly AttackTypeMeta[] = [
     icon: 'Heart',
   },
   {
-    id: 'fake-operator',
-    label: 'Finto operatore',
-    description: 'Falso bancario o supporto tecnico',
-    icon: 'Headset',
-  },
-  {
     id: 'phishing',
     label: 'Phishing / Smishing',
     description: 'Email o SMS con link fraudolenti',
     icon: 'Mail',
   },
   {
+    id: 'fake-operator',
+    label: 'Finto operatore',
+    description: 'Falso bancario o supporto tecnico',
+    icon: 'Headset',
+    comingSoon: true,
+  },
+  {
     id: 'fake-relative',
     label: 'Finto parente',
     description: '"Ciao mamma, ho cambiato numero"',
     icon: 'Users',
+    comingSoon: true,
   },
   {
     id: 'social-engineering',
     label: 'Pressione e urgenza',
     description: 'Manipolazione psicologica, richieste sotto pressione',
     icon: 'Brain',
+    comingSoon: true,
   },
 ] as const;
 

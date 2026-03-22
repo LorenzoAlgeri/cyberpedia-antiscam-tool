@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo, useEffect } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import type { KeyboardEvent } from 'react';
 import * as m from 'motion/react-m';
 import { AnimatePresence } from 'motion/react';
@@ -37,8 +37,6 @@ export function SimulationsPage({
   const [activeSim, setActiveSim] = useState<Simulation | null>(null);
   /** ID of the card currently being loaded — drives per-card loading state */
   const [selectingId, setSelectingId] = useState<string | null>(null);
-  /** E-phase: preferred scenario selection (single-choice, romance default) */
-  const [selectedId, setSelectedId] = useState<string>('romance-scam');
   /** Number of simulations completed — persisted in localStorage */
   const [simulationCount, setSimulationCount] = useState<number>(() => {
     const raw = localStorage.getItem('antiscam-sim-count');
@@ -66,25 +64,10 @@ export function SimulationsPage({
     if (activeSim) setShowRealismHint(false);
   }, [activeSim]);
 
-  // Hooks must be called unconditionally — before any early return.
-  const selectedSimulation = useMemo(
-    () => simulations.find((s) => s.id === selectedId) ?? null,
-    [selectedId],
-  );
-
   const handleSelectSim = useCallback(
-    async () => {
-      // Guard case 1: no attack type selected → return early.
-      // Guard does NOT fire when isGenerating is true — loading state is shown instead.
-      if (!selectedId) return;
-      const sim = selectedSimulation;
+    async (simId: string) => {
+      const sim = simulations.find((s) => s.id === simId) ?? null;
       if (!sim) return;
-
-      console.debug('[SimulationsPage] handleSelectSim fired:', {
-        id: sim.id,
-        title: sim.title,
-        stepsCount: sim.steps.length,
-      });
 
       setSelectingId(sim.id);
       try {
@@ -94,25 +77,18 @@ export function SimulationsPage({
         setSelectingId(null);
       }
     },
-    [selectedId, selectedSimulation, fetchAISimulation],
+    [fetchAISimulation],
   );
 
-  const handleKeyDownRadio = useCallback(
-    (event: KeyboardEvent<HTMLButtonElement>, simId: string, disabled: boolean) => {
-      if (disabled) return;
+  const handleKeyDownCard = useCallback(
+    (event: KeyboardEvent<HTMLButtonElement>, simId: string) => {
+      if (selectingId !== null) return;
       if (event.key === ' ' || event.key === 'Enter') {
         event.preventDefault();
-        setSelectedId(simId);
-      }
-      if (event.key === 'ArrowRight' || event.key === 'ArrowDown' || event.key === 'ArrowLeft' || event.key === 'ArrowUp') {
-        event.preventDefault();
-        const currentIndex = simulations.findIndex((s) => s.id === selectedId);
-        const delta = event.key === 'ArrowLeft' || event.key === 'ArrowUp' ? -1 : 1;
-        const nextIndex = (currentIndex + delta + simulations.length) % simulations.length;
-        setSelectedId(simulations[nextIndex]?.id ?? simId);
+        void handleSelectSim(simId);
       }
     },
-    [selectedId],
+    [selectingId, handleSelectSim],
   );
 
   // --- Active simulation view ---
@@ -143,10 +119,10 @@ export function SimulationsPage({
     <div className="flex flex-1 flex-col gap-6 px-4 py-8">
       <div className="space-y-2">
         <h2 className="text-3xl font-bold text-foreground">
-          Scenario preferito
+          Training antitruffa
         </h2>
         <p className="text-muted-foreground">
-          Se vuoi, scegli lo scenario più probabile: così ti prepariamo la checklist mirata.
+          Allenati a riconoscere quando <span className="font-medium text-cyan-300">stai per</span> cascare in una truffa.
         </p>
       </div>
 
@@ -169,25 +145,27 @@ export function SimulationsPage({
         )}
       </AnimatePresence>
 
-      {/* Scenario selector — single choice, romance scam enabled, others upcoming */}
+      {/* Prompt — moved from old button text */}
+      <p className="text-sm font-medium text-cyan-300">
+        Clicca su uno scenario per iniziare
+      </p>
+
+      {/* Scenario cards — click to start simulation directly */}
       <div
         className="grid grid-cols-1 gap-4 sm:grid-cols-2"
-        role="radiogroup"
-        aria-label="Scegli lo scenario più probabile"
+        role="list"
+        aria-label="Scenari di simulazione disponibili"
       >
         {simulations.map((sim, i) => {
           const Icon = ICON_MAP[sim.icon];
-          const isSelected = selectedId === sim.id;
+          const isLoading = selectingId === sim.id;
 
           return (
             <m.button
               key={sim.id}
               type="button"
-              role="radio"
-              aria-checked={isSelected}
-              tabIndex={isSelected ? 0 : -1}
-              onKeyDown={(event) => handleKeyDownRadio(event, sim.id, false)}
-              onClick={() => setSelectedId(sim.id)}
+              onKeyDown={(event) => handleKeyDownCard(event, sim.id)}
+              onClick={() => void handleSelectSim(sim.id)}
               disabled={selectingId !== null}
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
@@ -196,6 +174,7 @@ export function SimulationsPage({
               whileTap={selectingId === null ? { scale: 0.98 } : {}}
               className="glass-card group flex flex-col items-start gap-3 p-6 text-left transition-shadow cursor-pointer"
               style={{ minHeight: 44 }}
+              aria-busy={isLoading}
             >
               {/* Icon circle — swaps to spinner while this card loads */}
               <div
@@ -203,7 +182,7 @@ export function SimulationsPage({
                             bg-cyan-brand/10 transition-colors
                             group-hover:bg-cyan-brand/20"
               >
-                {selectingId === sim.id ? (
+                {isLoading ? (
                   <Loader2
                     className="size-5 animate-spin text-cyan-brand"
                     aria-hidden="true"
@@ -228,38 +207,19 @@ export function SimulationsPage({
         })}
       </div>
 
-      {/* CTAs: try simulation + advance */}
-      <div className="mt-auto flex flex-col gap-3 pt-4 sm:flex-row">
-        {/* Tertiary — ghost */}
+      {/* Navigation — only back + forward, no secondary CTA */}
+      <div className="mt-auto flex justify-between gap-3 pt-4">
         <button
           type="button"
           onClick={onBack}
-          className="btn-ghost sm:order-first"
+          className="btn-ghost"
         >
           Indietro
         </button>
-        {/* Secondary — outline */}
-        <button
-          type="button"
-          onClick={() => void handleSelectSim()}
-          className="btn-secondary flex flex-1 items-center justify-center gap-2"
-          disabled={!selectedId || selectingId !== null}
-          aria-busy={isGenerating || selectingId !== null}
-        >
-          {selectingId !== null || isGenerating ? (
-            <>
-              <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-              Caricamento...
-            </>
-          ) : (
-            'Prova una simulazione (45 sec)'
-          )}
-        </button>
-        {/* Primary — filled */}
         <button
           type="button"
           onClick={onNext}
-          className="btn-primary flex-1"
+          className="btn-primary"
         >
           Avanti
         </button>

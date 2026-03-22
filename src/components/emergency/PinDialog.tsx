@@ -188,7 +188,7 @@ export function PinDialog({
                     setPin(v);
                   }}
                   disabled={isLocked}
-                  className="input-glass w-full text-center text-2xl tracking-[0.5em]"
+                  className="input-glass w-full text-center !text-xl tracking-[0.4em] sm:!text-2xl sm:tracking-[0.5em]"
                   placeholder="• • • •"
                   aria-label="PIN di sicurezza"
                   aria-describedby={error ? 'pin-error' : isLocked ? 'pin-lockout' : undefined}

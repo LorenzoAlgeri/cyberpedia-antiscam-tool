@@ -1,9 +1,8 @@
-import { lazy, Suspense, useState } from 'react';
+import { lazy, Suspense, useState, useCallback } from 'react';
 import { LazyMotion, domAnimation } from 'motion/react';
 import { useHashRouter } from '@/hooks/useHashRouter';
 import { useIframeResize } from '@/hooks/useIframeResize';
 import { useReturningUser } from '@/hooks/useReturningUser';
-import { useVisitCount } from '@/hooks/useVisitCount';
 import { WizardShell } from '@/components/layout/WizardShell';
 import { LandingPage } from '@/pages/LandingPage';
 import { VictimStatusModal } from '@/components/layout/VictimStatusModal';
@@ -14,6 +13,9 @@ import { assertNever } from '@/lib/guards';
 /* ── Lazy-loaded pages (code-split chunks) ──────────── */
 const EmergencyPage = lazy(() =>
   import('@/pages/EmergencyPage').then((m) => ({ default: m.EmergencyPage })),
+);
+const ChecklistPage = lazy(() =>
+  import('@/pages/ChecklistPage').then((m) => ({ default: m.ChecklistPage })),
 );
 const SimulationsPage = lazy(() =>
   import('@/pages/SimulationsPage').then((m) => ({
@@ -45,17 +47,16 @@ function StepFallback() {
 
 /**
  * Root application component.
- * Renders the 4-step wizard with hash-based routing
- * and animated transitions via AnimatePresence.
  *
- * Pages 1-3 are lazy-loaded via React.lazy() for
- * smaller initial bundle — LandingPage stays eager
- * as it's the first thing users see.
+ * Flow:
+ * - First visit (no saved profile): Landing → Emergency (profile setup) → Simulations → Install
+ * - Return visit (has profile):     Landing → Checklist (what scam?) → Emergency → Simulations → Install
+ *
+ * Checklist (step 1) is skipped on first visit.
  */
 function App() {
   const { currentStep, direction, goTo, goNext, goBack } = useHashRouter();
   const { isReturningUser } = useReturningUser();
-  const { visitCount } = useVisitCount();
   const [victimStatus, setVictimStatus] = useState<VictimStatus | null>(() => {
     try {
       return readVictimStatus();
@@ -66,13 +67,33 @@ function App() {
   const [showVictimModal, setShowVictimModal] = useState(false);
   const [pendingNext, setPendingNext] = useState(false);
 
-  // Lifted PIN + decrypted data — shared across EmergencyPage and NeedModePage
-  // so NeedModePage skips the PIN dialog if already unlocked in EmergencyPage.
+  // Lifted PIN + decrypted data — shared across EmergencyPage, ChecklistPage, NeedModePage
   const [globalPin, setGlobalPin] = useState<string | null>(null);
   const [unlockedData, setUnlockedData] = useState<EmergencyData | null>(null);
 
+  // Track if profile was just saved in this session (upgrade first-visit → returning)
+  const [profileSavedThisSession, setProfileSavedThisSession] = useState(false);
+
   // Notify parent iframe (cyberpedia.it) of height changes
   useIframeResize();
+
+  /** Whether checklist should be shown (returning user or just saved profile) */
+  const showChecklist = isReturningUser || profileSavedThisSession;
+
+  /** Navigate from landing — skip checklist on first visit */
+  const handleLandingNext = useCallback(() => {
+    if (showChecklist) {
+      if (victimStatus === null) {
+        setPendingNext(true);
+        setShowVictimModal(true);
+        return;
+      }
+      goNext(); // → step 1 (checklist)
+    } else {
+      // First visit: skip checklist, go to emergency (step 2)
+      goTo(2);
+    }
+  }, [showChecklist, victimStatus, goNext, goTo]);
 
   /** Render the active step page, lazy pages wrapped in Suspense */
   function renderStep() {
@@ -81,15 +102,8 @@ function App() {
         return (
           <>
             <LandingPage
-              onNext={() => {
-                if (isReturningUser && victimStatus === null) {
-                  setPendingNext(true);
-                  setShowVictimModal(true);
-                  return;
-                }
-                goNext();
-              }}
-              isReturningUser={isReturningUser}
+              onNext={handleLandingNext}
+              isReturningUser={showChecklist}
             />
             <VictimStatusModal
               open={showVictimModal}
@@ -110,20 +124,21 @@ function App() {
           </>
         );
       case 1:
+        // Checklist — if first visit, redirect to emergency
+        if (!showChecklist) {
+          goTo(2);
+          return <StepFallback />;
+        }
         return (
           <Suspense fallback={<StepFallback />}>
-            <EmergencyPage
+            <ChecklistPage
               onNext={goNext}
               onBack={goBack}
-              visitCount={visitCount}
+              pin={globalPin}
               victimStatus={victimStatus}
               onChangeVictimStatus={(v) => {
                 setVictimStatus(v);
                 writeVictimStatus(v);
-              }}
-              onUnlock={(pin, data) => {
-                setGlobalPin(pin);
-                setUnlockedData(data);
               }}
             />
           </Suspense>
@@ -131,16 +146,30 @@ function App() {
       case 2:
         return (
           <Suspense fallback={<StepFallback />}>
-            <SimulationsPage onNext={goNext} onBack={goBack} />
+            <EmergencyPage
+              onNext={goNext}
+              onBack={showChecklist ? goBack : () => goTo(0)}
+              onUnlock={(pin, data) => {
+                setGlobalPin(pin);
+                setUnlockedData(data);
+              }}
+              onProfileSaved={() => setProfileSavedThisSession(true)}
+            />
           </Suspense>
         );
       case 3:
         return (
           <Suspense fallback={<StepFallback />}>
-            <InstallPage onNext={goNext} onBack={goBack} />
+            <SimulationsPage onNext={goNext} onBack={goBack} />
           </Suspense>
         );
       case 4:
+        return (
+          <Suspense fallback={<StepFallback />}>
+            <InstallPage onNext={goNext} onBack={goBack} />
+          </Suspense>
+        );
+      case 5:
         return (
           <Suspense fallback={<StepFallback />}>
             <NeedModePage
@@ -165,6 +194,7 @@ function App() {
         currentStep={currentStep}
         direction={direction}
         onStepClick={goTo}
+        hiddenSteps={showChecklist ? [] : [1]}
       >
         {renderStep()}
       </WizardShell>

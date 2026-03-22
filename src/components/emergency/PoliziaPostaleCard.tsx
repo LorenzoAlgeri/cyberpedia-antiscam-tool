@@ -3,7 +3,7 @@ import { ExternalLink, ShieldAlert } from 'lucide-react';
 /** Static blue card displaying Polizia Postale phone number and online report link. */
 export function PoliziaPostaleCard() {
   return (
-    <div className="flex items-center justify-between rounded-2xl border border-blue-500/20 bg-blue-500/5 px-4 py-3">
+    <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-blue-500/20 bg-blue-500/5 px-4 py-3">
       <div className="flex items-center gap-2.5">
         <ShieldAlert
           className="h-5 w-5 shrink-0 text-blue-400"

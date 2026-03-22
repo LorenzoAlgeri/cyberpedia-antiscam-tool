@@ -50,7 +50,7 @@ export function useHashRouter() {
 
   /** Navigate to next step (clamped) */
   const goNext = useCallback(() => {
-    const next = Math.min(prevStepRef.current + 1, 4) as StepIndex;
+    const next = Math.min(prevStepRef.current + 1, 5) as StepIndex;
     window.location.hash = STEP_HASHES[next];
   }, []);
 
@@ -67,6 +67,6 @@ export function useHashRouter() {
     goNext,
     goBack,
     isFirst: currentStep === 0,
-    isLast: currentStep === 4,
+    isLast: currentStep === 5,
   } as const;
 }

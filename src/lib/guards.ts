@@ -29,7 +29,7 @@ function isAttackType(value: unknown): value is AttackType {
   return typeof value === 'string' && ATTACK_TYPES.includes(value);
 }
 
-/** Runtime check that `value` is a { name: string; phone: string } object. */
+/** Runtime check that `value` has at least name + phone strings. */
 function isValidContact(value: unknown): value is TrustedContact {
   if (typeof value !== 'object' || value === null) return false;
   const rec = value as Record<string, unknown>;
@@ -74,7 +74,7 @@ export function validateEmergencyData(raw: unknown): EmergencyData {
     contacts = (obj['contacts'] as unknown[])
       .filter(isValidContact)
       .slice(0, MAX_CONTACTS)
-      .map((c) => ({ name: c.name, phone: c.phone }));
+      .map((c) => ({ name: c.name, phone: c.phone, countryCode: typeof c.countryCode === 'string' ? c.countryCode : '+39' }));
   }
 
   // Completed todo IDs: filter to strings from arrays

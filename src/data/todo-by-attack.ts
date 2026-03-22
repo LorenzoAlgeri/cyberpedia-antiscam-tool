@@ -36,7 +36,7 @@ const PHISHING_TODOS: readonly TodoItem[] = [
   { id: 'phi-01', text: 'NON cliccare su nessun link nel messaggio', priority: 1 },
   { id: 'phi-02', text: 'Se hai cliccato: cambia subito la password dell\'account', priority: 2 },
   { id: 'phi-03', text: 'Controlla l\'URL reale del sito (deve essere HTTPS + dominio ufficiale)', priority: 3 },
-  { id: 'phi-04', text: 'Attiva 2FA su tutti gli account esposti', priority: 4 },
+  { id: 'phi-04', text: 'Attiva la verifica in due passaggi sugli account esposti', priority: 4, hint: 'Cerca nelle impostazioni del tuo account, sotto "Sicurezza" o "Accesso". Può chiamarsi "Autenticazione a due fattori", "Verifica in due passaggi" o "Accesso con codice". Ti verrà chiesto un codice extra ogni volta che accedi.' },
   { id: 'phi-05', text: 'Segnala il messaggio come phishing al provider email', priority: 5 },
 ];
 

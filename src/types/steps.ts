@@ -2,20 +2,22 @@
  * Step type definitions for the anti-scam wizard.
  *
  * Step 0: Landing — emotional decompression
- * Step 1: Emergency — contacts + to-do checklist
- * Step 2: Simulations — interactive chat scenarios
- * Step 3: Install — PWA home screen guide
- * Step 4: Need Mode — on-demand quick actions (post-wizard)
+ * Step 1: Checklist — attack type selector (skipped on first visit)
+ * Step 2: Emergency — contacts + bank data (profile setup)
+ * Step 3: Simulations — interactive chat scenarios
+ * Step 4: Install — PWA home screen guide
+ * Step 5: Need Mode — on-demand quick actions (post-wizard)
  */
 
 /** @public Total number of wizard steps */
-export const STEP_COUNT = 5 as const;
+export const STEP_COUNT = 6 as const;
 
-export type StepIndex = 0 | 1 | 2 | 3 | 4;
+export type StepIndex = 0 | 1 | 2 | 3 | 4 | 5;
 
 /** Hash fragments mapped to step indices */
 export const STEP_HASHES = [
   '#landing',
+  '#checklist',
   '#emergency',
   '#simulations',
   '#install',
@@ -42,26 +44,32 @@ export const STEPS: readonly StepMeta[] = [
   },
   {
     index: 1,
-    hash: '#emergency',
-    label: 'Emergenza',
-    ariaLabel: 'Step 2: Dati di emergenza',
+    hash: '#checklist',
+    label: 'Checklist',
+    ariaLabel: 'Step 2: Cosa sta succedendo',
   },
   {
     index: 2,
-    hash: '#simulations',
-    label: 'Simulazioni',
-    ariaLabel: 'Step 3: Simulazioni interattive',
+    hash: '#emergency',
+    label: 'Emergenza',
+    ariaLabel: 'Step 3: Dati di emergenza',
   },
   {
     index: 3,
-    hash: '#install',
-    label: 'Installa',
-    ariaLabel: 'Step 4: Installa app',
+    hash: '#simulations',
+    label: 'Simulazioni',
+    ariaLabel: 'Step 4: Simulazioni interattive',
   },
   {
     index: 4,
+    hash: '#install',
+    label: 'Installa',
+    ariaLabel: 'Step 5: Installa app',
+  },
+  {
+    index: 5,
     hash: '#need',
     label: 'Al bisogno',
-    ariaLabel: 'Step 5: Modalità al bisogno',
+    ariaLabel: 'Step 6: Modalità al bisogno',
   },
 ] as const;

@@ -1,14 +1,8 @@
 /**
  * AttackTypeSelector — 6 card grid for selecting the scam type.
  *
- * Design decisions (skills consulted):
- * - /ui-ux-pro-max: card grid with icon + label + description
- * - /interaction-design: hover glow, active scale, ring on selected
- * - /accessibility-compliance: role="radiogroup" + role="radio",
- *   aria-checked, keyboard nav (Enter/Space to select)
- * - /frontend-design: 2-col grid on mobile, 3-col on md+
- * - CLAUDE.md: rounded-3xl cards, cyan glow on hover/selected,
- *   touch targets 44px, Lucide icons only
+ * Cards with comingSoon=true are blurred and non-interactive,
+ * showing a "In arrivo" badge overlay.
  */
 
 import { useRef, useCallback } from 'react';
@@ -20,6 +14,7 @@ import {
   Mail,
   Users,
   Brain,
+  Clock,
   type LucideIcon,
 } from 'lucide-react';
 import type { AttackType } from '@/types/emergency';
@@ -48,7 +43,9 @@ export function AttackTypeSelector({
 }: AttackTypeSelectorProps) {
   const groupRef = useRef<HTMLDivElement>(null);
 
-  /** Roving tabindex: arrow keys move focus + select */
+  const selectableTypes = ATTACK_TYPES.filter((a) => !a.comingSoon);
+
+  /** Roving tabindex: arrow keys move focus + select (skip comingSoon) */
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
       if (!['ArrowRight', 'ArrowLeft', 'ArrowDown', 'ArrowUp'].includes(e.key))
@@ -56,7 +53,7 @@ export function AttackTypeSelector({
 
       e.preventDefault();
       const buttons = groupRef.current?.querySelectorAll<HTMLButtonElement>(
-        '[role="radio"]',
+        '[role="radio"]:not([aria-disabled="true"])',
       );
       if (!buttons?.length) return;
 
@@ -73,20 +70,13 @@ export function AttackTypeSelector({
 
       const nextBtn = buttons[next]!;
       nextBtn.focus();
-      onSelect(ATTACK_TYPES[next]!.id);
+      onSelect(selectableTypes[next]!.id);
     },
-    [onSelect],
+    [onSelect, selectableTypes],
   );
 
   return (
     <section>
-      <h3 className="mb-2 text-lg font-semibold text-foreground">
-        Tipo di attacco
-      </h3>
-      <p className="mb-4 text-sm text-muted-foreground">
-        Seleziona il tipo di truffa per una checklist mirata.
-      </p>
-
       <div
         ref={groupRef}
         role="radiogroup"
@@ -97,6 +87,42 @@ export function AttackTypeSelector({
         {ATTACK_TYPES.map((attack, idx) => {
           const Icon = ICON_MAP[attack.icon] ?? Brain;
           const isSelected = selected === attack.id;
+          const isComingSoon = attack.comingSoon === true;
+
+          if (isComingSoon) {
+            return (
+              <div
+                key={attack.id}
+                className="relative flex flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-white/10 bg-secondary/20 p-4 text-center opacity-50 sm:gap-3 sm:p-5"
+                style={{ minHeight: 44 }}
+                aria-label={`${attack.label} — in arrivo`}
+              >
+                {/* Badge in alto a destra */}
+                <span className="absolute right-2 top-2 inline-flex items-center gap-1 rounded-full border border-white/10 bg-slate-800/90 px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">
+                  <Clock className="h-2.5 w-2.5" strokeWidth={2} aria-hidden="true" />
+                  In arrivo
+                </span>
+
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/5 text-muted-foreground sm:h-12 sm:w-12">
+                  <Icon
+                    className="h-5 w-5 sm:h-6 sm:w-6"
+                    strokeWidth={1.5}
+                    aria-hidden="true"
+                  />
+                </div>
+                <div>
+                  <span className="block text-sm font-semibold leading-tight text-foreground/60 sm:text-base">
+                    {attack.label}
+                  </span>
+                  <span className="mt-1 block text-sm text-muted-foreground/60">
+                    {attack.description}
+                  </span>
+                </div>
+              </div>
+            );
+          }
+
+          const selectableIdx = selectableTypes.findIndex((a) => a.id === attack.id);
 
           return (
             <m.button
@@ -104,12 +130,12 @@ export function AttackTypeSelector({
               type="button"
               role="radio"
               aria-checked={isSelected}
-              tabIndex={isSelected || (!selected && idx === 0) ? 0 : -1}
+              tabIndex={isSelected || (!selected && selectableIdx === 0) ? 0 : -1}
               onClick={() => onSelect(attack.id)}
               whileHover={{ scale: 1.02, y: -2 }}
               whileTap={{ scale: 0.97 }}
               transition={{ type: 'spring', stiffness: 400, damping: 20 }}
-              className={`flex flex-col items-center gap-2 rounded-2xl border-2 p-4 text-center transition-colors sm:gap-3 sm:p-5 ${
+              className={`flex flex-col items-center justify-center gap-2 rounded-2xl border-2 p-4 text-center transition-colors sm:gap-3 sm:p-5 ${
                 isSelected
                   ? 'border-cyan-brand bg-cyan-brand/10 shadow-lg shadow-cyan-brand/15'
                   : 'border-white/10 bg-secondary/50 hover:border-cyan-brand/30 hover:bg-secondary'

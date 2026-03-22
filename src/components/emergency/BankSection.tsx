@@ -8,7 +8,7 @@
  *     Opens tel: link; on non-mobile shows window.confirm first.
  */
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Check, Edit2, Phone } from 'lucide-react';
 import * as m from 'motion/react-m';
 import { AnimatePresence } from 'motion/react';
@@ -48,10 +48,13 @@ export function BankSection({
   // C3: Starts in view mode if bankPhone already has a value (returning user /
   // auto-loaded session). Starts in edit mode only when the field is empty (new user).
   const [isBankEditing, setIsBankEditing] = useState(() => bankPhone.trim() === '');
+  const userTouched = useRef(false);
 
-  // When async data loads and bankPhone goes from '' to a value, switch to view mode.
+  // Auto-close only for async data load (returning user). Once user has typed, skip.
   useEffect(() => {
-    if (bankPhone.trim() !== '') setIsBankEditing(false);
+    if (!userTouched.current && bankPhone.trim() !== '') {
+      setIsBankEditing(false);
+    }
   }, [bankPhone]);
 
   const confirmBankEdit = useCallback(() => {
@@ -93,7 +96,7 @@ export function BankSection({
               className="input-glass"
               placeholder="Nome banca (es. Intesa Sanpaolo)"
               value={bankName}
-              onChange={(e) => onBankNameChange(e.target.value)}
+              onChange={(e) => { userTouched.current = true; onBankNameChange(e.target.value); }}
               autoComplete="organization"
             />
             <p className="px-2 text-sm text-muted-foreground">
@@ -105,13 +108,13 @@ export function BankSection({
               <select
                 id="bank-country-code"
                 value={bankCountryCode}
-                onChange={(e) => onBankCountryCodeChange(e.target.value)}
-                className="w-24 shrink-0 cursor-pointer rounded-2xl border-2 border-white/10 bg-slate-900/60 px-3 font-medium text-foreground transition-colors duration-200 focus-visible:border-cyan-brand focus-visible:outline-none focus-visible:ring-4"
+                onChange={(e) => { userTouched.current = true; onBankCountryCodeChange(e.target.value); }}
+                className="w-[5.5rem] shrink-0 cursor-pointer rounded-2xl border-2 border-white/10 bg-slate-900/60 px-2 text-sm font-medium text-foreground transition-colors duration-200 sm:w-24 sm:px-3 sm:text-base focus-visible:border-cyan-brand focus-visible:outline-none focus-visible:ring-4"
                 style={{ minHeight: 44 }}
               >
-                {COUNTRY_CODES.map(({ code, flag, label }) => (
+                {COUNTRY_CODES.map(({ code, flag }) => (
                   <option key={code} value={code}>
-                    {flag} {code} {label}
+                    {flag} {code}
                   </option>
                 ))}
               </select>
@@ -121,10 +124,10 @@ export function BankSection({
                 type="tel"
                 inputMode="tel"
                 autoComplete="tel-national"
-                className="input-glass flex-1"
-                placeholder="Numero assistenza banca/carta"
+                className="input-glass min-w-0 flex-1"
+                placeholder="Numero assistenza"
                 value={bankPhone}
-                onChange={(e) => onBankPhoneChange(e.target.value)}
+                onChange={(e) => { userTouched.current = true; onBankPhoneChange(e.target.value); }}
               />
             </div>
             {/* C3: Full-width confirm button — feels mandatory */}
@@ -149,52 +152,37 @@ export function BankSection({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.15 }}
-            className="space-y-3"
           >
-            <div className="flex items-start justify-between gap-3 rounded-2xl
-                            border border-white/10 bg-white/5 px-4 py-3">
-              <div className="min-w-0 space-y-0.5">
-                {bankName && (
-                  <p className="text-sm font-medium text-foreground">
-                    {bankName}
+            {/* Green CTA with integrated info + edit pencil */}
+            <div
+              className="flex overflow-hidden rounded-2xl bg-green-600"
+              style={{ minHeight: 44 }}
+            >
+              <a
+                href={`tel:${bankCountryCode}${bankPhone}`}
+                onClick={handleCallBank}
+                className="flex min-w-0 flex-1 items-center gap-3 px-5 py-4 text-white transition-colors hover:bg-green-500 active:scale-[0.98]"
+                aria-label={`Chiama il numero antifrode: ${bankCountryCode} ${bankPhone}`}
+              >
+                <Phone className="h-5 w-5 shrink-0" strokeWidth={2} />
+                <div className="min-w-0">
+                  <p className="text-base font-semibold leading-tight">
+                    Allerta {bankName || 'la banca'}
                   </p>
-                )}
-                <p className={`font-mono text-base ${bankName ? 'text-muted-foreground' : 'text-foreground font-medium'}`}>
-                  {bankCountryCode}&nbsp;{bankPhone || '—'}
-                </p>
-              </div>
-              {/* C3: Edit (pencil) icon */}
+                  <p className="truncate text-sm font-medium text-white/70">
+                    {bankCountryCode}&nbsp;{bankPhone}
+                  </p>
+                </div>
+              </a>
               <button
                 type="button"
-                onClick={() => setIsBankEditing(true)}
-                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-secondary text-muted-foreground transition-colors hover:border-cyan-brand/30 hover:text-cyan-brand focus-visible:outline focus-visible:outline-2 focus-visible:outline-cyan-brand"
+                onClick={() => { userTouched.current = true; setIsBankEditing(true); }}
+                className="flex w-12 shrink-0 items-center justify-center border-l border-white/20 text-white/70 transition-colors hover:bg-green-500 hover:text-white"
                 aria-label="Modifica numero banca"
               >
                 <Edit2 className="h-4 w-4" strokeWidth={1.5} />
               </button>
             </div>
-            {/* C4: Green CTA — only when phone is saved */}
-            <AnimatePresence>
-              {phoneHasSavedValue && (
-                <m.div
-                  initial={{ opacity: 0, y: -4 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -4 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  <a
-                    href={`tel:${bankCountryCode}${bankPhone}`}
-                    onClick={handleCallBank}
-                    className="flex w-full items-center justify-center gap-2.5 rounded-2xl bg-green-600 px-5 py-4 text-base font-semibold text-white shadow-lg shadow-green-600/25 transition-colors hover:bg-green-500 active:scale-[0.98]"
-                    style={{ minHeight: 44 }}
-                    aria-label={`Chiama il numero antifrode: ${bankCountryCode} ${bankPhone}`}
-                  >
-                    <Phone className="h-5 w-5 shrink-0" strokeWidth={2} />
-                    Allerta la banca
-                  </a>
-                </m.div>
-              )}
-            </AnimatePresence>
           </m.div>
         )}
       </AnimatePresence>

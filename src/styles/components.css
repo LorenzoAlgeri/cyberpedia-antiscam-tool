@@ -62,9 +62,9 @@
         @apply outline-none ring-2 ring-cyan-brand ring-offset-2 ring-offset-background;
     }
 
-    /* Ghost / tertiary — "Indietro": no background, smaller text */
+    /* Ghost / tertiary — "Indietro": subtle border, visible as button */
     .btn-ghost {
-        @apply inline-flex items-center justify-center rounded-2xl px-4 py-3 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground;
+        @apply inline-flex items-center justify-center rounded-2xl border border-white/15 px-5 py-4 text-base font-medium text-muted-foreground transition-colors hover:border-white/30 hover:text-foreground;
         min-height: 44px;
     }
 
@@ -74,7 +74,7 @@
 
     /* Input — no label, placeholder only (CLAUDE.md rule) */
     .input-glass {
-        @apply w-full rounded-2xl border-2 border-white/10 bg-slate-900/60 p-5 text-xl font-medium text-foreground placeholder:text-muted-foreground transition-colors duration-200;
+        @apply w-full rounded-2xl border-2 border-white/10 bg-slate-900/60 p-4 text-base font-medium text-foreground placeholder:text-muted-foreground transition-colors duration-200 sm:p-5 sm:text-xl;
         min-height: 44px;
     }
 

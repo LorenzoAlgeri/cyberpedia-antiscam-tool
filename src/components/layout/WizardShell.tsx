@@ -10,14 +10,17 @@ interface WizardShellProps {
   readonly direction: 1 | -1;
   readonly onStepClick: (step: StepIndex) => void;
   readonly children: ReactNode;
+  /** Step indices to hide from the indicator (e.g. [1] to hide Checklist on first visit) */
+  readonly hiddenSteps?: readonly number[];
 }
 
 const STEP_NAMES: Record<StepIndex, string> = {
   0: 'Benvenuto',
-  1: 'Dati di emergenza',
-  2: 'Simulazioni',
-  3: 'Installa',
-  4: 'Modalita emergenza',
+  1: 'Cosa sta succedendo',
+  2: 'Dati di emergenza',
+  3: 'Simulazioni',
+  4: 'Installa',
+  5: 'Modalita emergenza',
 };
 
 /**
@@ -34,6 +37,7 @@ export function WizardShell({
   direction,
   onStepClick,
   children,
+  hiddenSteps = [],
 }: WizardShellProps) {
   useEffect(() => {
     if (currentStep > 0) {
@@ -48,7 +52,7 @@ export function WizardShell({
   return (
     <>
     <div aria-live="polite" aria-atomic="true" className="sr-only" role="status">
-      {currentStep > 0 ? `Passo ${currentStep} di 4: ${STEP_NAMES[currentStep]}` : ''}
+      {currentStep > 0 ? `Passo ${currentStep} di 5: ${STEP_NAMES[currentStep]}` : ''}
     </div>
     <div className="mx-auto flex min-h-dvh max-w-2xl flex-col px-4 md:px-8 lg:max-w-4xl lg:px-12">
       {/* Step indicator — hidden on landing (step 0) */}
@@ -61,6 +65,7 @@ export function WizardShell({
           <StepIndicator
             currentStep={currentStep}
             onStepClick={onStepClick}
+            hiddenSteps={hiddenSteps}
           />
         </m.div>
       )}

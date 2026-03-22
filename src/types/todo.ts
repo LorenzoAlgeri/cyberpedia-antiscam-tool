@@ -2,7 +2,7 @@
  * To-do item type shared by generic and attack-specific lists.
  */
 
-export type TodoScope = 'prevention' | 'repair' | 'both';
+export type TodoScope = 'prevention' | 'repair' | 'both' | 'verify';
 
 export interface TodoItem {
   /** Unique ID (stable, used for completed tracking) */
@@ -22,4 +22,9 @@ export interface TodoItem {
    * the contextual micro-action banner (call bank / copy number).
    */
   readonly severe?: boolean;
+  /**
+   * Optional helper text shown below the item — expands on tap.
+   * Used for items that need extra explanation (e.g. what 2FA is).
+   */
+  readonly hint?: string;
 }

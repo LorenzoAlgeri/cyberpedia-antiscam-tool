@@ -27,6 +27,7 @@ interface EmergencyFormProps {
   ) => void;
   readonly onAddContact: () => void;
   readonly onRemoveContact: (index: number) => void;
+  readonly onSave: () => void;
 }
 
 export function EmergencyForm({
@@ -40,6 +41,7 @@ export function EmergencyForm({
   onContactChange,
   onAddContact,
   onRemoveContact,
+  onSave,
 }: EmergencyFormProps) {
   return (
     <div className="space-y-8">
@@ -56,6 +58,7 @@ export function EmergencyForm({
         onContactChange={onContactChange}
         onAddContact={onAddContact}
         onRemoveContact={onRemoveContact}
+        onSave={onSave}
       />
     </div>
   );

@@ -1,5 +1,5 @@
 /**
- * Generic anti-scam to-do list — 5 life-saving actions.
+ * Generic anti-scam to-do list — 4 life-saving actions.
  *
  * These are the core actions that must always be present in Step 2.
  */
@@ -15,28 +15,23 @@ export const GENERIC_TODOS: readonly TodoItem[] = [
   },
   {
     id: 'gen-02',
-    text: 'Metti pausa di 24 ore (o "prendi tempo")',
+    text: 'Aspetta 24 ore prima di agire, prendi tempo',
     priority: 2,
     scope: 'prevention',
   },
   {
-    id: 'gen-03',
-    text: 'Verifica con un terzo (contatto fiducia)',
+    id: 'gen-05',
+    text: 'Contatta la banca dai numeri ufficiali',
     priority: 3,
-    scope: 'both',
+    scope: 'verify',
+    severe: true,
   },
   {
     id: 'gen-04',
-    text: 'Cambia password/2FA se hai condiviso dati',
+    text: 'Cambia le password e attiva l\'autenticazione a due fattori (2FA)',
     priority: 4,
     scope: 'repair',
     severe: true,
-  },
-  {
-    id: 'gen-05',
-    text: 'Contatta banca se c\'è transazione o dati bancari',
-    priority: 5,
-    scope: 'repair',
-    severe: true,
+    hint: 'L\'autenticazione a due fattori (2FA) aggiunge un codice extra oltre alla password, così nessuno può entrare nel tuo account anche se conosce la password. Per attivarla, cerca nelle impostazioni del tuo account sotto "Sicurezza" o "Accesso". Ogni servizio la chiama in modo diverso: "Autenticazione a due fattori", "Verifica in due passaggi" o "Accesso con codice".',
   },
 ];

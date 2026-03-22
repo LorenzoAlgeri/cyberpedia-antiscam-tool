@@ -23,12 +23,14 @@ export interface AttackTypeMeta {
   readonly label: string;
   readonly description: string;
   readonly icon: string; // Lucide icon name
+  readonly comingSoon?: boolean;
 }
 
 /** A trusted contact entry */
 export interface TrustedContact {
   name: string;
   phone: string;
+  countryCode: string;
 }
 
 /** Maximum number of trusted contacts */
