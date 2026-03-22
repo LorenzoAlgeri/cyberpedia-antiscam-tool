@@ -1,16 +1,15 @@
 /**
  * ChatInput — WhatsApp-style free-text input for AI training chat.
  *
- * Uses contentEditable div instead of textarea to prevent iOS Safari
- * from showing the autofill bar (passwords, credit cards, location).
- *
  * - Enter sends, Shift+Enter adds newline
  * - Max 500 characters
  * - Disabled when loading (waiting for AI response)
  * - Touch target: 44px minimum
+ * - form autoComplete=off to suppress iOS autofill bar
  */
 
 import { useState, useRef, useCallback, useEffect } from 'react';
+import type { KeyboardEvent, FormEvent } from 'react';
 import { Send } from 'lucide-react';
 
 interface ChatInputProps {
@@ -26,38 +25,36 @@ export function ChatInput({
   placeholder = 'Scrivi un messaggio...',
   maxLength = 500,
 }: ChatInputProps) {
-  const editorRef = useRef<HTMLDivElement>(null);
-  const [canSend, setCanSend] = useState(false);
+  const [text, setText] = useState('');
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Auto-focus on mount
   useEffect(() => {
     if (!disabled) {
-      editorRef.current?.focus({ preventScroll: true });
+      textareaRef.current?.focus({ preventScroll: true });
     }
   }, [disabled]);
 
-  const getText = useCallback((): string => {
-    return editorRef.current?.textContent ?? '';
-  }, []);
-
-  const clearEditor = useCallback(() => {
-    if (editorRef.current) {
-      editorRef.current.textContent = '';
-      setCanSend(false);
-    }
-  }, []);
+  // Auto-resize textarea
+  useEffect(() => {
+    const el = textareaRef.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = `${Math.min(el.scrollHeight, 120)}px`;
+  }, [text]);
 
   const handleSend = useCallback(() => {
-    const trimmed = getText().trim();
+    const trimmed = text.trim();
     if (!trimmed || disabled) return;
-    onSend(trimmed.slice(0, maxLength));
-    clearEditor();
-    // Re-focus after send
-    editorRef.current?.focus({ preventScroll: true });
-  }, [getText, clearEditor, disabled, onSend, maxLength]);
+    onSend(trimmed);
+    setText('');
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+    }
+  }, [text, disabled, onSend]);
 
   const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent<HTMLDivElement>) => {
+    (e: KeyboardEvent<HTMLTextAreaElement>) => {
       if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
         handleSend();
@@ -66,51 +63,42 @@ export function ChatInput({
     [handleSend],
   );
 
-  const handleInput = useCallback(() => {
-    const text = getText();
-    // Enforce max length
-    if (text.length > maxLength && editorRef.current) {
-      editorRef.current.textContent = text.slice(0, maxLength);
-      // Move cursor to end
-      const range = document.createRange();
-      const sel = window.getSelection();
-      range.selectNodeContents(editorRef.current);
-      range.collapse(false);
-      sel?.removeAllRanges();
-      sel?.addRange(range);
-    }
-    setCanSend(text.trim().length > 0);
-  }, [getText, maxLength]);
+  const handleSubmit = useCallback(
+    (e: FormEvent) => {
+      e.preventDefault();
+      handleSend();
+    },
+    [handleSend],
+  );
+
+  const canSend = text.trim().length > 0 && !disabled;
 
   return (
-    <div
+    <form
+      onSubmit={handleSubmit}
+      autoComplete="off"
       className="flex items-end gap-2 border-t border-slate-700/50 bg-slate-900/60 px-3 py-2"
     >
-      <div
-        ref={editorRef}
-        contentEditable={!disabled}
-        role="textbox"
-        aria-label="Scrivi il tuo messaggio"
-        data-placeholder={placeholder}
+      <textarea
+        ref={textareaRef}
+        value={text}
+        onChange={(e) => setText(e.target.value.slice(0, maxLength))}
         onKeyDown={handleKeyDown}
-        onInput={handleInput}
-        className={`min-h-[48px] flex-1 rounded-2xl bg-slate-800/60 px-4 py-3
-                   text-slate-100 outline-none
-                   focus:ring-2 focus:ring-cyan-400/30
+        disabled={disabled}
+        placeholder={placeholder}
+        rows={1}
+        name="chat-message"
+        autoComplete="off"
+        aria-label="Scrivi il tuo messaggio"
+        className={`min-h-[48px] flex-1 resize-none rounded-2xl bg-slate-800/60 px-4 py-3
+                   text-slate-100 placeholder-slate-500
+                   outline-none focus:ring-2 focus:ring-cyan-400/30
                    ${disabled ? 'cursor-not-allowed opacity-50' : ''}`}
-        style={{
-          fontSize: '18px',
-          overflowWrap: 'break-word',
-          maxHeight: '120px',
-          overflowY: 'auto',
-          wordBreak: 'break-word',
-        }}
-        suppressContentEditableWarning
+        style={{ fontSize: '18px' }}
       />
       <button
-        type="button"
-        onClick={handleSend}
-        disabled={!canSend || disabled}
+        type="submit"
+        disabled={!canSend}
         aria-label="Invia messaggio"
         className="flex size-11 shrink-0 items-center justify-center rounded-full
                    bg-cyan-500 text-slate-900 transition-all
@@ -119,6 +107,6 @@ export function ChatInput({
       >
         <Send className="size-5" aria-hidden="true" />
       </button>
-    </div>
+    </form>
   );
 }
