@@ -74,6 +74,24 @@ interface TrainingSetupProps {
 }
 
 // ---------------------------------------------------------------------------
+// Difficulty suggestion based on user profile
+// ---------------------------------------------------------------------------
+
+type Difficulty = 'easy' | 'medium' | 'hard';
+
+function getSuggestedDifficulty(profile: UserProfile | null): Difficulty | null {
+  if (!profile || profile.sessionHistory.length < 3) return null;
+
+  // Average riskScore of last 3 sessions
+  const recent = profile.sessionHistory.slice(0, 3);
+  const avgRisk = recent.reduce((sum, s) => sum + s.finalRiskScore, 0) / recent.length;
+
+  if (avgRisk > 70) return 'easy';   // struggling -> suggest easier
+  if (avgRisk < 40) return 'hard';   // doing well -> suggest harder
+  return null; // medium is fine
+}
+
+// ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
 
@@ -84,8 +102,10 @@ export function TrainingSetup({
   onStart,
   onBack,
 }: TrainingSetupProps) {
+  const suggestedDifficulty = getSuggestedDifficulty(profile);
+
   const [attackType, setAttackType] = useState<AttackType | null>(null);
-  const [difficulty, setDifficulty] = useState<'easy' | 'medium' | 'hard'>('medium');
+  const [difficulty, setDifficulty] = useState<Difficulty>(suggestedDifficulty ?? 'medium');
   const [target, setTarget] = useState<TrainingTarget | null>(null);
 
   const canStart = attackType !== null && target !== null;
@@ -190,6 +210,11 @@ export function TrainingSetup({
                 <span className="text-xs text-muted-foreground sm:text-sm">
                   {d.description}
                 </span>
+                {suggestedDifficulty === d.value && (
+                  <span className="mt-1 block text-[10px] font-medium text-cyan-300">
+                    Consigliato per te
+                  </span>
+                )}
               </m.button>
             );
           })}

@@ -9,6 +9,7 @@ import { TrainingChat } from '@/components/training/TrainingChat';
 import { TrainingSetup } from '@/components/training/TrainingSetup';
 import { ReflectionView } from '@/components/training/ReflectionView';
 import { SessionReport } from '@/components/training/SessionReport';
+import { TrainingDashboard } from '@/components/training/TrainingDashboard';
 import { useAISimulation } from '@/hooks/useAISimulation';
 import { useTrainingSession } from '@/hooks/useTrainingSession';
 import { useTrainingProfile } from '@/hooks/useTrainingProfile';
@@ -371,6 +372,11 @@ export function SimulationsPage({
             )}
           </div>
         </m.button>
+      )}
+
+      {/* Training dashboard — visible after first session */}
+      {isTrainingEnabled && profile.sessionsCompleted > 0 && (
+        <TrainingDashboard profile={profile} />
       )}
 
       {/* Prompt — moved from old button text */}
