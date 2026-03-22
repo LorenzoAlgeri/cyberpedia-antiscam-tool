@@ -65,6 +65,7 @@ interface TrainingSetupProps {
   readonly profile: UserProfile | null;
   readonly recommendedTarget: TrainingTarget | null;
   readonly isLoading: boolean;
+  readonly error: string | null;
   readonly onStart: (
     attackType: AttackType,
     difficulty: 'easy' | 'medium' | 'hard',
@@ -99,6 +100,7 @@ export function TrainingSetup({
   profile,
   recommendedTarget,
   isLoading,
+  error,
   onStart,
   onBack,
 }: TrainingSetupProps) {
@@ -289,6 +291,13 @@ export function TrainingSetup({
           })}
         </div>
       </section>
+
+      {/* Error message */}
+      {error && (
+        <p className="text-center text-sm text-red-400" role="alert">
+          {error}
+        </p>
+      )}
 
       {/* ----------------------------------------------------------------- */}
       {/* Start button                                                      */}

@@ -232,19 +232,27 @@ export function useTrainingSession(): UseTrainingSessionResult {
       dispatch({ type: 'START_LOADING' });
       startWaitTimer();
 
-      const result = await api.startSession(req);
-      stopWaitTimer();
+      try {
+        const result = await api.startSession(req);
+        stopWaitTimer();
 
-      if (!result) {
-        dispatch({ type: 'SET_ERROR', error: 'Impossibile avviare la sessione. Riprova.' });
-        return;
+        if (!result) {
+          dispatch({ type: 'SET_ERROR', error: 'Impossibile avviare la sessione. Riprova.' });
+          return;
+        }
+
+        dispatch({
+          type: 'SESSION_STARTED',
+          scenarioConfig: result.scenarioConfig,
+          firstMessage: result.firstMessage,
+        });
+      } catch (e) {
+        stopWaitTimer();
+        dispatch({
+          type: 'SET_ERROR',
+          error: e instanceof Error ? e.message : 'Errore di connessione. Riprova.',
+        });
       }
-
-      dispatch({
-        type: 'SESSION_STARTED',
-        scenarioConfig: result.scenarioConfig,
-        firstMessage: result.firstMessage,
-      });
     },
     [api, startWaitTimer, stopWaitTimer],
   );
@@ -266,36 +274,44 @@ export function useTrainingSession(): UseTrainingSessionResult {
       dispatch({ type: 'USER_MESSAGE_SENT', turn: userTurn });
       startWaitTimer();
 
-      const result = await api.sendMessage(
-        state.scenarioConfig,
-        [...state.turns, userTurn],
-        trimmed,
-        state.turns.length + 1,
-      );
-      stopWaitTimer();
+      try {
+        const result = await api.sendMessage(
+          state.scenarioConfig,
+          [...state.turns, userTurn],
+          trimmed,
+          state.turns.length + 1,
+        );
+        stopWaitTimer();
 
-      if (!result) {
-        dispatch({ type: 'SET_ERROR', error: 'Errore nella risposta. Riprova.' });
-        return;
-      }
+        if (!result) {
+          dispatch({ type: 'SET_ERROR', error: 'Errore nella risposta. Riprova.' });
+          return;
+        }
 
-      const aiTurn: ConversationTurn = {
-        id: `turn-${state.turns.length + 1}`,
-        timestamp: new Date().toISOString(),
-        role: 'scammer',
-        content: result.aiMessage,
-        phase: result.nextPhase,
-      };
+        const aiTurn: ConversationTurn = {
+          id: `turn-${state.turns.length + 1}`,
+          timestamp: new Date().toISOString(),
+          role: 'scammer',
+          content: result.aiMessage,
+          phase: result.nextPhase,
+        };
 
-      dispatch({
-        type: 'AI_RESPONSE',
-        turn: aiTurn,
-        scores: result.behaviorScores,
-        nextPhase: result.nextPhase,
-      });
+        dispatch({
+          type: 'AI_RESPONSE',
+          turn: aiTurn,
+          scores: result.behaviorScores,
+          nextPhase: result.nextPhase,
+        });
 
-      if (result.shouldInterrupt) {
-        dispatch({ type: 'INTERRUPTED', triggerMessage: trimmed });
+        if (result.shouldInterrupt) {
+          dispatch({ type: 'INTERRUPTED', triggerMessage: trimmed });
+        }
+      } catch (e) {
+        stopWaitTimer();
+        dispatch({
+          type: 'SET_ERROR',
+          error: e instanceof Error ? e.message : 'Errore di connessione. Riprova.',
+        });
       }
     },
     [state.scenarioConfig, state.turns, api, startWaitTimer, stopWaitTimer],

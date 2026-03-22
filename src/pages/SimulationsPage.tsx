@@ -167,6 +167,7 @@ export function SimulationsPage({
             profile={profile}
             recommendedTarget={getRecommendedTarget()}
             isLoading={trainingState.isLoading}
+            error={trainingState.error}
             onStart={(at, diff, tgt) => void handleStartTraining(at, diff, tgt)}
             onBack={handleTrainingBack}
           />
