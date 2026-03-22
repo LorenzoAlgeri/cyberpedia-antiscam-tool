@@ -79,7 +79,6 @@ export function TrustedContactRow({
     [contact],
   );
 
-  const hasSavedPhone = contact.phone.trim() !== '';
   const displayName = contact.name || `Contatto ${index + 1}`;
 
   return (

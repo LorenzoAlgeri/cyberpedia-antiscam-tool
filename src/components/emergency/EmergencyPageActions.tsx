@@ -1,6 +1,6 @@
 interface EmergencyPageActionsProps {
   onNext: () => void;
-  onBack?: () => void;
+  onBack?: (() => void) | undefined;
 }
 
 /** Navigation buttons for Emergency page. */

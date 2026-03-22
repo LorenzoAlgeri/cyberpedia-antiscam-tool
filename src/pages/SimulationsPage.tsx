@@ -47,7 +47,7 @@ export function SimulationsPage({
   /** Show onboarding-to-realistic hint after first completion */
   const [showRealismHint, setShowRealismHint] = useState(false);
 
-  const { isGenerating, fetchAISimulation } = useAISimulation();
+  const { fetchAISimulation } = useAISimulation();
 
   /** Called by ChatSimulator when phase reaches 'complete' */
   const handleSimComplete = useCallback(() => {

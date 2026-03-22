@@ -75,8 +75,6 @@ export function BankSection({
     [bankCountryCode, bankPhone],
   );
 
-  const phoneHasSavedValue = bankPhone.trim() !== '';
-
   return (
     <section>
       <AnimatePresence mode="wait">

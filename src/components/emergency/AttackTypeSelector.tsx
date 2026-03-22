@@ -84,7 +84,7 @@ export function AttackTypeSelector({
         onKeyDown={handleKeyDown}
         className="grid grid-cols-2 gap-3 md:grid-cols-3"
       >
-        {ATTACK_TYPES.map((attack, idx) => {
+        {ATTACK_TYPES.map((attack) => {
           const Icon = ICON_MAP[attack.icon] ?? Brain;
           const isSelected = selected === attack.id;
           const isComingSoon = attack.comingSoon === true;
