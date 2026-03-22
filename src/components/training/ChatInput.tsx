@@ -93,10 +93,11 @@ export function ChatInput({
         data-1p-ignore
         data-lpignore="true"
         aria-label="Scrivi il tuo messaggio"
-        className="min-h-[44px] flex-1 resize-none rounded-2xl bg-slate-800/60 px-4 py-3
-                   text-base text-slate-100 placeholder-slate-500
+        className="min-h-[48px] flex-1 resize-none rounded-2xl bg-slate-800/60 px-4 py-3
+                   text-slate-100 placeholder-slate-500
                    focus:outline-none focus:ring-2 focus:ring-cyan-400/30
                    disabled:cursor-not-allowed disabled:opacity-50"
+        style={{ fontSize: '18px' }}
       />
       <button
         type="submit"

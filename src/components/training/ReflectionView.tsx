@@ -101,7 +101,7 @@ export function ReflectionView({
       <div className="flex flex-1 flex-col gap-6 overflow-y-auto px-4 py-6">
         {/* Step label */}
         <div className="text-center">
-          <span className="rounded-full bg-cyan-500/10 px-3 py-1 text-xs font-medium text-cyan-400">
+          <span className="rounded-full bg-cyan-500/10 px-3 py-1 text-sm font-medium text-cyan-400">
             {STEP_LABELS[currentStep]}
           </span>
         </div>
@@ -114,7 +114,8 @@ export function ReflectionView({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -12 }}
             transition={{ duration: 0.3 }}
-            className="text-center text-xl font-medium leading-relaxed text-slate-100"
+            className="text-center font-medium leading-relaxed text-slate-100"
+            style={{ fontSize: '22px' }}
           >
             {currentQuestion}
           </m.p>
@@ -129,9 +130,9 @@ export function ReflectionView({
               exit={{ opacity: 0 }}
               className="rounded-2xl border border-slate-700/50 bg-slate-800/40 p-4"
             >
-              <p className="mb-1 text-xs font-medium text-cyan-400">La tua risposta precedente</p>
-              <p className="mb-3 text-sm italic text-slate-400">"{latestReflection.userAnswer}"</p>
-              <p className="text-sm leading-relaxed text-slate-300">{latestReflection.aiAnalysis}</p>
+              <p className="mb-1 text-sm font-medium text-cyan-400">La tua risposta precedente</p>
+              <p className="mb-3 italic text-slate-400" style={{ fontSize: '16px' }}>"{latestReflection.userAnswer}"</p>
+              <p className="leading-relaxed text-slate-300" style={{ fontSize: '16px' }}>{latestReflection.aiAnalysis}</p>
             </m.div>
           )}
         </AnimatePresence>
