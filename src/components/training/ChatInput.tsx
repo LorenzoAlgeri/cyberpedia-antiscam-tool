@@ -9,7 +9,7 @@
  */
 
 import { useState, useRef, useCallback, useEffect } from 'react';
-import type { KeyboardEvent, FormEvent } from 'react';
+import type { KeyboardEvent } from 'react';
 import { Send } from 'lucide-react';
 
 interface ChatInputProps {
@@ -65,19 +65,10 @@ export function ChatInput({
     [handleSend],
   );
 
-  const handleSubmit = useCallback(
-    (e: FormEvent) => {
-      e.preventDefault();
-      handleSend();
-    },
-    [handleSend],
-  );
-
   const canSend = text.trim().length > 0 && !disabled;
 
   return (
-    <form
-      onSubmit={handleSubmit}
+    <div
       className="flex items-end gap-2 border-t border-slate-700/50 bg-slate-900/60 px-3 py-2"
     >
       <textarea
@@ -100,7 +91,8 @@ export function ChatInput({
         style={{ fontSize: '18px' }}
       />
       <button
-        type="submit"
+        type="button"
+        onClick={handleSend}
         disabled={!canSend}
         aria-label="Invia messaggio"
         className="flex size-11 shrink-0 items-center justify-center rounded-full
@@ -110,6 +102,6 @@ export function ChatInput({
       >
         <Send className="size-5" aria-hidden="true" />
       </button>
-    </form>
+    </div>
   );
 }
