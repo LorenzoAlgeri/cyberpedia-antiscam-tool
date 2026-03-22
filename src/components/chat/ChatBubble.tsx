@@ -122,11 +122,12 @@ export function ChatBubble({ entry }: ChatBubbleProps) {
       className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}
     >
       <div
-        className={`max-w-[85%] rounded-2xl px-5 py-3.5 text-[1.25rem] leading-relaxed ${
+        className={`max-w-[85%] rounded-2xl px-5 py-3.5 leading-relaxed ${
           isUser
             ? 'rounded-br-md bg-cyan-600/30 text-cyan-50'
             : 'rounded-bl-md bg-slate-800/80 text-slate-200'
         }`}
+        style={{ fontSize: '20px' }}
       >
         <span className="sr-only">{isUser ? 'Tu: ' : 'Truffatore: '}</span>
         {text}
