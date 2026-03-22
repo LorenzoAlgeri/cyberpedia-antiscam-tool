@@ -37,7 +37,7 @@ export function RiskIndicator({ scores }: RiskIndicatorProps) {
 
   return (
     <div
-      className="flex items-center gap-3 px-4 py-2"
+      className="sticky top-0 z-10 flex items-center gap-3 border-b border-slate-700/30 bg-slate-900/90 px-4 py-2 backdrop-blur-sm"
       role="meter"
       aria-label={`Livello di rischio: ${riskScore} su 100`}
       aria-valuenow={riskScore}

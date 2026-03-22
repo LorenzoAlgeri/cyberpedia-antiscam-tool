@@ -89,7 +89,7 @@ export function ChatInput({
         rows={1}
         aria-label="Scrivi il tuo messaggio"
         className="min-h-[44px] flex-1 resize-none rounded-2xl bg-slate-800/60 px-4 py-3
-                   text-sm text-slate-100 placeholder-slate-500
+                   text-base text-slate-100 placeholder-slate-500
                    focus:outline-none focus:ring-2 focus:ring-cyan-400/30
                    disabled:cursor-not-allowed disabled:opacity-50"
       />
