@@ -81,8 +81,13 @@ export function ChatInput({
         rows={1}
         autoComplete="off"
         autoCorrect="off"
+        autoCapitalize="sentences"
+        spellCheck={false}
+        inputMode="text"
+        enterKeyHint="send"
         data-1p-ignore
         data-lpignore="true"
+        data-form-type="other"
         aria-label="Scrivi il tuo messaggio"
         className="min-h-[48px] flex-1 resize-none rounded-2xl bg-slate-800/60 px-4 py-3
                    text-slate-100 placeholder-slate-500
