@@ -186,7 +186,7 @@ export function SimulationsPage({
           animate={{ opacity: 1, x: 0 }}
           exit={{ opacity: 0, x: -40 }}
           transition={{ duration: 0.25 }}
-          className="flex flex-1 flex-col"
+          className="relative flex flex-1 flex-col"
         >
           <TrainingChat
             scammerName={trainingState.scenarioConfig?.scammerPersona.name ?? 'Truffatore'}
@@ -201,9 +201,9 @@ export function SimulationsPage({
           {/* Interruption overlay — prompt user to begin reflection */}
           {trainingState.phase === 'interrupted' && !trainingState.isLoading && (
             <m.div
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 0 }}
               animate={{ opacity: 1, y: 0 }}
-              className={`absolute inset-x-0 bottom-0 border-t bg-slate-900/95 px-4 py-6 text-center backdrop-blur-sm ${
+              className={`border-t bg-slate-900/95 px-4 py-6 text-center ${
                 trainingState.interruptReason === 'max_turns'
                   ? 'border-cyan-500/30'
                   : 'border-amber-500/30'
