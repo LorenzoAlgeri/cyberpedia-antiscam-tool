@@ -27,8 +27,8 @@ export function TodoBasePane({ resolvedIncident, setIncident, onIncidentChange, 
     <m.div key="base" initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -8 }} transition={{ duration: 0.2 }}>
       {showIncidentToggle && (
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-          <p className="text-sm text-muted-foreground">Hai subito una truffa?</p>
-          <div className="inline-flex shrink-0 rounded-full bg-white/5 p-0.5 text-sm">
+          <p className="text-base text-muted-foreground">Hai subito una truffa?</p>
+          <div className="inline-flex shrink-0 rounded-full bg-white/5 p-0.5 text-base">
             <button type="button" onClick={() => { setIncident('no'); onIncidentChange?.('no'); }}
               className={`rounded-full px-2 py-1 transition-colors ${resolvedIncident === 'no' ? 'bg-cyan-brand/20 text-cyan-brand' : 'text-muted-foreground hover:text-foreground'}`}>
               No

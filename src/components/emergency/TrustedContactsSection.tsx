@@ -41,7 +41,7 @@ export function TrustedContactsSection({
       <h3 className="mb-4 text-lg font-semibold text-foreground">
         Contatti di fiducia
       </h3>
-      <p className="mb-4 text-sm text-muted-foreground">
+      <p className="mb-4 text-base text-muted-foreground">
         Persone che puoi chiamare prima di agire. Max {MAX_CONTACTS}.
       </p>
 

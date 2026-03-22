@@ -111,10 +111,10 @@ export function AttackTypeSelector({
                   />
                 </div>
                 <div>
-                  <span className="block text-sm font-semibold leading-tight text-foreground/60 sm:text-base">
+                  <span className="block text-base font-semibold leading-tight text-foreground/60 sm:text-lg">
                     {attack.label}
                   </span>
-                  <span className="mt-1 block text-sm text-muted-foreground/60">
+                  <span className="mt-1 block text-base text-muted-foreground/60">
                     {attack.description}
                   </span>
                 </div>
@@ -158,13 +158,13 @@ export function AttackTypeSelector({
 
               <div>
                 <span
-                  className={`block text-sm font-semibold leading-tight sm:text-base ${
+                  className={`block text-base font-semibold leading-tight sm:text-lg ${
                     isSelected ? 'text-foreground' : 'text-foreground/80'
                   }`}
                 >
                   {attack.label}
                 </span>
-                <span className="mt-1 block text-sm text-muted-foreground">
+                <span className="mt-1 block text-base text-muted-foreground">
                   {attack.description}
                 </span>
               </div>

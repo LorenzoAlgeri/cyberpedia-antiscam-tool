@@ -49,7 +49,7 @@ export function SevereActionBanner({
       className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4"
     >
       <div className="mb-3 flex items-start justify-between gap-3">
-        <p className="text-sm font-semibold text-amber-300">
+        <p className="text-base font-semibold text-amber-300">
           {hasBankPhone
             ? `Chiama subito ${bankName || 'la tua banca'} per bloccare eventuali operazioni.`
             : 'Contatta subito la tua banca o la Polizia Postale.'}
@@ -66,7 +66,7 @@ export function SevereActionBanner({
       <div className="flex flex-wrap gap-2">
         <a
           href={telHref}
-          className="inline-flex items-center gap-1.5 rounded-xl bg-amber-500/20 px-4 py-2 text-sm font-semibold text-amber-300 transition-colors hover:bg-amber-500/30"
+          className="inline-flex items-center gap-1.5 rounded-xl bg-amber-500/20 px-4 py-2 text-base font-semibold text-amber-300 transition-colors hover:bg-amber-500/30"
           style={{ minHeight: 44 }}
         >
           <Phone className="h-4 w-4" aria-hidden="true" />
@@ -75,7 +75,7 @@ export function SevereActionBanner({
         <button
           type="button"
           onClick={handleCopy}
-          className="inline-flex items-center rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+          className="inline-flex items-center rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-base font-medium text-muted-foreground transition-colors hover:text-foreground"
           style={{ minHeight: 44 }}
         >
           {copied ? 'Copiato!' : 'Copia numero'}

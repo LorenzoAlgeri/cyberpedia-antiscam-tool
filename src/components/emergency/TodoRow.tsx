@@ -85,7 +85,7 @@ export function TodoRow({
           <button
             type="button"
             onClick={() => setHintOpen((v) => !v)}
-            className="ml-8 mt-1.5 flex items-center gap-1 rounded-lg px-2 py-1 text-sm font-medium text-cyan-brand transition-colors hover:bg-cyan-brand/10"
+            className="ml-8 mt-1.5 flex items-center gap-1 rounded-lg px-2 py-1 text-base font-medium text-cyan-brand transition-colors hover:bg-cyan-brand/10"
             aria-expanded={hintOpen}
             aria-controls={`hint-${item.id}`}
           >
@@ -98,7 +98,7 @@ export function TodoRow({
           {hintOpen && (
             <p
               id={`hint-${item.id}`}
-              className="ml-8 mt-1 rounded-xl bg-white/5 px-3 py-2.5 text-sm leading-relaxed text-muted-foreground"
+              className="ml-8 mt-1 rounded-xl bg-white/5 px-3 py-2.5 text-base leading-relaxed text-muted-foreground"
             >
               {item.hint}
             </p>

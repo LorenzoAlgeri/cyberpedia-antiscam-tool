@@ -168,7 +168,7 @@ export function EmergencyPage({ onNext, onBack, onUnlock, onProfileSaved }: Emer
     <div className="mx-auto flex w-full max-w-2xl flex-col gap-6 px-4 py-8">
       {!isCryptoAvailable() && (
         <div
-          className="mb-4 flex items-center gap-2 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-amber-300"
+          className="mb-4 flex items-center gap-2 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 text-base text-amber-300"
           role="alert"
         >
           <AlertTriangle className="h-5 w-5 shrink-0" aria-hidden="true" />

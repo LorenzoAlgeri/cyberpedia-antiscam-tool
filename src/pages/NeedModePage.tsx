@@ -115,7 +115,7 @@ export function NeedModePage({ onBack, pin: pinProp = null, unlockedData = null,
             Azioni rapide e report. Nessun dato viene inviato online.
           </p>
           {attackMetaLabel && (
-            <p className="mt-2 text-sm text-muted-foreground/70">
+            <p className="mt-2 text-base text-muted-foreground/70">
               Scenario: {attackMetaLabel}
             </p>
           )}
@@ -132,7 +132,7 @@ export function NeedModePage({ onBack, pin: pinProp = null, unlockedData = null,
           role="tab"
           aria-selected={tab === 'base'}
           onClick={() => setTab('base')}
-          className={`flex flex-1 items-center justify-center rounded-xl py-2.5 text-sm font-medium transition-colors ${
+          className={`flex flex-1 items-center justify-center rounded-xl py-2.5 text-base font-medium transition-colors ${
             tab === 'base' ? 'bg-white/10 text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
           }`}
         >
@@ -143,7 +143,7 @@ export function NeedModePage({ onBack, pin: pinProp = null, unlockedData = null,
           role="tab"
           aria-selected={tab === 'scenario'}
           onClick={() => setTab('scenario')}
-          className={`flex flex-1 items-center justify-center rounded-xl py-2.5 text-sm font-medium transition-colors ${
+          className={`flex flex-1 items-center justify-center rounded-xl py-2.5 text-base font-medium transition-colors ${
             tab === 'scenario'
               ? 'bg-cyan-brand/15 text-cyan-brand shadow-sm'
               : 'text-muted-foreground hover:text-foreground'
@@ -228,7 +228,7 @@ export function NeedModePage({ onBack, pin: pinProp = null, unlockedData = null,
 
       {/* If there's no stored data, show a gentle empty state */}
       {!hasStoredData() && (
-        <p className="text-center text-sm text-muted-foreground">
+        <p className="text-center text-base text-muted-foreground">
           Non ci sono dati salvati. Torna indietro e salva prima i tuoi contatti.
         </p>
       )}

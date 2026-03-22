@@ -89,7 +89,7 @@ function PrivacyDialog({ open, onClose }: { open: boolean; onClose: () => void }
                 >
                   Cosa salviamo sul tuo dispositivo
                 </h2>
-                <p className="mt-1 text-sm text-muted-foreground">
+                <p className="mt-1 text-base text-muted-foreground">
                   Nessun dato viene inviato a server esterni. Tutto rimane nel
                   browser, sul tuo dispositivo.
                 </p>
@@ -118,10 +118,10 @@ function PrivacyDialog({ open, onClose }: { open: boolean; onClose: () => void }
                     {icon}
                   </span>
                   <div>
-                    <p className="text-sm font-semibold text-foreground">
+                    <p className="text-base font-semibold text-foreground">
                       {title}
                     </p>
-                    <p className="mt-0.5 text-sm leading-relaxed text-muted-foreground">
+                    <p className="mt-0.5 text-base leading-relaxed text-muted-foreground">
                       {desc}
                     </p>
                   </div>
@@ -228,7 +228,7 @@ export function LandingPage({
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.5, delay: 0.5 }}
-        className="flex items-center gap-2 text-sm text-muted-foreground"
+        className="flex items-center gap-2 text-base text-muted-foreground"
       >
         <Lock className="h-4 w-4 shrink-0" strokeWidth={1.5} aria-hidden="true" />
         <span>
@@ -249,7 +249,7 @@ export function LandingPage({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.4, delay: 0.6 }}
-          className="text-sm text-cyan-brand/70"
+          className="text-base text-cyan-brand/70"
         >
           Bentornato — i tuoi dati salvati sono al sicuro.
         </m.p>

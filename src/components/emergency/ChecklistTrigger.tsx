@@ -25,14 +25,14 @@ export function ChecklistTrigger({ completedCount, onClick }: ChecklistTriggerPr
           <p className="text-base font-medium text-foreground">
             Checklist azioni
           </p>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-base text-muted-foreground">
             {completedCount > 0
               ? `${completedCount} azioni completate`
               : 'Cosa fare adesso, passo per passo'}
           </p>
         </div>
       </div>
-      <span className="text-sm text-muted-foreground">Apri →</span>
+      <span className="text-base text-muted-foreground">Apri →</span>
     </button>
   );
 }

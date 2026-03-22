@@ -52,11 +52,11 @@ function ScoreBar({ label, value, inverted = false, delay, previousAvg }: ScoreB
   return (
     <div className="space-y-1">
       <div className="flex items-center justify-between">
-        <span className="text-sm text-slate-300">{label}</span>
+        <span className="text-base text-slate-300">{label}</span>
         <div className="flex items-center gap-2">
-          <span className="text-sm font-bold text-slate-200">{value}/100</span>
+          <span className="text-base font-bold text-slate-200">{value}/100</span>
           {delta !== null && delta !== 0 && (
-            <span className={`flex items-center gap-0.5 text-xs font-medium ${
+            <span className={`flex items-center gap-0.5 text-sm font-medium ${
               delta > 0 ? 'text-emerald-400' : 'text-red-400'
             }`}>
               {delta > 0 ? (
@@ -77,7 +77,7 @@ function ScoreBar({ label, value, inverted = false, delay, previousAvg }: ScoreB
           transition={{ type: 'spring', stiffness: 100, damping: 20, delay }}
         />
       </div>
-      <p className="text-xs text-slate-500">
+      <p className="text-sm text-slate-500">
         {inverted ? '(piu basso = meglio)' : '(piu alto = meglio)'}
       </p>
     </div>
@@ -116,7 +116,7 @@ export function SessionReport({
         </button>
         <div className="flex items-center gap-2">
           <BarChart3 className="size-4 text-cyan-400" aria-hidden="true" />
-          <span className="text-sm font-semibold text-slate-200">Risultato sessione</span>
+          <span className="text-base font-semibold text-slate-200">Risultato sessione</span>
         </div>
       </div>
 
@@ -128,7 +128,7 @@ export function SessionReport({
             animate={{ opacity: 1, y: 0 }}
             className="rounded-2xl border border-slate-700/50 bg-slate-800/40 p-6 text-center"
           >
-            <p className="mb-2 text-sm text-slate-400">Punteggio di rischio</p>
+            <p className="mb-2 text-base text-slate-400">Punteggio di rischio</p>
             <p className={`text-5xl font-bold ${
               scores.riskScore >= 65
                 ? 'text-red-400'
@@ -138,7 +138,7 @@ export function SessionReport({
             }`}>
               {scores.riskScore}
             </p>
-            <p className="mt-1 text-sm text-slate-500">su 100</p>
+            <p className="mt-1 text-base text-slate-500">su 100</p>
           </m.div>
         )}
 
@@ -150,7 +150,7 @@ export function SessionReport({
             transition={{ delay: 0.2 }}
             className="rounded-2xl border border-slate-700/50 bg-slate-800/40 p-4"
           >
-            <h3 className="mb-2 text-center text-sm font-semibold text-slate-300">Profilo comportamentale</h3>
+            <h3 className="mb-2 text-center text-base font-semibold text-slate-300">Profilo comportamentale</h3>
             <RadarChart scores={scores} previousScores={prevScoresForRadar} size={220} />
             {previousAverageScores && (
               <div className="mt-2 flex items-center justify-center gap-4 text-[10px] text-slate-500">
@@ -168,7 +168,7 @@ export function SessionReport({
         {/* Dimension bars */}
         {scores && (
           <div className="space-y-4">
-            <h3 className="text-sm font-semibold text-slate-300">Dettaglio per dimensione</h3>
+            <h3 className="text-base font-semibold text-slate-300">Dettaglio per dimensione</h3>
             <ScoreBar label="Attivazione emotiva" value={scores.activation} inverted delay={0.1} previousAvg={previousAverageScores?.activation} />
             <ScoreBar label="Impulsivita" value={scores.impulsivity} inverted delay={0.2} previousAvg={previousAverageScores?.impulsivity} />
             <ScoreBar label="Verifica" value={scores.verification} delay={0.3} previousAvg={previousAverageScores?.verification} />
@@ -179,15 +179,15 @@ export function SessionReport({
         {/* Reflection insights */}
         {reflections.length > 0 && (
           <div className="space-y-3">
-            <h3 className="text-sm font-semibold text-slate-300">Le tue riflessioni</h3>
+            <h3 className="text-base font-semibold text-slate-300">Le tue riflessioni</h3>
             {reflections.map((r) => (
               <div
                 key={r.step}
                 className="rounded-xl border border-slate-700/30 bg-slate-800/30 p-3"
               >
-                <p className="mb-1 text-xs font-medium text-cyan-400">{r.question}</p>
-                <p className="text-sm italic text-slate-400">"{r.userAnswer}"</p>
-                <p className="mt-2 text-sm leading-relaxed text-slate-300">{r.aiAnalysis}</p>
+                <p className="mb-1 text-sm font-medium text-cyan-400">{r.question}</p>
+                <p className="text-base italic text-slate-400">"{r.userAnswer}"</p>
+                <p className="mt-2 text-base leading-relaxed text-slate-300">{r.aiAnalysis}</p>
               </div>
             ))}
           </div>

@@ -71,11 +71,11 @@ function CorruptionAlert({ onReset, onCancel }: { readonly onReset?: () => void;
     <div className="flex flex-col items-center gap-4 text-center">
       <AlertCircle className="h-12 w-12 text-destructive" aria-hidden="true" />
       <h3 id="pin-dialog-title" className="text-xl font-bold text-foreground">Dati danneggiati</h3>
-      <p className="text-sm text-muted-foreground">I tuoi dati salvati sono danneggiati e non possono essere recuperati.</p>
+      <p className="text-base text-muted-foreground">I tuoi dati salvati sono danneggiati e non possono essere recuperati.</p>
       {onReset && (
         <button type="button" onClick={onReset} className="btn-primary" style={{ minHeight: 44 }}>Resetta e ricomincia</button>
       )}
-      <button type="button" onClick={onCancel} className="rounded-2xl px-4 py-3 text-sm text-muted-foreground transition-colors hover:text-foreground" style={{ minHeight: 44 }}>Annulla</button>
+      <button type="button" onClick={onCancel} className="rounded-2xl px-4 py-3 text-base text-muted-foreground transition-colors hover:text-foreground" style={{ minHeight: 44 }}>Annulla</button>
     </div>
   );
 }
@@ -167,7 +167,7 @@ export function PinDialog({
               >
                 {title}
               </h3>
-              <p className="text-center text-sm text-muted-foreground">
+              <p className="text-center text-base text-muted-foreground">
                 {description}
               </p>
             </div>
@@ -198,7 +198,7 @@ export function PinDialog({
                   <m.p
                     id="pin-error"
                     role="alert"
-                    className="mt-2 flex items-center gap-1.5 text-sm text-destructive"
+                    className="mt-2 flex items-center gap-1.5 text-base text-destructive"
                     initial={{ opacity: 0, y: -4 }}
                     animate={{ opacity: 1, y: 0 }}
                   >
@@ -210,7 +210,7 @@ export function PinDialog({
                   <m.p
                     id="pin-lockout"
                     role="alert"
-                    className="mt-2 flex items-center gap-1.5 text-sm text-amber-400"
+                    className="mt-2 flex items-center gap-1.5 text-base text-amber-400"
                     initial={{ opacity: 0, y: -4 }}
                     animate={{ opacity: 1, y: 0 }}
                   >
@@ -231,19 +231,19 @@ export function PinDialog({
               <button
                 type="button"
                 onClick={onCancel}
-                className="rounded-2xl px-4 py-3 text-sm text-muted-foreground transition-colors hover:text-foreground"
+                className="rounded-2xl px-4 py-3 text-base text-muted-foreground transition-colors hover:text-foreground"
                 style={{ minHeight: 44 }}
               >
                 Annulla
               </button>
 
               {showHint && mode === 'unlock' && onResetData && (
-                <div className="mt-2 rounded-xl bg-slate-800/60 p-4 text-center text-sm text-muted-foreground">
+                <div className="mt-2 rounded-xl bg-slate-800/60 p-4 text-center text-base text-muted-foreground">
                   <p>Hai dimenticato il PIN? Puoi resettare i dati e ricominciare.</p>
                   <button
                     type="button"
                     onClick={onResetData}
-                    className="mt-2 rounded-xl px-4 py-2 text-sm font-medium text-destructive transition-colors hover:bg-destructive/10"
+                    className="mt-2 rounded-xl px-4 py-2 text-base font-medium text-destructive transition-colors hover:bg-destructive/10"
                     style={{ minHeight: 44 }}
                   >
                     Resetta tutti i dati

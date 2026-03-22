@@ -132,8 +132,12 @@
 
     html {
         @apply font-sans antialiased;
-        /* Prevent iOS zoom on input focus */
+        /* Typography scale — mobile-first, WhatsApp-like readability */
         font-size: 16px;
+        --text-body: 17px;    /* Body text, descriptions, paragraphs */
+        --text-label: 16px;   /* Buttons, links, tab labels */
+        --text-caption: 14px; /* Badges, status, metadata */
+        --text-helper: 13px;  /* Hints, subtle secondary text */
         /* Prevent horizontal scrollbar caused by animated page transitions */
         overflow-x: hidden;
     }

@@ -144,8 +144,8 @@ export function TrustedContactRow({
               value={contact.countryCode}
               onChange={(e) => { userTouched.current = true; onChange('countryCode', e.target.value); }}
               className="w-[5.5rem] shrink-0 cursor-pointer rounded-2xl border-2 border-white/10
-                         bg-slate-900/60 px-2 text-sm font-medium text-foreground
-                         transition-colors duration-200 sm:w-24 sm:px-3 sm:text-base
+                         bg-slate-900/60 px-2 text-base font-medium text-foreground
+                         transition-colors duration-200 sm:w-24 sm:px-3 sm:text-lg
                          focus-visible:border-cyan-brand focus-visible:outline-none focus-visible:ring-4"
               style={{ minHeight: 44 }}
             >
@@ -208,7 +208,7 @@ export function TrustedContactRow({
                   <p className="text-base font-semibold leading-tight">
                     Chiama {displayName}
                   </p>
-                  <p className="truncate text-sm font-medium text-white/70">
+                  <p className="truncate text-base font-medium text-white/70">
                     {contact.countryCode}&nbsp;{contact.phone}
                   </p>
                 </div>

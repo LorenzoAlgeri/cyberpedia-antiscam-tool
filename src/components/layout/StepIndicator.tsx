@@ -50,7 +50,7 @@ export function StepIndicator({
               ].join(' ')}
             />
             {isActive && (
-              <span className="text-xs font-medium text-cyan-brand whitespace-nowrap">
+              <span className="text-sm font-medium text-cyan-brand whitespace-nowrap">
                 {step.label}
               </span>
             )}

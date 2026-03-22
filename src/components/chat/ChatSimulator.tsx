@@ -75,7 +75,7 @@ export function ChatSimulator({ simulation, onBack, isFirstSimulation = false, o
             <MessageCircle className="size-4 text-cyan-400" aria-hidden="true" />
           </div>
           <div className="min-w-0">
-            <p className="truncate text-sm font-semibold text-slate-100">
+            <p className="truncate text-base font-semibold text-slate-100">
               {simulation.scammerName}
             </p>
             <AnimatePresence mode="wait">
@@ -123,9 +123,9 @@ export function ChatSimulator({ simulation, onBack, isFirstSimulation = false, o
           >
             <div className="flex items-center gap-2 text-cyan-400">
               <CircleCheck className="size-5" aria-hidden="true" />
-              <p className="text-sm font-semibold">Simulazione completata</p>
+              <p className="text-base font-semibold">Simulazione completata</p>
             </div>
-            <p className="max-w-xs text-sm leading-relaxed text-slate-300">
+            <p className="max-w-xs text-base leading-relaxed text-slate-300">
               {score.totalAttempts === score.correctAnswers
                 ? 'Hai risposto correttamente al primo tentativo tutte le volte.'
                 : `Hai risposto correttamente al primo tentativo ${score.correctAnswers} volt${score.correctAnswers === 1 ? 'a' : 'e'} su ${score.totalAttempts}.`}

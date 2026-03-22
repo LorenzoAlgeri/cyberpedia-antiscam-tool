@@ -11,7 +11,7 @@ export function PoliziaPostaleCard() {
           aria-hidden="true"
         />
         <div>
-          <p className="text-sm font-semibold text-blue-300">
+          <p className="text-base font-semibold text-blue-300">
             Polizia Postale
           </p>
           <a
@@ -27,7 +27,7 @@ export function PoliziaPostaleCard() {
         href="https://www.commissariatodips.it"
         target="_blank"
         rel="noopener noreferrer"
-        className="flex items-center gap-1 text-sm text-blue-400 underline-offset-2 transition-colors hover:text-blue-300 hover:underline"
+        className="flex items-center gap-1 text-base text-blue-400 underline-offset-2 transition-colors hover:text-blue-300 hover:underline"
         aria-label="Denuncia online su commissariatodips.it (apre in nuova tab)"
       >
         Denuncia online

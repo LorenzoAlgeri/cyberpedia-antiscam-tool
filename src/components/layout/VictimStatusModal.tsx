@@ -64,7 +64,7 @@ export function VictimStatusModal({ open, onSelect, onClose }: VictimStatusModal
                 <h2 className="text-xl font-semibold text-foreground">
                   Hai subito una truffa?
                 </h2>
-                <p className="mt-1 text-sm text-muted-foreground">
+                <p className="mt-1 text-base text-muted-foreground">
                   Scegli la modalità giusta: prevenzione o intervento.
                 </p>
               </div>
@@ -94,7 +94,7 @@ export function VictimStatusModal({ open, onSelect, onClose }: VictimStatusModal
               </button>
             </div>
 
-            <p className="mt-4 text-sm text-muted-foreground/70">
+            <p className="mt-4 text-base text-muted-foreground/70">
               Puoi cambiare risposta in seguito.
             </p>
           </m.div>

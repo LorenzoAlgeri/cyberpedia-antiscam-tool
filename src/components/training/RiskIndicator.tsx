@@ -44,7 +44,7 @@ export function RiskIndicator({ scores }: RiskIndicatorProps) {
       aria-valuemin={0}
       aria-valuemax={100}
     >
-      <span className="text-xs font-medium text-slate-400">Rischio</span>
+      <span className="text-sm font-medium text-slate-400">Rischio</span>
       <div className="relative h-2 flex-1 overflow-hidden rounded-full bg-slate-800">
         <m.div
           className={`absolute inset-y-0 left-0 rounded-full ${color}`}
@@ -53,7 +53,7 @@ export function RiskIndicator({ scores }: RiskIndicatorProps) {
           transition={{ type: 'spring', stiffness: 200, damping: 30 }}
         />
       </div>
-      <span className={`min-w-[3.5rem] text-right text-xs font-bold ${
+      <span className={`min-w-[3.5rem] text-right text-sm font-bold ${
         riskScore >= 65 ? 'text-red-400' : riskScore >= 40 ? 'text-amber-400' : 'text-emerald-400'
       }`}>
         {label} ({riskScore})

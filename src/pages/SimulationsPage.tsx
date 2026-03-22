@@ -209,7 +209,7 @@ export function SimulationsPage({
                   : 'border-amber-500/30'
               }`}
             >
-              <p className={`mb-3 text-sm font-medium ${
+              <p className={`mb-3 text-base font-medium ${
                 trainingState.interruptReason === 'max_turns'
                   ? 'text-cyan-300'
                   : 'text-amber-300'
@@ -330,7 +330,7 @@ export function SimulationsPage({
             className="flex items-start gap-2.5 rounded-2xl border border-cyan-brand/30 bg-cyan-brand/10 px-4 py-3"
           >
             <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-cyan-brand" aria-hidden="true" />
-            <p className="text-sm leading-relaxed text-cyan-100">
+            <p className="text-base leading-relaxed text-cyan-100">
               Ottimo! Prova ora un&apos;opzione più realistica — questa volta vedrai anche risposte sbagliate da evitare.
             </p>
           </m.div>
@@ -368,7 +368,7 @@ export function SimulationsPage({
               </span>
             </div>
             {profile.sessionsCompleted > 0 ? (
-              <p className="text-sm leading-relaxed text-muted-foreground">
+              <p className="text-base leading-relaxed text-muted-foreground">
                 Bentornato! <span className="font-medium text-cyan-300">{profile.sessionsCompleted} sessioni</span> completate.
                 {profile.weakestDimension && (
                   <> Punto debole: <span className="font-medium text-amber-300">{
@@ -379,7 +379,7 @@ export function SimulationsPage({
                 )}
               </p>
             ) : (
-              <p className="text-sm leading-relaxed text-muted-foreground">
+              <p className="text-base leading-relaxed text-muted-foreground">
                 Conversazione AI libera per allenare i tuoi riflessi mentali contro le truffe.
               </p>
             )}
@@ -393,7 +393,7 @@ export function SimulationsPage({
       )}
 
       {/* Prompt — moved from old button text */}
-      <p className="text-sm font-medium text-cyan-300">
+      <p className="text-base font-medium text-cyan-300">
         Clicca su uno scenario per iniziare
       </p>
 
@@ -445,7 +445,7 @@ export function SimulationsPage({
                 <h3 className="text-lg font-semibold text-foreground">
                   {sim.title}
                 </h3>
-                <p className="text-sm leading-relaxed text-muted-foreground">
+                <p className="text-base leading-relaxed text-muted-foreground">
                   {sim.description}
                 </p>
               </div>

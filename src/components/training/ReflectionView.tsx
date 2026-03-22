@@ -67,16 +67,16 @@ export function ReflectionView({
         <button
           type="button"
           onClick={onBack}
-          className="text-sm text-slate-400 hover:text-slate-200"
+          className="text-base text-slate-400 hover:text-slate-200"
           aria-label="Torna indietro"
         >
           Esci
         </button>
         <div className="flex items-center gap-2">
           <Brain className="size-4 text-cyan-400" aria-hidden="true" />
-          <span className="text-sm font-semibold text-slate-200">Riflessione</span>
+          <span className="text-base font-semibold text-slate-200">Riflessione</span>
         </div>
-        <span className="text-sm text-slate-500">
+        <span className="text-base text-slate-500">
           {stepNumber}/{TOTAL_STEPS}
         </span>
       </div>
@@ -130,7 +130,7 @@ export function ReflectionView({
               exit={{ opacity: 0 }}
               className="rounded-2xl border border-slate-700/50 bg-slate-800/40 p-4"
             >
-              <p className="mb-1 text-sm font-medium text-cyan-400">La tua risposta precedente</p>
+              <p className="mb-1 text-base font-medium text-cyan-400">La tua risposta precedente</p>
               <p className="mb-3 italic text-slate-400" style={{ fontSize: '16px' }}>"{latestReflection.userAnswer}"</p>
               <p className="leading-relaxed text-slate-300" style={{ fontSize: '16px' }}>{latestReflection.aiAnalysis}</p>
             </m.div>
@@ -141,7 +141,7 @@ export function ReflectionView({
         {isLoading && (
           <div className="flex flex-col items-center gap-2">
             <Loader2 className="size-6 animate-spin text-cyan-400" />
-            <p className="text-sm text-slate-500">
+            <p className="text-base text-slate-500">
               {waitSeconds >= 5
                 ? 'Sto analizzando la tua risposta...'
                 : 'Un momento...'}
@@ -151,7 +151,7 @@ export function ReflectionView({
 
         {/* Error */}
         {error && (
-          <p className="text-center text-sm text-red-400" role="alert">
+          <p className="text-center text-base text-red-400" role="alert">
             {error}
           </p>
         )}

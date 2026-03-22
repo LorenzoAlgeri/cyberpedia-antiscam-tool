@@ -178,7 +178,7 @@ export function TodoChecklist({
             ) : (
               <div className="flex flex-col items-center gap-3 py-8 text-center">
                 <Crosshair className="h-8 w-8 text-muted-foreground/40" strokeWidth={1} aria-hidden="true" />
-                <p className="text-sm text-muted-foreground">
+                <p className="text-base text-muted-foreground">
                   Seleziona il tipo di truffa per vedere
                   <br />
                   le azioni mirate.
@@ -187,7 +187,7 @@ export function TodoChecklist({
                   <button
                     type="button"
                     onClick={onRequestAttackSelect}
-                    className="mt-1 rounded-xl bg-cyan-brand/15 px-4 py-2.5 text-sm font-medium text-cyan-brand transition-colors hover:bg-cyan-brand/25 active:scale-[0.98]"
+                    className="mt-1 rounded-xl bg-cyan-brand/15 px-4 py-2.5 text-base font-medium text-cyan-brand transition-colors hover:bg-cyan-brand/25 active:scale-[0.98]"
                     style={{ minHeight: 44 }}
                   >
                     Scegli tipo di truffa

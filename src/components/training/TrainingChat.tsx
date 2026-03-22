@@ -91,7 +91,7 @@ export function TrainingChat({
           <div>
             <p className="text-base font-semibold text-slate-200">{scammerName}</p>
             {isLoading && (
-              <p className="text-xs text-cyan-400">sta scrivendo...</p>
+              <p className="text-sm text-cyan-400">sta scrivendo...</p>
             )}
           </div>
         </div>
@@ -127,7 +127,7 @@ export function TrainingChat({
                 <m.p
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  className="mt-2 text-center text-xs text-slate-500"
+                  className="mt-2 text-center text-sm text-slate-500"
                 >
                   Il nostro esperto sta analizzando la situazione...
                 </m.p>
@@ -141,11 +141,11 @@ export function TrainingChat({
           <m.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="mx-auto flex flex-col items-center gap-2 rounded-xl border border-red-500/30 bg-red-950/30 px-4 py-3 text-center text-sm text-red-300"
+            className="mx-auto flex flex-col items-center gap-2 rounded-xl border border-red-500/30 bg-red-950/30 px-4 py-3 text-center text-base text-red-300"
             role="alert"
           >
             <p>{error}</p>
-            <p className="text-xs text-red-400/70">Rinvia il messaggio per riprovare</p>
+            <p className="text-sm text-red-400/70">Rinvia il messaggio per riprovare</p>
           </m.div>
         )}
       </div>

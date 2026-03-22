@@ -155,7 +155,7 @@ export function TrainingSetup({
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-cyan-brand/20 text-cyan-brand">
             <Zap className="h-5 w-5" strokeWidth={2} aria-hidden="true" />
           </div>
-          <p className="text-sm text-foreground/90 sm:text-base">
+          <p className="text-base text-foreground/90 sm:text-lg">
             <span className="font-semibold text-cyan-brand">Suggerimento:</span>{' '}
             in base alle tue sessioni precedenti, ti consigliamo di allenarti su{' '}
             <span className="font-semibold">
@@ -203,13 +203,13 @@ export function TrainingSetup({
                 aria-pressed={isSelected}
               >
                 <span
-                  className={`text-sm font-semibold sm:text-base ${
+                  className={`text-base font-semibold sm:text-lg ${
                     isSelected ? 'text-foreground' : 'text-foreground/80'
                   }`}
                 >
                   {d.label}
                 </span>
-                <span className="text-xs text-muted-foreground sm:text-sm">
+                <span className="text-sm text-muted-foreground sm:text-base">
                   {d.description}
                 </span>
                 {suggestedDifficulty === d.value && (
@@ -276,13 +276,13 @@ export function TrainingSetup({
 
                 <div>
                   <span
-                    className={`block text-sm font-semibold leading-tight sm:text-base ${
+                    className={`block text-base font-semibold leading-tight sm:text-lg ${
                       isSelected ? 'text-foreground' : 'text-foreground/80'
                     }`}
                   >
                     {t.label}
                   </span>
-                  <span className="mt-1 block text-xs text-muted-foreground sm:text-sm">
+                  <span className="mt-1 block text-sm text-muted-foreground sm:text-base">
                     {t.description}
                   </span>
                 </div>
@@ -294,7 +294,7 @@ export function TrainingSetup({
 
       {/* Error message */}
       {error && (
-        <p className="text-center text-sm text-red-400" role="alert">
+        <p className="text-center text-base text-red-400" role="alert">
           {error}
         </p>
       )}

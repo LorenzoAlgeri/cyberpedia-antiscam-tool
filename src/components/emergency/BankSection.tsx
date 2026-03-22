@@ -97,7 +97,7 @@ export function BankSection({
               onChange={(e) => { userTouched.current = true; onBankNameChange(e.target.value); }}
               autoComplete="organization"
             />
-            <p className="px-2 text-sm text-muted-foreground">
+            <p className="px-2 text-base text-muted-foreground">
               Inserisci il numero della tua banca per trovarlo subito
               disponibile in caso di emergenza.
             </p>
@@ -107,7 +107,7 @@ export function BankSection({
                 id="bank-country-code"
                 value={bankCountryCode}
                 onChange={(e) => { userTouched.current = true; onBankCountryCodeChange(e.target.value); }}
-                className="w-[5.5rem] shrink-0 cursor-pointer rounded-2xl border-2 border-white/10 bg-slate-900/60 px-2 text-sm font-medium text-foreground transition-colors duration-200 sm:w-24 sm:px-3 sm:text-base focus-visible:border-cyan-brand focus-visible:outline-none focus-visible:ring-4"
+                className="w-[5.5rem] shrink-0 cursor-pointer rounded-2xl border-2 border-white/10 bg-slate-900/60 px-2 text-base font-medium text-foreground transition-colors duration-200 sm:w-24 sm:px-3 sm:text-lg focus-visible:border-cyan-brand focus-visible:outline-none focus-visible:ring-4"
                 style={{ minHeight: 44 }}
               >
                 {COUNTRY_CODES.map(({ code, flag }) => (
@@ -139,7 +139,7 @@ export function BankSection({
               <Check className="h-5 w-5 shrink-0" strokeWidth={2.5} />
               Conferma numero banca
             </button>
-            <p className="px-2 text-sm text-muted-foreground">
+            <p className="px-2 text-base text-muted-foreground">
               Lo trovi sul retro della carta o sull&apos;app della banca.
             </p>
           </m.div>
@@ -167,7 +167,7 @@ export function BankSection({
                   <p className="text-base font-semibold leading-tight">
                     Allerta {bankName || 'la banca'}
                   </p>
-                  <p className="truncate text-sm font-medium text-white/70">
+                  <p className="truncate text-base font-medium text-white/70">
                     {bankCountryCode}&nbsp;{bankPhone}
                   </p>
                 </div>

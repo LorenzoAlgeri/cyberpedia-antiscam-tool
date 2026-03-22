@@ -146,7 +146,7 @@ function Sparkline({ profile }: { readonly profile: UserProfile }) {
       transition={{ delay: 0.3 }}
       className="rounded-xl border border-slate-700/30 bg-slate-800/30 p-3"
     >
-      <p className="mb-2 text-xs font-medium text-slate-400">
+      <p className="mb-2 text-sm font-medium text-slate-400">
         Andamento rischio (ultime {count} sessioni)
       </p>
       <svg
@@ -220,7 +220,7 @@ export function TrainingDashboard({ profile }: TrainingDashboardProps) {
           <p className="text-lg font-bold text-slate-100">
             {profile.sessionsCompleted}
           </p>
-          <p className="text-[10px] text-slate-400">Sessioni</p>
+          <p className="text-xs text-slate-400">Sessioni</p>
         </m.div>
 
         <m.div
@@ -233,7 +233,7 @@ export function TrainingDashboard({ profile }: TrainingDashboardProps) {
           <p className={`text-lg font-bold ${riskColor(avgRisk)}`}>
             {avgRisk}
           </p>
-          <p className="text-[10px] text-slate-400">Rischio medio</p>
+          <p className="text-xs text-slate-400">Rischio medio</p>
         </m.div>
 
         <m.div
@@ -247,7 +247,7 @@ export function TrainingDashboard({ profile }: TrainingDashboardProps) {
             {streak}
             {streak >= 3 ? ' \ud83d\udd25' : ''}
           </p>
-          <p className="text-[10px] text-slate-400">Streak</p>
+          <p className="text-xs text-slate-400">Streak</p>
         </m.div>
       </div>
 
@@ -265,11 +265,11 @@ export function TrainingDashboard({ profile }: TrainingDashboardProps) {
         <div className="flex items-center gap-2 rounded-xl border border-emerald-500/20 bg-slate-800/30 p-3">
           <TrendingUp className="h-4 w-4 shrink-0 text-emerald-400" />
           <div className="min-w-0">
-            <p className="text-[10px] text-slate-400">Punto forte</p>
-            <p className="truncate text-sm font-semibold text-emerald-300">
+            <p className="text-xs text-slate-400">Punto forte</p>
+            <p className="truncate text-base font-semibold text-emerald-300">
               {DIMENSION_LABELS[strongest.dimension]}
             </p>
-            <p className="text-xs text-slate-400">{strongest.score}</p>
+            <p className="text-sm text-slate-400">{strongest.score}</p>
           </div>
         </div>
 
@@ -279,19 +279,19 @@ export function TrainingDashboard({ profile }: TrainingDashboardProps) {
             <>
               <AlertTriangle className="h-4 w-4 shrink-0 text-amber-400" />
               <div className="min-w-0">
-                <p className="text-[10px] text-slate-400">Punto debole</p>
-                <p className="truncate text-sm font-semibold text-amber-300">
+                <p className="text-xs text-slate-400">Punto debole</p>
+                <p className="truncate text-base font-semibold text-amber-300">
                   {DIMENSION_LABELS[profile.weakestDimension]}
                 </p>
-                <p className="text-xs text-slate-400">{weakScore}</p>
+                <p className="text-sm text-slate-400">{weakScore}</p>
               </div>
             </>
           ) : (
             <>
               <TrendingDown className="h-4 w-4 shrink-0 text-slate-500" />
               <div className="min-w-0">
-                <p className="text-[10px] text-slate-400">Punto debole</p>
-                <p className="text-sm text-slate-500">N/D</p>
+                <p className="text-xs text-slate-400">Punto debole</p>
+                <p className="text-base text-slate-500">N/D</p>
               </div>
             </>
           )}
@@ -306,14 +306,14 @@ export function TrainingDashboard({ profile }: TrainingDashboardProps) {
           transition={{ delay: 0.35 }}
           className="rounded-xl border border-slate-700/30 bg-slate-800/30 p-3"
         >
-          <p className="mb-2 text-xs font-medium text-slate-400">
+          <p className="mb-2 text-sm font-medium text-slate-400">
             Pattern frequenti
           </p>
           <ul className="space-y-1.5">
             {topPatterns.map((p) => (
               <li
                 key={p.patternId}
-                className="flex items-start justify-between gap-2 text-xs"
+                className="flex items-start justify-between gap-2 text-sm"
               >
                 <span className="text-slate-300">{p.description}</span>
                 <span className="shrink-0 rounded-full bg-slate-700/50 px-2 py-0.5 text-[10px] text-slate-400">
