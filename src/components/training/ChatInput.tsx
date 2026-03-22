@@ -28,10 +28,11 @@ export function ChatInput({
   const [text, setText] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // Auto-focus on mount
+  // Auto-focus on mount — use preventScroll to avoid iOS Safari
+  // scrolling the whole page when keyboard opens
   useEffect(() => {
     if (!disabled) {
-      textareaRef.current?.focus();
+      textareaRef.current?.focus({ preventScroll: true });
     }
   }, [disabled]);
 
