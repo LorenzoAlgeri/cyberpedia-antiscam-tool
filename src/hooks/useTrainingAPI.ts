@@ -45,7 +45,7 @@ async function postJSON<T>(
   path: string,
   body: unknown,
   signal: AbortSignal,
-): Promise<T | null> {
+): Promise<T> {
   const response = await fetch(`${WORKER_BASE}${path}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -54,8 +54,14 @@ async function postJSON<T>(
   });
 
   if (!response.ok) {
-    console.debug(`[useTrainingAPI] ${path} → HTTP ${response.status}`);
-    return null;
+    let detail = '';
+    try {
+      const errBody = await response.json() as { error?: string };
+      detail = errBody.error ?? '';
+    } catch { /* ignore parse errors */ }
+    throw new Error(
+      detail || `Errore server (HTTP ${response.status})`,
+    );
   }
 
   return (await response.json()) as T;
@@ -124,9 +130,9 @@ export function useTrainingAPI(): UseTrainingAPIResult {
         );
       } catch (err) {
         if (err instanceof Error && err.name === 'AbortError') {
-          console.debug('[useTrainingAPI] startSession timed out');
+          throw new Error('Timeout — il server non ha risposto in tempo. Riprova.');
         }
-        return null;
+        throw err;
       }
     },
     [createController],
@@ -155,9 +161,9 @@ export function useTrainingAPI(): UseTrainingAPIResult {
         );
       } catch (err) {
         if (err instanceof Error && err.name === 'AbortError') {
-          console.debug('[useTrainingAPI] sendMessage timed out');
+          throw new Error('Timeout — il server non ha risposto in tempo. Riprova.');
         }
-        return null;
+        throw err;
       }
     },
     [createController],
@@ -188,9 +194,9 @@ export function useTrainingAPI(): UseTrainingAPIResult {
         );
       } catch (err) {
         if (err instanceof Error && err.name === 'AbortError') {
-          console.debug('[useTrainingAPI] submitReflection timed out');
+          throw new Error('Timeout — il server non ha risposto in tempo. Riprova.');
         }
-        return null;
+        throw err;
       }
     },
     [createController],
