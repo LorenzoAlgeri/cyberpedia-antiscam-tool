@@ -1,12 +1,20 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import type { KeyboardEvent } from 'react';
 import * as m from 'motion/react-m';
 import { AnimatePresence } from 'motion/react';
-import { FileText, Heart, Loader2, Package, Sparkles } from 'lucide-react';
+import { Brain, FileText, Heart, Loader2, Package, Sparkles } from 'lucide-react';
 import { simulations } from '@/data/simulations';
 import { ChatSimulator } from '@/components/chat/ChatSimulator';
+import { TrainingChat } from '@/components/training/TrainingChat';
+import { TrainingSetup } from '@/components/training/TrainingSetup';
+import { ReflectionView } from '@/components/training/ReflectionView';
+import { SessionReport } from '@/components/training/SessionReport';
 import { useAISimulation } from '@/hooks/useAISimulation';
+import { useTrainingSession } from '@/hooks/useTrainingSession';
+import { useTrainingProfile } from '@/hooks/useTrainingProfile';
 import type { Simulation } from '@/types/simulation';
+import type { AttackType } from '@/types/emergency';
+import type { TrainingTarget } from '@/types/training';
 
 /** Map icon string from simulation data to Lucide component */
 const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -49,6 +57,57 @@ export function SimulationsPage({
 
   const { fetchAISimulation } = useAISimulation();
 
+  // --- AI Training (Palestra Mentale) ---
+  const isTrainingEnabled = import.meta.env.VITE_AI_TRAINING_ENABLED === 'true';
+  const training = useTrainingSession();
+  const { state: trainingState } = training;
+  const { profile, saveSession, getRecommendedTarget } = useTrainingProfile();
+  const [showSetup, setShowSetup] = useState(false);
+  /** Track whether we already saved this session to profile */
+  const savedSessionRef = useRef(false);
+
+  const handleOpenSetup = useCallback(() => {
+    setShowSetup(true);
+  }, []);
+
+  const handleStartTraining = useCallback(async (
+    attackType: AttackType,
+    difficulty: 'easy' | 'medium' | 'hard',
+    target: TrainingTarget,
+  ) => {
+    await training.startSession({ attackType, difficulty, trainingTarget: target });
+  }, [training]);
+
+  const handleTrainingBack = useCallback(() => {
+    training.reset();
+    setShowSetup(false);
+    savedSessionRef.current = false;
+  }, [training]);
+
+  // Save session to profile when reaching summary
+  useEffect(() => {
+    if (
+      trainingState.phase === 'summary' &&
+      !savedSessionRef.current &&
+      trainingState.scenarioConfig
+    ) {
+      const finalScores = trainingState.finalScores ?? trainingState.latestScores;
+      if (finalScores) {
+        savedSessionRef.current = true;
+        const summary = {
+          sessionId: trainingState.scenarioConfig.scenarioId,
+          date: new Date().toISOString(),
+          attackType: trainingState.scenarioConfig.attackType,
+          trainingTarget: trainingState.scenarioConfig.trainingTarget,
+          finalRiskScore: finalScores.riskScore,
+          interruptedAtTurn: trainingState.interruptedAtTurn,
+          improvement: 0, // computed inside saveSession
+        } as const;
+        saveSession(summary, finalScores, []);
+      }
+    }
+  }, [trainingState.phase, trainingState.scenarioConfig, trainingState.finalScores, trainingState.latestScores, trainingState.interruptedAtTurn, saveSession]);
+
   /** Called by ChatSimulator when phase reaches 'complete' */
   const handleSimComplete = useCallback(() => {
     setSimulationCount((prev) => {
@@ -90,6 +149,125 @@ export function SimulationsPage({
     },
     [selectingId, handleSelectSim],
   );
+
+  // --- Training setup view ---
+  if (showSetup && trainingState.phase === 'setup') {
+    return (
+      <AnimatePresence mode="wait">
+        <m.div
+          key="training-setup"
+          initial={{ opacity: 0, x: 40 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: -40 }}
+          transition={{ duration: 0.25 }}
+          className="flex flex-1 flex-col"
+        >
+          <TrainingSetup
+            profile={profile}
+            recommendedTarget={getRecommendedTarget()}
+            isLoading={trainingState.isLoading}
+            onStart={(at, diff, tgt) => void handleStartTraining(at, diff, tgt)}
+            onBack={handleTrainingBack}
+          />
+        </m.div>
+      </AnimatePresence>
+    );
+  }
+
+  // --- Active training session views ---
+  if (trainingState.phase === 'conversation' || trainingState.phase === 'interrupted') {
+    return (
+      <AnimatePresence mode="wait">
+        <m.div
+          key="training-chat"
+          initial={{ opacity: 0, x: 40 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: -40 }}
+          transition={{ duration: 0.25 }}
+          className="flex flex-1 flex-col"
+        >
+          <TrainingChat
+            scammerName={trainingState.scenarioConfig?.scammerPersona.name ?? 'Truffatore'}
+            turns={trainingState.turns}
+            latestScores={trainingState.latestScores}
+            isLoading={trainingState.isLoading}
+            waitSeconds={trainingState.waitSeconds}
+            error={trainingState.error}
+            onSendMessage={(text) => void training.sendMessage(text)}
+            onBack={handleTrainingBack}
+          />
+          {/* Interruption overlay — prompt user to begin reflection */}
+          {trainingState.phase === 'interrupted' && !trainingState.isLoading && (
+            <m.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="absolute inset-x-0 bottom-0 border-t border-amber-500/30 bg-slate-900/95 px-4 py-6 text-center backdrop-blur-sm"
+            >
+              <p className="mb-3 text-sm font-medium text-amber-300">
+                Sessione interrotta — il livello di rischio ha superato la soglia.
+              </p>
+              <button
+                type="button"
+                onClick={training.beginReflection}
+                className="btn-primary"
+              >
+                Inizia riflessione guidata
+              </button>
+            </m.div>
+          )}
+        </m.div>
+      </AnimatePresence>
+    );
+  }
+
+  if (trainingState.phase === 'reflection') {
+    return (
+      <AnimatePresence mode="wait">
+        <m.div
+          key="training-reflection"
+          initial={{ opacity: 0, x: 40 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: -40 }}
+          transition={{ duration: 0.25 }}
+          className="flex flex-1 flex-col"
+        >
+          <ReflectionView
+            currentStep={trainingState.currentReflectionStep}
+            currentQuestion={trainingState.currentReflectionQuestion}
+            reflections={trainingState.reflections}
+            isLoading={trainingState.isLoading}
+            waitSeconds={trainingState.waitSeconds}
+            error={trainingState.error}
+            onSubmitAnswer={(answer) => void training.submitReflection(answer)}
+            onBack={handleTrainingBack}
+          />
+        </m.div>
+      </AnimatePresence>
+    );
+  }
+
+  if (trainingState.phase === 'summary') {
+    return (
+      <AnimatePresence mode="wait">
+        <m.div
+          key="training-report"
+          initial={{ opacity: 0, x: 40 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: -40 }}
+          transition={{ duration: 0.25 }}
+          className="flex flex-1 flex-col"
+        >
+          <SessionReport
+            scores={trainingState.finalScores ?? trainingState.latestScores}
+            reflections={trainingState.reflections}
+            previousAverageScores={profile.sessionsCompleted > 1 ? profile.averageScores : null}
+            onFinish={handleTrainingBack}
+            onBack={handleTrainingBack}
+          />
+        </m.div>
+      </AnimatePresence>
+    );
+  }
 
   // --- Active simulation view ---
   if (activeSim) {
@@ -144,6 +322,56 @@ export function SimulationsPage({
           </m.div>
         )}
       </AnimatePresence>
+
+      {/* AI Training card — Palestra Mentale */}
+      {isTrainingEnabled && (
+        <m.button
+          type="button"
+          onClick={handleOpenSetup}
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+          whileHover={{ scale: 1.02, y: -2 }}
+          whileTap={{ scale: 0.98 }}
+          className="glass-card group relative flex items-start gap-4 p-6 text-left transition-shadow
+                     cursor-pointer border-cyan-brand/30 hover:border-cyan-brand/50"
+          style={{ minHeight: 44 }}
+        >
+          {/* Icon */}
+          <div className="flex size-11 shrink-0 items-center justify-center rounded-xl
+                          bg-cyan-brand/15 transition-colors group-hover:bg-cyan-brand/25">
+            <Brain className="size-5 text-cyan-brand" aria-hidden="true" />
+          </div>
+
+          {/* Text */}
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <h3 className="text-lg font-semibold text-foreground">
+                Palestra Mentale
+              </h3>
+              <span className="rounded-full bg-cyan-brand/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-cyan-300">
+                Beta
+              </span>
+            </div>
+            {profile.sessionsCompleted > 0 ? (
+              <p className="text-sm leading-relaxed text-muted-foreground">
+                Bentornato! <span className="font-medium text-cyan-300">{profile.sessionsCompleted} sessioni</span> completate.
+                {profile.weakestDimension && (
+                  <> Punto debole: <span className="font-medium text-amber-300">{
+                    profile.weakestDimension === 'activation' ? 'attivazione' :
+                    profile.weakestDimension === 'impulsivity' ? 'impulsivita' :
+                    profile.weakestDimension === 'verification' ? 'verifica' : 'consapevolezza'
+                  }</span>.</>
+                )}
+              </p>
+            ) : (
+              <p className="text-sm leading-relaxed text-muted-foreground">
+                Conversazione AI libera per allenare i tuoi riflessi mentali contro le truffe.
+              </p>
+            )}
+          </div>
+        </m.button>
+      )}
 
       {/* Prompt — moved from old button text */}
       <p className="text-sm font-medium text-cyan-300">
