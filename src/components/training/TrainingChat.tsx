@@ -65,7 +65,7 @@ export function TrainingChat({
   }, [turns.length, isLoading]);
 
   return (
-    <div className="flex h-[100dvh] flex-col overflow-hidden">
+    <div className="flex flex-1 flex-col overflow-hidden">
       {/* Header */}
       <div className="flex items-center gap-3 border-b border-slate-700/50 bg-slate-900/80 px-4 py-3">
         <button
