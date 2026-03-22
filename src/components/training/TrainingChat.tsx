@@ -134,10 +134,11 @@ export function TrainingChat({
           <m.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="mx-auto rounded-xl border border-red-500/30 bg-red-950/30 px-4 py-2 text-center text-sm text-red-300"
+            className="mx-auto flex flex-col items-center gap-2 rounded-xl border border-red-500/30 bg-red-950/30 px-4 py-3 text-center text-sm text-red-300"
             role="alert"
           >
-            {error}
+            <p>{error}</p>
+            <p className="text-xs text-red-400/70">Rinvia il messaggio per riprovare</p>
           </m.div>
         )}
       </div>

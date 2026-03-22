@@ -23,6 +23,22 @@ import type {
 } from '@/types/training';
 import { getReflectionQuestion } from './trainingReflectionQuestions';
 
+/** Translate common English fetch/network errors to Italian */
+function translateError(e: unknown): string {
+  if (!(e instanceof Error)) return 'Errore di connessione. Riprova.';
+  const msg = e.message.toLowerCase();
+  if (msg.includes('load failed') || msg.includes('failed to fetch') || msg.includes('networkerror')) {
+    return 'Connessione persa. Controlla la rete e riprova.';
+  }
+  if (msg.includes('timeout') || msg.includes('aborted')) {
+    return 'Il server non ha risposto in tempo. Riprova.';
+  }
+  if (msg.includes('too many requests')) {
+    return 'Troppe richieste. Attendi qualche minuto e riprova.';
+  }
+  return e.message;
+}
+
 // ---------------------------------------------------------------------------
 // State
 // ---------------------------------------------------------------------------
@@ -254,7 +270,7 @@ export function useTrainingSession(): UseTrainingSessionResult {
         stopWaitTimer();
         dispatch({
           type: 'SET_ERROR',
-          error: e instanceof Error ? e.message : 'Errore di connessione. Riprova.',
+          error: translateError(e),
         });
       }
     },
@@ -318,7 +334,7 @@ export function useTrainingSession(): UseTrainingSessionResult {
         stopWaitTimer();
         dispatch({
           type: 'SET_ERROR',
-          error: e instanceof Error ? e.message : 'Errore di connessione. Riprova.',
+          error: translateError(e),
         });
       }
     },
