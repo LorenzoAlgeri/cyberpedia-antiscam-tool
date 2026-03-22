@@ -82,7 +82,7 @@ export function TrainingChat({
             <Shield className="size-4 text-cyan-400" aria-hidden="true" />
           </div>
           <div>
-            <p className="text-sm font-semibold text-slate-200">{scammerName}</p>
+            <p className="text-base font-semibold text-slate-200">{scammerName}</p>
             {isLoading && (
               <p className="text-xs text-cyan-400">sta scrivendo...</p>
             )}
