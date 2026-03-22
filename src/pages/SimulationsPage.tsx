@@ -186,7 +186,7 @@ export function SimulationsPage({
           animate={{ opacity: 1, x: 0 }}
           exit={{ opacity: 0, x: -40 }}
           transition={{ duration: 0.25 }}
-          className="relative flex h-dvh flex-col"
+          className="relative flex flex-1 flex-col"
         >
           <TrainingChat
             scammerName={trainingState.scenarioConfig?.scammerPersona.name ?? 'Truffatore'}

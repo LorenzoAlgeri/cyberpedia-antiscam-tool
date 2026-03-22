@@ -17,6 +17,7 @@ import { ChatBubble } from '@/components/chat/ChatBubble';
 import { ChatTyping } from '@/components/chat/ChatTyping';
 import { ChatInput } from './ChatInput';
 import { RiskIndicator } from './RiskIndicator';
+import { useVirtualKeyboard } from '@/hooks/useVirtualKeyboard';
 import type { ConversationTurn, BehaviorScores } from '@/types/training';
 import type { ChatEntry } from '@/types/simulation';
 
@@ -52,6 +53,9 @@ export function TrainingChat({
 }: TrainingChatProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
 
+  // Handle virtual keyboard on iOS + Android
+  useVirtualKeyboard();
+
   // Auto-scroll to bottom on new messages
   useEffect(() => {
     if (scrollRef.current) {
@@ -65,7 +69,10 @@ export function TrainingChat({
   }, [turns.length, isLoading]);
 
   return (
-    <div className="flex flex-1 flex-col overflow-hidden">
+    <div
+      className="flex flex-col overflow-hidden"
+      style={{ height: 'var(--app-height, 100dvh)' }}
+    >
       {/* Header */}
       <div className="flex items-center gap-3 border-b border-slate-700/50 bg-slate-900/80 px-4 py-3">
         <button
