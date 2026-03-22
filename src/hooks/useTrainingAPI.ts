@@ -31,7 +31,7 @@ import type {
 const WORKER_BASE =
   'https://antiscam-worker.lorenzo-algeri.workers.dev';
 
-const TIMEOUT_MS = 25_000;
+const TIMEOUT_MS = 40_000;
 
 // ---------------------------------------------------------------------------
 // Helpers
