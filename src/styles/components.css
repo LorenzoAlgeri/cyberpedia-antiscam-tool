@@ -72,6 +72,13 @@
         @apply outline-none ring-2 ring-cyan-brand ring-offset-2 ring-offset-background;
     }
 
+    /* ContentEditable placeholder — shown when div is empty */
+    [contenteditable][data-placeholder]:empty::before {
+        content: attr(data-placeholder);
+        color: rgb(100 116 139); /* slate-500 */
+        pointer-events: none;
+    }
+
     /* Input — no label, placeholder only (CLAUDE.md rule) */
     .input-glass {
         @apply w-full rounded-2xl border-2 border-white/10 bg-slate-900/60 p-4 text-base font-medium text-foreground placeholder:text-muted-foreground transition-colors duration-200 sm:p-5 sm:text-xl;
