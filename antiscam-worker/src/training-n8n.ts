@@ -41,7 +41,7 @@ import { N8NTimeoutError, N8NApiError, N8NValidationError } from './n8n';
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
-const TIMEOUT_MS = 25_000;
+const TIMEOUT_MS = 28_000;
 
 // ── Internal helper ──────────────────────────────────────────────────────────
 
@@ -86,13 +86,13 @@ export async function callTrainingStart(
 ): Promise<StartSessionOutput> {
   const parsed = await callWebhook(webhookUrl, {
     action: 'start',
-    systemPrompt: buildStartSessionSystemPrompt(req.attackType, req.difficulty, req.trainingTarget),
-    userPrompt: buildStartSessionUserPrompt(req.attackType, req.difficulty, req.trainingTarget),
+    systemPrompt: buildStartSessionSystemPrompt(req.attackType, req.difficulty, req.trainingTargets, req.customDescription, req.customPersona, req.scammerGender),
+    userPrompt: buildStartSessionUserPrompt(req.attackType, req.difficulty, req.trainingTargets[0]!),
   });
 
   const result = StartSessionResponseSchema.safeParse(parsed);
   if (result.success) return result.data;
-  throw new N8NValidationError();
+  throw new N8NValidationError(JSON.stringify(result.error.issues));
 }
 
 /** Send a user message — returns behavior analysis + next scammer message. */
@@ -108,7 +108,7 @@ export async function callTrainingMessage(
 
   const result = SendMessageResponseSchema.safeParse(parsed);
   if (result.success) return result.data;
-  throw new N8NValidationError();
+  throw new N8NValidationError(JSON.stringify(result.error.issues));
 }
 
 /** Submit a reflection answer — returns AI analysis + next question. */
@@ -118,7 +118,7 @@ export async function callTrainingReflect(
 ): Promise<ReflectionOutput> {
   const parsed = await callWebhook(webhookUrl, {
     action: 'reflect',
-    systemPrompt: buildReflectionSystemPrompt(req.scenarioConfig),
+    systemPrompt: buildReflectionSystemPrompt(req.scenarioConfig, req.interruptReason),
     userPrompt: buildReflectionUserPrompt(
       req.triggerMessage,
       req.reflectionStep,
@@ -129,5 +129,5 @@ export async function callTrainingReflect(
 
   const result = ReflectionResponseSchema.safeParse(parsed);
   if (result.success) return result.data;
-  throw new N8NValidationError();
+  throw new N8NValidationError(JSON.stringify(result.error.issues));
 }

@@ -23,7 +23,7 @@ export const VALID_TRAINING_TARGETS = [
   'responsibility',
   'fear',
   'trust',
-  'greed',
+  'easy_gain',
   'authority',
 ] as const;
 
@@ -32,8 +32,13 @@ export type TrainingTarget = (typeof VALID_TRAINING_TARGETS)[number];
 export const VALID_DIFFICULTIES = ['easy', 'medium', 'hard'] as const;
 export type Difficulty = (typeof VALID_DIFFICULTIES)[number];
 
+export type ScammerGender = 'male' | 'female' | 'unspecified';
+
 export type NarrativePhase = 'P1' | 'P2' | 'P3';
 export type ReflectionStep = 'R1' | 'R2' | 'R3' | 'R4';
+
+/** Reason why the training session was interrupted */
+export type InterruptReason = 'high_risk' | 'max_turns';
 
 // ── Behavior scores ──────────────────────────────────────────────────────────
 
@@ -58,9 +63,12 @@ export interface ScenarioConfig {
   readonly attackType: TrainingAttackType;
   readonly difficulty: Difficulty;
   readonly trainingTarget: TrainingTarget;
+  readonly trainingTargets: TrainingTarget[];
   readonly scammerPersona: ScammerPersona;
   readonly interruptThreshold: number;
   readonly minTurnsBeforeInterrupt: number;
+  readonly maxTurns: number;
+  readonly scammerGender?: ScammerGender;
 }
 
 // ── Conversation turn ────────────────────────────────────────────────────────
@@ -88,7 +96,12 @@ export interface ReflectionAnswer {
 export interface StartSessionRequest {
   readonly attackType: TrainingAttackType;
   readonly difficulty: Difficulty;
-  readonly trainingTarget: TrainingTarget;
+  readonly trainingTargets: TrainingTarget[];
+  readonly scammerGender?: ScammerGender | undefined;
+  /** Custom scenario description — overrides attackType for prompt generation */
+  readonly customDescription?: string | undefined;
+  /** Custom scammer persona — used instead of AI-generated one */
+  readonly customPersona?: { name: string; role: string; tone: string } | undefined;
 }
 
 export interface SendMessageRequest {
@@ -104,6 +117,7 @@ export interface ReflectionRequest {
   readonly reflectionStep: ReflectionStep;
   readonly userAnswer: string;
   readonly previousReflections: readonly ReflectionAnswer[];
+  readonly interruptReason?: InterruptReason;
 }
 
 // ── Response types ───────────────────────────────────────────────────────────
@@ -118,6 +132,7 @@ export interface SendMessageResponse {
   readonly behaviorScores: BehaviorScores;
   readonly shouldInterrupt: boolean;
   readonly nextPhase: NarrativePhase;
+  readonly interruptReason?: InterruptReason;
 }
 
 export interface ReflectionResponse {

@@ -31,6 +31,7 @@ import {
   type TrainingAttackType,
   type Difficulty,
   type TrainingTarget,
+  type ScammerGender,
   type StartSessionRequest,
   type SendMessageRequest,
   type ReflectionRequest,
@@ -134,13 +135,27 @@ async function handleStart(request: Request, env: Env): Promise<Response> {
       ? (parsed.difficulty as Difficulty)
       : 'medium';
 
-  // Validate trainingTarget (default: urgency)
-  const trainingTarget: TrainingTarget =
-    parsed.trainingTarget &&
-    typeof parsed.trainingTarget === 'string' &&
-    (VALID_TRAINING_TARGETS as readonly string[]).includes(parsed.trainingTarget)
-      ? (parsed.trainingTarget as TrainingTarget)
-      : 'urgency';
+  // Validate trainingTargets array
+  let trainingTargets: TrainingTarget[];
+  const rawTargets = (parsed as Record<string, unknown>).trainingTargets;
+  if (Array.isArray(rawTargets) && rawTargets.length > 0) {
+    trainingTargets = (rawTargets as unknown[])
+      .filter((t): t is string => typeof t === 'string' && (VALID_TRAINING_TARGETS as readonly string[]).includes(t))
+      .slice(0, 3) as TrainingTarget[];
+    if (trainingTargets.length === 0) trainingTargets = ['urgency'];
+  } else if (
+    (parsed as Record<string, unknown>).trainingTarget &&
+    typeof (parsed as Record<string, unknown>).trainingTarget === 'string' &&
+    (VALID_TRAINING_TARGETS as readonly string[]).includes((parsed as Record<string, unknown>).trainingTarget as string)
+  ) {
+    trainingTargets = [(parsed as Record<string, unknown>).trainingTarget as TrainingTarget];
+  } else {
+    trainingTargets = ['urgency'];
+  }
+
+  // Extract scammerGender
+  const rawGender = (parsed as Record<string, unknown>).scammerGender;
+  const scammerGender: ScammerGender = (rawGender === 'male' || rawGender === 'female') ? rawGender : 'unspecified';
 
   // Extract optional custom fields (sanitized with strict length limits)
   const customDescription = typeof parsed.customDescription === 'string' && parsed.customDescription.trim().length > 0
@@ -163,7 +178,8 @@ async function handleStart(request: Request, env: Env): Promise<Response> {
       {
         attackType: parsed.attackType as TrainingAttackType,
         difficulty,
-        trainingTarget,
+        trainingTargets,
+        scammerGender,
         customDescription,
         customPersona,
       },
