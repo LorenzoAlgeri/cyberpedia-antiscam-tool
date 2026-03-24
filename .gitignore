@@ -27,3 +27,33 @@ dist-ssr
 *.sw?
 
 .planning/
+
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+dist-ssr/
+
+# Wrangler
+.wrangler/
+
+# Logs
+*.log
+build.log
+
+# Editor
+.vscode/
+.idea/
+*.sw?
+.DS_Store
+
+# Local env
+*.local
+.env
+.env.*
+.dev.vars
+
+# Claude Code local settings
+.claude/settings.local.json
+.claude/skills.lnk

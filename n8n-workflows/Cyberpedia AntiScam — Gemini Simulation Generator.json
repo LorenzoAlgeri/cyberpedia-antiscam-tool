@@ -1,0 +1,311 @@
+{
+  "name": "Cyberpedia AntiScam — Gemini Simulation Generator",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "generate-simulation",
+        "responseMode": "responseNode",
+        "options": {
+          "rawBody": false
+        }
+      },
+      "id": "1772f48b-b47f-435c-9cb5-865d89d5804f",
+      "name": "Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "generate-simulation"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "condition-attackType",
+              "leftValue": "={{ $json.body.attackType }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "condition-attackType-valid",
+              "leftValue": "={{ ['romance-scam','urgent-loan','fake-bank-operator','fake-relative'].includes($json.body.attackType) }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "condition-difficulty-valid",
+              "leftValue": "={{ !$json.body.difficulty || ['easy','medium','hard'].includes($json.body.difficulty) }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "47ffa76c-ebb9-4301-a54a-7bc5e95a0132",
+      "name": "Validate Input",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        240,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ error: 'Invalid input. Required: attackType (romance-scam|urgent-loan|fake-bank-operator|fake-relative). Optional: difficulty (easy|medium|hard).' }) }}",
+        "options": {
+          "responseCode": 400
+        }
+      },
+      "id": "5bc084b8-6a50-40c4-a61a-a3c0d8f0dece",
+      "name": "Respond Invalid Input",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        480,
+        192
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Build Gemini API request body\n// Resolves ATTACK_LABELS, ATTACK_ICONS, DIFFICULTY_INSTRUCTIONS maps\n// and constructs systemInstruction + contents + generationConfig\n\nconst body = $input.first().json.body;\nconst attackType = body.attackType;\nconst difficulty = body.difficulty || 'medium';\n\nconst ATTACK_LABELS = {\n  'romance-scam': 'truffa amorosa (romance scam via app di incontri o social)',\n  'urgent-loan': 'truffa del prestito urgente (finto amico che ha cambiato numero)',\n  'fake-bank-operator': 'finto operatore bancario (vishing telefonico)',\n  'fake-relative': 'finto parente WhatsApp (\"Ciao mamma, ho perso il telefono\")',\n};\n\nconst ATTACK_ICONS = {\n  'romance-scam': 'Heart',\n  'urgent-loan': 'Wallet',\n  'fake-bank-operator': 'Building2',\n  'fake-relative': 'Users',\n};\n\nconst DIFFICULTY_INSTRUCTIONS = {\n  'easy': 'Segnali di truffa evidenti, pressione lieve.',\n  'medium': 'Segnali sottili, urgenza moderata, dettagli credibili.',\n  'hard': 'Segnali ambigui, pressione psicologica intensa.',\n};\n\nconst attackLabel = ATTACK_LABELS[attackType];\nconst attackIcon = ATTACK_ICONS[attackType];\nconst difficultyInstruction = DIFFICULTY_INSTRUCTIONS[difficulty];\n\nconst systemPrompt = `Sei un generatore di simulazioni anti-truffa per la piattaforma Cyberpedia.it.\nIl tuo compito è creare scenari realistici di truffa in formato JSON, progettati per addestrare gli utenti a riconoscere e proteggersi dalle frodi digitali.\n\nTIPO DI TRUFFA: ${attackLabel}\nDIFFICOLTÀ: ${difficultyInstruction}\n\nRispondi con ESATTAMENTE questo schema JSON. Tutti i campi sono obbligatori.\nNon aggiungere campi non previsti. Non omettere alcun campo.\n\n{\n  \"id\": \"${attackType}\",\n  \"title\": \"titolo breve e descrittivo (massimo 5 parole)\",\n  \"description\": \"breve descrizione dello scenario (massimo 15 parole)\",\n  \"icon\": \"${attackIcon}\",\n  \"scammerName\": \"nome e cognome italiani realistici del truffatore\",\n  \"steps\": [\n    {\n      \"type\": \"message\",\n      \"sender\": \"scammer\",\n      \"text\": \"messaggio iniziale realistico del truffatore (massimo 2 righe). Deve sembrare un vero SMS o messaggio WhatsApp, con urgenza e manipolazione emotiva.\"\n    },\n    {\n      \"type\": \"choice\",\n      \"options\": [\n        { \"id\": \"d1-a\", \"text\": \"risposta sbagliata — ESPONE al rischio (massimo 1 riga)\", \"correct\": false },\n        { \"id\": \"d1-b\", \"text\": \"risposta corretta — LIMITE (es. rifiuto netto, blocca contatto, dice NO con fermezza)\", \"correct\": true, \"skill\": \"limite\" },\n        { \"id\": \"d1-c\", \"text\": \"risposta corretta — VERIFICA (es. chiama numero originale, chiedi prova identità)\", \"correct\": true, \"skill\": \"verifica\" },\n        { \"id\": \"d1-d\", \"text\": \"risposta sbagliata — ESPONE al rischio (massimo 1 riga)\", \"correct\": false }\n      ]\n    },\n    {\n      \"type\": \"feedback\",\n      \"explanation\": \"spiegazione che copre ENTRAMBE le risposte corrette: perché ognuna protegge dalla truffa (massimo 2 frasi)\",\n      \"wrongExplanation\": \"spiega il RISCHIO concreto della scelta sbagliata: cosa potrebbe accadere alla vittima (massimo 15 parole, tono neutro e informativo, MAI giustificare la scelta sbagliata)\",\n      \"followUp\": []\n    }\n  ]\n}\nREGOLE ASSOLUTE — la violazione di qualsiasi regola invalida l'intero output:\n\n1. STRUTTURA: esattamente 3 step nell'ordine: message → choice → feedback. Né più, né meno.\n2. SCELTE (I2): 3 o 4 opzioni nel choice. ESATTAMENTE 2 con \"correct\": true che allenano skill DIVERSE. Le altre con \"correct\": false (senza campo \"skill\").\n   Skill disponibili:\n   - \"limite\"      = rifiutare / bloccare / dire NO con fermezza\n   - \"verifica\"    = verificare identità o dettagli (chiamata, domanda segreta, videochiamata)\n   - \"esposizione\" = nominare esplicitamente il pattern di truffa (\"questo è una tecnica nota\")\n   - \"alternativa\" = proporre un pagamento/azione sicura alternativa\n   Le due opzioni corrette NON devono essere sinonimi o varianti della stessa skill.\n3. SEMANTICA DI \"correct\":\n   - correct: true = la scelta che PROTEGGE l'utente dalla truffa (deve avere campo \"skill\" con valore valido)\n   - correct: false = la scelta che ESPONE l'utente al rischio (NON includere campo \"skill\")\n4. FEEDBACK: il campo \"explanation\" copre ENTRAMBE le scelte corrette (perché ognuna protegge). Il campo \"wrongExplanation\" descrive il RISCHIO concreto delle scelte sbagliate. MAI giustificare o normalizzare la scelta sbagliata.\n5. FEEDBACK VIETATI: NON includere il campo \"correct\" nel feedback. NON includere il campo \"retryMessage\". Il campo \"followUp\" è SEMPRE un array vuoto [].\n6. FORMATO: rispondi ESCLUSIVAMENTE con JSON puro. Nessun markdown (niente \\`\\`\\`json, niente \\`\\`\\`). Nessun testo prima o dopo il JSON. Nessun commento.\n7. CAMPI FISSI: i campi \"id\" e \"icon\" devono contenere ESATTAMENTE i valori indicati sopra. Non inventare valori diversi.\n8. LINGUA: tutto il contenuto testuale DEVE essere in italiano corretto e formale. Nessun anglicismo non necessario.\n9. TONO: il messaggio del truffatore deve essere realistico e credibile. Usa urgenza (\"devi farlo subito\"), familiarità (\"ciao, sono io\"), manipolazione emotiva (\"ho bisogno di aiuto\"), linguaggio tipico di SMS/WhatsApp. Il truffatore NON deve sembrare palesemente sospetto — il livello di ambiguità dipende dalla difficoltà.\n10. ID OPZIONI: usa \"d1-a\", \"d1-b\", \"d1-c\", \"d1-d\" per 4 opzioni; oppure \"d1-a\", \"d1-b\", \"d1-c\" per 3 opzioni (1 sola opzione sbagliata).`;\n\nconst userPrompt = `Genera simulazione \"${attackLabel}\" — difficoltà \"${difficulty}\". id: \"${attackType}\", icon: \"${attackIcon}\".`;\n\nreturn [{\n  json: {\n    requestBody: {\n      contents: [\n        {\n          role: 'user',\n          parts: [{ text: userPrompt }]\n        }\n      ],\n      systemInstruction: {\n        parts: [{ text: systemPrompt }]\n      },\n      generationConfig: {\n        temperature: 0.9,\n        topP: 0.95,\n        topK: 40,\n        maxOutputTokens: 8192,\n        responseMimeType: 'application/json'\n      }\n    },\n    attackType,\n    difficulty,\n    attackIcon\n  }\n}];"
+      },
+      "id": "780076f8-7bac-4793-9d72-8588d53a571d",
+      "name": "Build Gemini Prompt",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        480,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=AIzaSyAzQrouRm6WblZaiT_ioDMfwjOJHz_Vf2s",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googlePalmApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.requestBody) }}",
+        "options": {
+          "timeout": 60000
+        }
+      },
+      "id": "02feae2d-9d30-429d-99e8-7c3729900892",
+      "name": "Gemini API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        720,
+        0
+      ],
+      "credentials": {
+        "googlePalmApi": {
+          "id": "OEg4mUsFmQTwI2RJ",
+          "name": "Lorenzo.algeri03@gmail.com"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extract + validate Gemini response\n// 1. Extract candidates[0].content.parts[0].text\n// 2. Strip any accidental markdown fences (defensive)\n// 3. JSON.parse\n// 4. Patch id/icon with deterministic values (like patchFixedFields in n8n.ts)\n// 5. Validate minimum structure (steps array with 3 elements)\n\nconst geminiResponse = $input.first().json;\n\n// Get attackType and attackIcon from the Build Gemini Prompt node\nconst buildNode = $node['Build Gemini Prompt'].json;\nconst attackType = buildNode.attackType;\nconst attackIcon = buildNode.attackIcon;\n\n// Step 1: Extract generated text from Gemini response\nlet rawText;\ntry {\n  rawText = geminiResponse.candidates[0].content.parts[0].text;\n} catch (e) {\n  throw new Error(`Gemini response missing expected structure: ${JSON.stringify(geminiResponse).slice(0, 300)}`);\n}\n\nif (!rawText || typeof rawText !== 'string') {\n  throw new Error('Gemini returned empty or non-string text');\n}\n\n// Step 2: Strip markdown fences defensively\nlet cleaned = rawText.trim();\nif (cleaned.startsWith('```json')) {\n  cleaned = cleaned.slice(7);\n}\nif (cleaned.startsWith('```')) {\n  cleaned = cleaned.slice(3);\n}\nif (cleaned.endsWith('```')) {\n  cleaned = cleaned.slice(0, -3);\n}\ncleaned = cleaned.trim();\n\n// Step 3: Parse JSON\nlet simulation;\ntry {\n  simulation = JSON.parse(cleaned);\n} catch (e) {\n  throw new Error(`Failed to parse Gemini JSON: ${e.message}. Raw: ${cleaned.slice(0, 200)}`);\n}\n\n// Step 4: Patch id and icon with deterministic values\n// (same as patchFixedFields in antiscam-worker/src/n8n.ts)\nif (typeof simulation === 'object' && simulation !== null) {\n  simulation.id = attackType;\n  simulation.icon = attackIcon;\n}\n\n// Step 5: Validate minimum structure\nconst errors = [];\n\nif (!simulation.id || typeof simulation.id !== 'string') {\n  errors.push('Missing or invalid \"id\"');\n}\nif (!simulation.title || typeof simulation.title !== 'string') {\n  errors.push('Missing or invalid \"title\"');\n}\nif (!simulation.description || typeof simulation.description !== 'string') {\n  errors.push('Missing or invalid \"description\"');\n}\nif (!simulation.icon || typeof simulation.icon !== 'string') {\n  errors.push('Missing or invalid \"icon\"');\n}\nif (!simulation.scammerName || typeof simulation.scammerName !== 'string') {\n  errors.push('Missing or invalid \"scammerName\"');\n}\nif (!Array.isArray(simulation.steps)) {\n  errors.push('Missing or invalid \"steps\" array');\n} else if (simulation.steps.length !== 3) {\n  errors.push(`Expected 3 steps, got ${simulation.steps.length}`);\n} else {\n  // Validate step types\n  if (simulation.steps[0].type !== 'message') {\n    errors.push(`Step 0 should be \"message\", got \"${simulation.steps[0].type}\"`);\n  }\n  if (simulation.steps[1].type !== 'choice') {\n    errors.push(`Step 1 should be \"choice\", got \"${simulation.steps[1].type}\"`);\n  } else {\n    // Validate choice options — I2 rule: exactly 2 correct options with different skills\n    const options = simulation.steps[1].options;\n    if (!Array.isArray(options) || options.length < 3 || options.length > 4) {\n      errors.push(`Expected 3 or 4 choice options, got ${Array.isArray(options) ? options.length : 'none'}`);\n    } else {\n      const correctOptions = options.filter(o => o.correct === true);\n      const correctCount = correctOptions.length;\n      if (correctCount !== 2) {\n        errors.push(`I2: Expected exactly 2 correct options, got ${correctCount}`);\n      } else {\n        const validSkills = ['limite', 'verifica', 'esposizione', 'alternativa'];\n        const skills = correctOptions.map(o => o.skill);\n        if (!skills[0] || !validSkills.includes(skills[0])) {\n          errors.push(`I2: Correct option 1 missing valid skill (got \"${skills[0]}\")`);\n        }\n        if (!skills[1] || !validSkills.includes(skills[1])) {\n          errors.push(`I2: Correct option 2 missing valid skill (got \"${skills[1]}\")`);\n        }\n        if (skills[0] && skills[1] && skills[0] === skills[1]) {\n          errors.push(`I2: Both correct options have same skill \"${skills[0]}\" — must be different`);\n        }\n      }\n    }\n  }\n  if (simulation.steps[2].type !== 'feedback') {\n    errors.push(`Step 2 should be \"feedback\", got \"${simulation.steps[2].type}\"`);\n  } else {\n    // Remove forbidden fields from feedback if present\n    delete simulation.steps[2].correct;\n    delete simulation.steps[2].retryMessage;\n    // Ensure followUp is empty array\n    simulation.steps[2].followUp = [];\n  }\n}\n\nif (errors.length > 0) {\n  throw new Error(`Validation failed: ${errors.join('; ')}`);\n}\n\nreturn [{ json: simulation }];"
+      },
+      "id": "0b3efa28-6e7f-4ae2-b241-57c2c1c453bc",
+      "name": "Extract + Validate JSON",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        960,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($json) }}",
+        "options": {
+          "responseCode": 200,
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "name": "Cache-Control",
+                "value": "no-store"
+              }
+            ]
+          }
+        }
+      },
+      "id": "b39d5a86-7e5c-43cf-9506-4c82d1807b24",
+      "name": "Respond Success",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1200,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ error: 'Generation failed', detail: $json.error?.message || $json.message || 'Unknown error from Gemini API or validation' }) }}",
+        "options": {
+          "responseCode": 502
+        }
+      },
+      "id": "955421da-e88a-44ec-a57d-a01c53ababa7",
+      "name": "Respond Error",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        960,
+        272
+      ]
+    }
+  ],
+  "pinData": {
+    "Webhook Trigger": [
+      {
+        "json": {
+          "headers": {
+            "host": "lorenzoalgeri.app.n8n.cloud",
+            "content-length": "51",
+            "accept-encoding": "gzip, br",
+            "cdn-loop": "cloudflare; loops=1; subreqs=2",
+            "cf-connecting-ip": "2a06:98c0:3600::103",
+            "cf-ew-via": "14",
+            "cf-ipcountry": "IT",
+            "cf-ray": "9db2a39169c6ea35-FCO",
+            "cf-visitor": "{\"scheme\":\"https\"}",
+            "cf-worker": "n8n.cloud",
+            "content-type": "application/json",
+            "x-forwarded-for": "2a06:98c0:3600::103, 162.158.116.46",
+            "x-forwarded-host": "lorenzoalgeri.app.n8n.cloud",
+            "x-forwarded-port": "443",
+            "x-forwarded-proto": "https",
+            "x-forwarded-server": "traefik-prod-users-gwc-79-7c576b657f-l7qbn",
+            "x-is-trusted": "yes",
+            "x-real-ip": "2a06:98c0:3600::103"
+          },
+          "params": {},
+          "query": {},
+          "body": {
+            "attackType": "romance-scam",
+            "difficulty": "medium"
+          },
+          "webhookUrl": "https://lorenzoalgeri.app.n8n.cloud/webhook/generate-simulation",
+          "executionMode": "production"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Webhook Trigger": {
+      "main": [
+        [
+          {
+            "node": "Validate Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Input": {
+      "main": [
+        [
+          {
+            "node": "Build Gemini Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond Invalid Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Gemini Prompt": {
+      "main": [
+        [
+          {
+            "node": "Gemini API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gemini API": {
+      "main": [
+        [
+          {
+            "node": "Extract + Validate JSON",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Extract + Validate JSON": {
+      "main": [
+        [
+          {
+            "node": "Respond Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "533b77ee-7388-4c71-b0cc-7c4f2f123663",
+  "meta": {
+    "instanceId": "ba3901e4487ccf6e12f50e3a684d11f2ead93431a41133ff07ce08aaf43825ba"
+  },
+  "id": "mkPkAbtYrms1odM4",
+  "tags": []
+}

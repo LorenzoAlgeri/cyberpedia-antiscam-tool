@@ -40,9 +40,9 @@ Requirements for this hardening milestone. Each maps to a roadmap phase with a s
 
 ### Accessibility
 
-- [ ] **A11Y-01**: Run full WCAG 2.2 AA audit focused on elderly/vulnerable user needs
-- [ ] **A11Y-02**: Verify screen reader compatibility for all interactive elements
-- [ ] **A11Y-03**: Verify touch targets (44x44px min) and font sizes (16px min on mobile)
+- [x] **A11Y-01**: Run full WCAG 2.2 AA audit focused on elderly/vulnerable user needs
+- [x] **A11Y-02**: Verify screen reader compatibility for all interactive elements
+- [x] **A11Y-03**: Verify touch targets (44x44px min) and font sizes (16px min on mobile)
 
 ## v2 Requirements
 
@@ -90,9 +90,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | TS-02 | Phase 4: TypeScript Strictness | Complete |
 | SIM-01 | Phase 5: AI Simulation Audit | Complete |
 | SIM-02 | Phase 5: AI Simulation Audit | Complete |
-| A11Y-01 | Phase 6: Accessibility | Pending |
-| A11Y-02 | Phase 6: Accessibility | Pending |
-| A11Y-03 | Phase 6: Accessibility | Pending |
+| A11Y-01 | Phase 6: Accessibility | Complete |
+| A11Y-02 | Phase 6: Accessibility | Complete |
+| A11Y-03 | Phase 6: Accessibility | Complete |
 
 **Coverage:**
 - v1 requirements: 19 total

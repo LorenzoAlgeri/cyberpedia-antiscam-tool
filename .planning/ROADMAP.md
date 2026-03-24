@@ -16,8 +16,8 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 2: Component Refactoring** - Split four oversized components (TodoChecklist, ChatSimulator, EmergencyPage, EmergencyForm) into focused modules (completed 2026-03-16)
 - [x] **Phase 3: Security Hardening** - Stress-test encryption edge cases, audit PIN caching, verify legacy migration and CSP headers (completed 2026-03-16)
 - [x] **Phase 4: TypeScript Strictness** - Add runtime type guards at storage boundaries and exhaustive switch assertions on all unions (completed 2026-03-16)
-- [ ] **Phase 5: AI Simulation Audit** - Verify all simulation scenarios match the validator contract and have correct choice-point structure
-- [ ] **Phase 6: Accessibility** - Full WCAG 2.2 AA audit for elderly/vulnerable users, screen reader verification, touch target compliance
+- [x] **Phase 5: AI Simulation Audit** - Verify all simulation scenarios match the validator contract and have correct choice-point structure (completed 2026-03-17)
+- [x] **Phase 6: Accessibility** - Full WCAG 2.2 AA audit for elderly/vulnerable users, screen reader verification, touch target compliance (completed 2026-03-17)
 
 ## Phase Details
 
@@ -124,5 +124,5 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | 2. Component Refactoring | 4/4 | Complete   | 2026-03-16 |
 | 3. Security Hardening | 2/2 | Complete   | 2026-03-16 |
 | 4. TypeScript Strictness | 2/2 | Complete   | 2026-03-16 |
-| 5. AI Simulation Audit | 0/1 | Planning complete | - |
-| 6. Accessibility | 0/3 | Planning complete | - |
+| 5. AI Simulation Audit | 1/1 | Complete   | 2026-03-17 |
+| 6. Accessibility | 3/3 | Complete   | 2026-03-17 |

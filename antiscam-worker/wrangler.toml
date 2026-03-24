@@ -1,0 +1,43 @@
+name = "antiscam-worker"
+main = "src/index.ts"
+compatibility_date = "2025-03-01"
+
+# ── KV namespace for simulation cache ────────────────────────────────────────
+# 12 max combinations (4 attackType × 3 difficulty) → few Gemini calls/day.
+#
+# After first deploy, create the namespaces and replace the placeholder IDs:
+#   wrangler kv namespace create ANTISCAM_SIMULATIONS_CACHE
+#   wrangler kv namespace create ANTISCAM_SIMULATIONS_CACHE --preview
+# Then paste the returned IDs below.
+
+[[kv_namespaces]]
+binding = "ANTISCAM_SIMULATIONS_CACHE"
+id = "26864f73a49a4089a44f408c0c56317f"
+preview_id = "26864f73a49a4089a44f408c0c56317f"
+
+# ── KV namespace for rate limiting ───────────────────────────────────────────
+# Kept separate from ANTISCAM_SIMULATIONS_CACHE intentionally:
+#   - independent quota, TTL profile (1h vs 24h), and dashboard monitoring
+#   - eliminates any risk of "rl:" keys colliding with "sim:" cache keys
+#
+# Create before first deploy:
+#   wrangler kv namespace create ANTISCAM_RATELIMIT
+#   wrangler kv namespace create ANTISCAM_RATELIMIT --preview
+# Then paste the returned IDs below.
+
+[[kv_namespaces]]
+binding = "ANTISCAM_RATELIMIT"
+id = "4bf7e2be994b433ca4304e712b47891e"
+preview_id = "4e0b8f0506c742d1a83b9c680ff265ef"
+
+# ── Secrets (never put values here) ─────────────────────────────────────────
+# Set via CLI after deploy:
+#   wrangler secret put N8N_WEBHOOK_URL
+#   wrangler secret put N8N_TRAINING_WEBHOOK_URL
+#
+# Values:
+#   N8N_WEBHOOK_URL          → webhook per simulazioni scripted
+#   N8N_TRAINING_WEBHOOK_URL → (set via `wrangler secret put`)
+#
+# Secrets appear automatically in the Env type at runtime.
+# Listed here as documentation only — Cloudflare ignores unknown top-level keys.

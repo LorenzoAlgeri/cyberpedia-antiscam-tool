@@ -1,0 +1,256 @@
+{
+  "name": "Cyberpedia Palestra Mentale — AI Training",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "palestra-mentale",
+        "responseMode": "responseNode",
+        "options": {
+          "rawBody": false
+        }
+      },
+      "id": "wh-palestra-001",
+      "name": "Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [0, 0],
+      "webhookId": "palestra-mentale"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "cond-action-exists",
+              "leftValue": "={{ $json.body.action }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "cond-action-valid",
+              "leftValue": "={{ ['start','message','reflect'].includes($json.body.action) }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "cond-system-prompt",
+              "leftValue": "={{ $json.body.systemPrompt }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "cond-user-prompt",
+              "leftValue": "={{ $json.body.userPrompt }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "if-validate-001",
+      "name": "Validate Input",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [240, 0]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ error: 'Invalid input. Required fields: action (start|message|reflect), systemPrompt (string), userPrompt (string).' }) }}",
+        "options": {
+          "responseCode": 400
+        }
+      },
+      "id": "resp-invalid-001",
+      "name": "Respond Invalid Input",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [480, 240]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Build Gemini API request body from Worker-provided prompts.\n// The Worker already constructs systemPrompt and userPrompt\n// with all scenario context, conversation history, and instructions.\n// This node simply formats them into the Gemini API structure.\n\nconst body = $input.first().json.body;\nconst action = body.action;\nconst systemPrompt = body.systemPrompt;\nconst userPrompt = body.userPrompt;\n\n// Temperature varies by action type:\n// - start: higher creativity for diverse scenarios (0.9)\n// - message: balanced for realistic conversation + analysis (0.7)\n// - reflect: lower for consistent, empathetic analysis (0.5)\nconst temperatureMap = { start: 0.9, message: 0.7, reflect: 0.5 };\nconst temperature = temperatureMap[action] || 0.7;\n\nreturn [{\n  json: {\n    requestBody: {\n      contents: [\n        {\n          role: 'user',\n          parts: [{ text: userPrompt }]\n        }\n      ],\n      systemInstruction: {\n        parts: [{ text: systemPrompt }]\n      },\n      generationConfig: {\n        temperature,\n        topP: 0.95,\n        topK: 40,\n        maxOutputTokens: 4096,\n        responseMimeType: 'application/json'\n      }\n    },\n    action\n  }\n}];"
+      },
+      "id": "code-build-prompt-001",
+      "name": "Build Gemini Request",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [480, 0]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googlePalmApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.requestBody) }}",
+        "options": {
+          "timeout": 25000
+        }
+      },
+      "id": "http-gemini-001",
+      "name": "Gemini API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [720, 0],
+      "credentials": {
+        "googlePalmApi": {
+          "id": "OEg4mUsFmQTwI2RJ",
+          "name": "Lorenzo.algeri03@gmail.com"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extract Gemini response text, parse JSON, and validate structure.\n// The expected JSON schema depends on the action type:\n//\n// ACTION: start\n// { scenarioConfig: {...}, firstMessage: string }\n//\n// ACTION: message\n// { behaviorScores: {...}, shouldInterrupt: bool, nextPhase: string, aiMessage: string }\n//\n// ACTION: reflect\n// { aiAnalysis: string, nextQuestion: string|null, insightSummary?: string }\n\nconst geminiResponse = $input.first().json;\nconst action = $node['Build Gemini Request'].json.action;\n\n// Step 1: Extract generated text\nlet rawText;\ntry {\n  rawText = geminiResponse.candidates[0].content.parts[0].text;\n} catch (e) {\n  throw new Error(`Gemini response missing expected structure: ${JSON.stringify(geminiResponse).slice(0, 500)}`);\n}\n\nif (!rawText || typeof rawText !== 'string') {\n  throw new Error('Gemini returned empty or non-string text');\n}\n\n// Step 2: Strip markdown fences defensively\nlet cleaned = rawText.trim();\nif (cleaned.startsWith('```json')) cleaned = cleaned.slice(7);\nif (cleaned.startsWith('```')) cleaned = cleaned.slice(3);\nif (cleaned.endsWith('```')) cleaned = cleaned.slice(0, -3);\ncleaned = cleaned.trim();\n\n// Step 3: Parse JSON\nlet parsed;\ntry {\n  parsed = JSON.parse(cleaned);\n} catch (e) {\n  throw new Error(`Failed to parse Gemini JSON: ${e.message}. Raw: ${cleaned.slice(0, 300)}`);\n}\n\n// Step 4: Validate based on action type\nconst errors = [];\n\nif (action === 'start') {\n  if (!parsed.scenarioConfig || typeof parsed.scenarioConfig !== 'object') {\n    errors.push('Missing scenarioConfig object');\n  } else {\n    const sc = parsed.scenarioConfig;\n    if (!sc.scenarioId) errors.push('Missing scenarioConfig.scenarioId');\n    if (!sc.attackType) errors.push('Missing scenarioConfig.attackType');\n    if (!sc.difficulty) errors.push('Missing scenarioConfig.difficulty');\n    if (!sc.trainingTarget) errors.push('Missing scenarioConfig.trainingTarget');\n    if (!sc.scammerPersona || !sc.scammerPersona.name) errors.push('Missing scammerPersona.name');\n    if (!sc.scammerPersona || !sc.scammerPersona.role) errors.push('Missing scammerPersona.role');\n    if (!sc.scammerPersona || !sc.scammerPersona.tone) errors.push('Missing scammerPersona.tone');\n    // Ensure numeric fields have defaults\n    if (typeof sc.interruptThreshold !== 'number') sc.interruptThreshold = 70;\n    if (typeof sc.minTurnsBeforeInterrupt !== 'number') sc.minTurnsBeforeInterrupt = 3;\n  }\n  if (!parsed.firstMessage || typeof parsed.firstMessage !== 'string') {\n    errors.push('Missing or invalid firstMessage');\n  }\n}\n\nif (action === 'message') {\n  if (!parsed.behaviorScores || typeof parsed.behaviorScores !== 'object') {\n    errors.push('Missing behaviorScores object');\n  } else {\n    const bs = parsed.behaviorScores;\n    for (const key of ['activation', 'impulsivity', 'verification', 'awareness', 'riskScore']) {\n      if (typeof bs[key] !== 'number' || bs[key] < 0 || bs[key] > 100) {\n        errors.push(`behaviorScores.${key} must be a number 0-100 (got ${bs[key]})`);\n      }\n    }\n  }\n  if (typeof parsed.shouldInterrupt !== 'boolean') {\n    errors.push('Missing or invalid shouldInterrupt (must be boolean)');\n  }\n  if (!['P1', 'P2', 'P3'].includes(parsed.nextPhase)) {\n    errors.push(`Invalid nextPhase: ${parsed.nextPhase} (must be P1, P2, or P3)`);\n  }\n  if (!parsed.aiMessage || typeof parsed.aiMessage !== 'string') {\n    errors.push('Missing or invalid aiMessage');\n  }\n}\n\nif (action === 'reflect') {\n  if (!parsed.aiAnalysis || typeof parsed.aiAnalysis !== 'string') {\n    errors.push('Missing or invalid aiAnalysis');\n  }\n  // nextQuestion can be null (last step) or string\n  if (parsed.nextQuestion !== null && typeof parsed.nextQuestion !== 'string') {\n    errors.push('nextQuestion must be string or null');\n  }\n}\n\nif (errors.length > 0) {\n  throw new Error(`Validation failed (${action}): ${errors.join('; ')}`);\n}\n\nreturn [{ json: parsed }];"
+      },
+      "id": "code-validate-001",
+      "name": "Extract + Validate JSON",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [960, 0]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($json) }}",
+        "options": {
+          "responseCode": 200,
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "name": "Cache-Control",
+                "value": "no-store"
+              }
+            ]
+          }
+        }
+      },
+      "id": "resp-success-001",
+      "name": "Respond Success",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1200, 0]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ error: 'Training generation failed', detail: $json.error?.message || $json.message || 'Unknown error from Gemini API or validation' }) }}",
+        "options": {
+          "responseCode": 502
+        }
+      },
+      "id": "resp-error-001",
+      "name": "Respond Error",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [960, 320]
+    }
+  ],
+  "connections": {
+    "Webhook Trigger": {
+      "main": [
+        [
+          {
+            "node": "Validate Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Input": {
+      "main": [
+        [
+          {
+            "node": "Build Gemini Request",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond Invalid Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Gemini Request": {
+      "main": [
+        [
+          {
+            "node": "Gemini API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gemini API": {
+      "main": [
+        [
+          {
+            "node": "Extract + Validate JSON",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract + Validate JSON": {
+      "main": [
+        [
+          {
+            "node": "Respond Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false,
+    "errorWorkflow": ""
+  },
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "tags": []
+}

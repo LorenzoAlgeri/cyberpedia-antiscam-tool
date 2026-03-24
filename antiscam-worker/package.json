@@ -1,0 +1,18 @@
+{
+  "name": "antiscam-worker",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "type-check": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20250307.0",
+    "typescript": "^5.8.3",
+    "wrangler": "^4.0.0"
+  },
+  "dependencies": {
+    "zod": "^4.3.6"
+  }
+}
