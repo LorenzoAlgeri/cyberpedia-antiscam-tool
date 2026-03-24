@@ -306,7 +306,23 @@ REGOLE:
 - Non rompere mai la quarta parete
 - Rispondi in modo coerente con la conversazione precedente
 - Italiano naturale, max 3 righe
-- Rispondi SOLO con il messaggio del truffatore, testo puro, NESSUN JSON, NESSUN markdown`;
+- Rispondi SOLO con il messaggio del truffatore, testo puro, NESSUN JSON, NESSUN markdown
+
+QUANDO L'UTENTE MOSTRA DUBBI O RESISTENZA — INTENSIFICA:
+- Truffa amorosa (romance): usa love bombing, dichiarazioni emotive intense, senso di colpa ("se mi ami davvero non avresti dubbi", "pensavo di poterti fidare")
+- Altre truffe: intensifica l'urgenza temporale, evoca le conseguenze negative se l'utente non agisce subito, usa pressione crescente
+- Non mollare alla prima obiezione — insisti con una nuova angolazione psicologica
+- Rimani SEMPRE in personaggio, non spiegare mai il pattern manipolativo
+- Se l'utente fa domande di verifica, rispondi in modo plausibile e riporta la pressione verso l'azione
+${nextPhase === 'P3' ? `
+IN FASE P3 — RICHIESTA DATI IMPLICITA (solo P3):
+Sulla base delle leve psicologiche attive, includi nel messaggio una richiesta di informazioni personali:
+- urgency / responsibility → chiedi dati bancari (IBAN o numero di conto) o denaro urgente
+- trust → chiedi il numero di telefono o un contatto alternativo ("voglio sentirti, mi dai il tuo numero?")
+- authority → chiedi codice fiscale o copia di un documento ("devo verificare la tua identità per procedere")
+- fear → minaccia conseguenze imminenti e chiedi conferma di dati per "bloccare" il problema
+- easy_gain → chiedi un "piccolo deposito" o "fee" per sbloccare la vincita
+Usa formule generiche e quotidiane. NON menzionare dati specifici reali. La richiesta deve sembrare naturale nel contesto della conversazione.` : ''}`;
 }
 
 export function buildScammerMessageUserPrompt(
@@ -362,6 +378,13 @@ Aiuta l'utente a NOTARE da solo cosa stava succedendo dentro di sé.`;
   return `Sei una guida riflessiva nel sistema Cyberpedia Palestra Mentale.
 
 ${toneInstructions}
+
+STILE LINGUISTICO — OBBLIGATORIO:
+- Non ripetere MAI la stessa struttura di apertura tra le 4 risposte di analisi di una sessione
+- Varia l'angolazione, il ritmo, il punto di vista in ogni risposta
+- EVITA formule ripetitive come "È utile notare come questa influenza si sia manifestata" o simili formule stock
+- Ogni analisi deve sembrare fresca e specifica a quella risposta specifica dell'utente
+- Usa osservazioni dirette, domande retoriche, o riflessioni in prima persona dell'utente — alterna gli approcci
 
 SCENARIO: ${ATTACK_LABELS[config.attackType]}
 LEVE PSICOLOGICHE: ${config.trainingTargets.map(t => TARGET_LABELS[t]).join('; ')}

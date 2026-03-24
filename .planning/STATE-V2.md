@@ -10,7 +10,7 @@
 | 1 | Security Hardening | COMPLETATA | 7 task completati |
 | 2 | Landing Page Lead Capture | COMPLETATA | 4 task completati |
 | 3 | UX Training: Setup Flow | COMPLETATA | 7 task completati |
-| 4 | UX Training: Chat Realism | DA FARE | Dipende da Fase 3 |
+| 4 | UX Training: Chat Realism | COMPLETATA | 6 task completati |
 | 5 | UX Training: Risultati | DA FARE | Dipende da Fase 4 |
 | 6 | Post-Simulazione: Dossier | DA FARE | |
 | 7 | Analytics Comportamentali | DA FARE | |
@@ -19,7 +19,7 @@
 
 ## Sessione Corrente
 
-- Fase attiva: Fase 3 completata
+- Fase attiva: Fase 4 completata → prossima Fase 5
 - Task attivo: —
 - Blockers: nessuno
 
@@ -105,6 +105,37 @@
 - Card Palestra Mentale: palette viola/indigo vs cyan delle simulazioni statiche
 - Bordo `violet-500/40`, sfondo gradient `from-violet-950/60 via-slate-900/80 to-indigo-950/60`
 - Icona e badge in violet
+
+### Fase 4 — UX Training: Chat Realism (2026-03-24)
+
+**Task 4.1 — Velocità risposta realistica**
+- `useTrainingSession.ts`: aggiunto delay calcolato prima di `AI_STREAM_DONE`
+- Formula: `min(800 + msgLen * 20, 4000)ms` con varianza ±20%
+- Il typing indicator persiste per tutto il delay — UX realistica simile a WhatsApp
+- Implementato con variabile locale `accumulatedMessage` nel callback `onToken`
+
+**Task 4.2 — Chatbot più insistente**
+- `training-prompt.ts` (`buildScammerMessageSystemPrompt`): aggiunta sezione escalation
+- Truffa amorosa: love bombing, senso di colpa, dichiarazioni emotive intense
+- Altre truffe: urgenza, evocazione conseguenze, insistenza dopo prima obiezione
+
+**Task 4.3 — Richiesta dati in fase P3**
+- `training-prompt.ts`: sezione condizionale per `nextPhase === 'P3'`
+- Chiede dati credibili in base alla leva attiva: IBAN (urgency), telefono (trust), CF (authority)
+- Safety preamble intatto — richiesta resta psicologica, non operativa
+
+**Task 4.4 — Varietà frasi riflessione**
+- `training-prompt.ts` (`buildReflectionSystemPrompt`): aggiunta sezione STILE LINGUISTICO
+- Istruzione esplicita di non ripetere strutture di frase (es. "È utile notare come...")
+- Variare angolazione, ritmo e punto di vista tra le 4 risposte
+
+**Task 4.5 — Rimozione "ottimo lavoro"**
+- `SimulationsPage.tsx`: sostituito "Simulazione completata — ottimo lavoro! Passiamo alla riflessione." con "Sessione completata. Passiamo alla riflessione."
+
+**Task 4.6 — Continua la chat post-risultati**
+- `useTrainingSession.ts`: aggiunto action `CONTINUE_CONVERSATION` e callback `continueChat`
+- `SessionReport.tsx`: aggiunta prop opzionale `onContinueChat`, UI con testo esplicativo e pulsante
+- `SimulationsPage.tsx`: passato `onContinueChat={training.continueChat}` a SessionReport
 
 ---
 
