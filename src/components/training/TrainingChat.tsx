@@ -18,6 +18,8 @@ import { ChatTyping } from '@/components/chat/ChatTyping';
 import { ChatInput } from './ChatInput';
 import { RiskIndicator } from './RiskIndicator';
 import { useVirtualKeyboard } from '@/hooks/useVirtualKeyboard';
+import { useSpeechSynthesis } from '@/hooks/useSpeechSynthesis';
+import { useSpeechRecognition } from '@/hooks/useSpeechRecognition';
 import type { ConversationTurn, BehaviorScores } from '@/types/training';
 import type { ChatEntry } from '@/types/simulation';
 
@@ -55,6 +57,12 @@ export function TrainingChat({
 
   // Handle virtual keyboard on iOS + Android
   useVirtualKeyboard();
+
+  // TTS — speak scammer messages aloud
+  const tts = useSpeechSynthesis();
+
+  // STT — voice input for user messages
+  const stt = useSpeechRecognition();
 
   // Auto-scroll to bottom on new messages
   useEffect(() => {
@@ -109,7 +117,13 @@ export function TrainingChat({
         aria-live="polite"
       >
         {turns.map((turn) => (
-          <ChatBubble key={turn.id} entry={turnToEntry(turn)} />
+          <ChatBubble
+            key={turn.id}
+            entry={turnToEntry(turn)}
+            onSpeak={tts.isSupported ? tts.speak : undefined}
+            onStopSpeaking={tts.stop}
+            isSpeaking={tts.speakingId === turn.id}
+          />
         ))}
 
         {/* Typing indicator */}
@@ -155,6 +169,12 @@ export function TrainingChat({
         onSend={onSendMessage}
         disabled={isLoading}
         placeholder="Rispondi al messaggio..."
+        sttSupported={stt.isSupported}
+        isListening={stt.isListening}
+        onStartListening={stt.startListening}
+        onStopListening={stt.stopListening}
+        injectedText={stt.transcript}
+        onInjectedTextConsumed={stt.resetTranscript}
       />
     </div>
   );

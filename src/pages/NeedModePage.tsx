@@ -1,6 +1,6 @@
 import { lazy, Suspense, useCallback, useMemo, useState } from 'react';
 import * as m from 'motion/react-m';
-import { FileText, FolderLock, Phone } from 'lucide-react';
+import { FileText, FolderLock, Phone, ShieldCheck } from 'lucide-react';
 import { PinDialog } from '@/components/emergency/PinDialog';
 import { TodoChecklist } from '@/components/emergency/TodoChecklist';
 import { ATTACK_TYPES } from '@/data/attack-types';
@@ -16,6 +16,10 @@ const DossierForm = lazy(() =>
   import('@/components/dossier/DossierForm').then((m) => ({ default: m.DossierForm })),
 );
 
+const DataBreachCheck = lazy(() =>
+  import('@/components/emergency/DataBreachCheck').then((m) => ({ default: m.DataBreachCheck })),
+);
+
 interface NeedModePageProps {
   readonly onBack: () => void;
   /** PIN already entered in EmergencyPage — skip unlock dialog when provided. */
@@ -28,7 +32,7 @@ interface NeedModePageProps {
   readonly victimStatus?: VictimStatus | null;
 }
 
-type NeedTab = 'base' | 'scenario' | 'dossier';
+type NeedTab = 'base' | 'scenario' | 'dossier' | 'verifica';
 
 function sanitizeTel(value: string): string {
   return value.replace(/[^\d+]/g, '');
@@ -188,10 +192,32 @@ export function NeedModePage({ onBack, pin: pinProp = null, unlockedData = null,
             Dossier
           </button>
         )}
+        <button
+          type="button"
+          role="tab"
+          aria-selected={tab === 'verifica'}
+          onClick={() => setTab('verifica')}
+          className={`flex flex-1 items-center justify-center gap-1.5 rounded-xl py-2.5 text-base font-medium transition-colors ${
+            tab === 'verifica'
+              ? 'bg-amber-500/15 text-amber-300 shadow-sm'
+              : 'text-muted-foreground hover:text-foreground'
+          }`}
+        >
+          <ShieldCheck className="h-4 w-4" />
+          Verifica
+        </button>
       </div>
 
       {/* Tab content */}
-      {tab === 'dossier' ? (
+      {tab === 'verifica' ? (
+        <Suspense fallback={
+          <div className="flex items-center justify-center py-12">
+            <div className="h-6 w-6 animate-spin rounded-full border-2 border-amber-400 border-t-transparent" />
+          </div>
+        }>
+          <DataBreachCheck />
+        </Suspense>
+      ) : tab === 'dossier' ? (
         localPin ? (
           <div className="glass-card p-4 sm:p-6">
             <Suspense fallback={
@@ -295,7 +321,7 @@ export function NeedModePage({ onBack, pin: pinProp = null, unlockedData = null,
       />
 
       {/* If there's no stored data, show a gentle empty state */}
-      {!hasStoredData() && tab !== 'dossier' && (
+      {!hasStoredData() && tab !== 'dossier' && tab !== 'verifica' && (
         <p className="text-center text-base text-muted-foreground">
           Non ci sono dati salvati. Torna indietro e salva prima i tuoi contatti.
         </p>

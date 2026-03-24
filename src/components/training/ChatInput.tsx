@@ -12,13 +12,25 @@
  */
 
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { Send } from 'lucide-react';
+import { Mic, MicOff, Send } from 'lucide-react';
 
 interface ChatInputProps {
   readonly onSend: (text: string) => void;
   readonly disabled?: boolean;
   readonly placeholder?: string;
   readonly maxLength?: number;
+  /** Whether STT is supported in this browser. */
+  readonly sttSupported?: boolean;
+  /** Whether currently listening for speech. */
+  readonly isListening?: boolean;
+  /** Start listening callback. */
+  readonly onStartListening?: () => void;
+  /** Stop listening callback. */
+  readonly onStopListening?: () => void;
+  /** Text injected externally (e.g. from STT transcript). */
+  readonly injectedText?: string;
+  /** Called after injectedText has been consumed (set into editor). */
+  readonly onInjectedTextConsumed?: () => void;
 }
 
 export function ChatInput({
@@ -26,6 +38,12 @@ export function ChatInput({
   disabled = false,
   placeholder = 'Scrivi un messaggio...',
   maxLength = 500,
+  sttSupported = false,
+  isListening = false,
+  onStartListening,
+  onStopListening,
+  injectedText,
+  onInjectedTextConsumed,
 }: ChatInputProps) {
   const editorRef = useRef<HTMLDivElement>(null);
   const [canSend, setCanSend] = useState(false);
@@ -36,6 +54,23 @@ export function ChatInput({
       editorRef.current?.focus({ preventScroll: true });
     }
   }, [disabled]);
+
+  // Inject external text (e.g. from STT) into the editor
+  useEffect(() => {
+    if (injectedText && editorRef.current) {
+      editorRef.current.textContent = injectedText.slice(0, maxLength);
+      setCanSend(injectedText.trim().length > 0);
+      // Move cursor to end
+      const range = document.createRange();
+      const sel = window.getSelection();
+      range.selectNodeContents(editorRef.current);
+      range.collapse(false);
+      sel?.removeAllRanges();
+      sel?.addRange(range);
+      editorRef.current.focus({ preventScroll: true });
+      onInjectedTextConsumed?.();
+    }
+  }, [injectedText, maxLength, onInjectedTextConsumed]);
 
   const getText = useCallback((): string => {
     return editorRef.current?.textContent ?? '';
@@ -85,6 +120,29 @@ export function ChatInput({
     <div
       className="flex items-end gap-2 border-t border-slate-700/50 bg-slate-900/60 px-3 py-2"
     >
+      {/* Mic button for STT (Chrome/Edge only) */}
+      {sttSupported && (
+        <button
+          type="button"
+          onClick={() => (isListening ? onStopListening?.() : onStartListening?.())}
+          disabled={disabled}
+          aria-label={isListening ? 'Ferma dettatura' : 'Dettatura vocale'}
+          className={`flex size-11 shrink-0 items-center justify-center rounded-full
+                     transition-all active:scale-95
+                     disabled:opacity-50 disabled:active:scale-100
+                     ${
+                       isListening
+                         ? 'bg-red-500/20 text-red-400 ring-2 ring-red-500/50 animate-pulse'
+                         : 'bg-slate-700 text-slate-400 hover:bg-slate-600 hover:text-slate-200'
+                     }`}
+        >
+          {isListening ? (
+            <MicOff className="size-5" aria-hidden="true" />
+          ) : (
+            <Mic className="size-5" aria-hidden="true" />
+          )}
+        </button>
+      )}
       <div
         ref={editorRef}
         contentEditable={!disabled}

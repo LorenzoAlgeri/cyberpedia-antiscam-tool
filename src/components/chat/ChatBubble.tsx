@@ -12,7 +12,7 @@
 import { useState } from 'react';
 import * as m from 'motion/react-m';
 import { AnimatePresence } from 'motion/react';
-import { CheckCircle, ChevronDown, XCircle } from 'lucide-react';
+import { CheckCircle, ChevronDown, Volume2, VolumeX, XCircle } from 'lucide-react';
 import type { ChatEntry } from '@/types/simulation';
 
 /** Feedback bubble with short text + optional "Approfondisci" collapsible */
@@ -86,9 +86,15 @@ function FeedbackBubble({ entry }: { entry: ChatEntry }) {
 
 interface ChatBubbleProps {
   entry: ChatEntry;
+  /** TTS: called when user taps the speaker icon on a scammer message. */
+  onSpeak?: (text: string, id: string) => void;
+  /** TTS: called to stop speech. */
+  onStopSpeaking?: () => void;
+  /** Whether this specific message is currently being spoken. */
+  isSpeaking?: boolean;
 }
 
-export function ChatBubble({ entry }: ChatBubbleProps) {
+export function ChatBubble({ entry, onSpeak, onStopSpeaking, isSpeaking }: ChatBubbleProps) {
   const { sender, text } = entry;
 
   // Feedback bubble
@@ -131,6 +137,28 @@ export function ChatBubble({ entry }: ChatBubbleProps) {
       >
         <span className="sr-only">{isUser ? 'Tu: ' : 'Truffatore: '}</span>
         {text}
+
+        {/* TTS button — scammer messages only */}
+        {!isUser && onSpeak && (
+          <div className="mt-1.5 flex justify-end">
+            <button
+              type="button"
+              onClick={() =>
+                isSpeaking ? onStopSpeaking?.() : onSpeak(text, entry.id)
+              }
+              className="flex size-7 items-center justify-center rounded-full
+                         bg-slate-700/50 text-slate-400 transition-colors
+                         hover:bg-slate-700 hover:text-slate-200"
+              aria-label={isSpeaking ? 'Ferma lettura' : 'Ascolta messaggio'}
+            >
+              {isSpeaking ? (
+                <VolumeX className="size-3.5" aria-hidden="true" />
+              ) : (
+                <Volume2 className="size-3.5" aria-hidden="true" />
+              )}
+            </button>
+          </div>
+        )}
       </div>
     </m.div>
   );
