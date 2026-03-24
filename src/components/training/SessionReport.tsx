@@ -22,6 +22,8 @@ interface SessionReportProps {
   readonly previousAverageScores?: Record<TrainingDimension, number> | null;
   readonly onFinish: () => void;
   readonly onBack: () => void;
+  /** Called when user wants to continue chatting after seeing results. */
+  readonly onContinueChat?: () => void;
 }
 
 interface ScoreBarProps {
@@ -90,6 +92,7 @@ export function SessionReport({
   previousAverageScores,
   onFinish,
   onBack,
+  onContinueChat,
 }: SessionReportProps) {
   // Build a BehaviorScores object from previousAverageScores for RadarChart
   const prevScoresForRadar: BehaviorScores | null = previousAverageScores
@@ -202,6 +205,21 @@ export function SessionReport({
           >
             Torna alle simulazioni
           </button>
+          {onContinueChat && (
+            <div className="mt-3 text-center">
+              <p className="mb-2 text-sm text-slate-500">
+                Vuoi approfondire? Puoi continuare la conversazione con il truffatore.
+              </p>
+              <button
+                type="button"
+                onClick={onContinueChat}
+                className="w-full rounded-2xl border border-slate-700/50 bg-slate-800/40 py-3 text-base font-medium
+                           text-slate-300 transition-colors hover:bg-slate-700/50 hover:text-slate-100"
+              >
+                Continua la chat
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>

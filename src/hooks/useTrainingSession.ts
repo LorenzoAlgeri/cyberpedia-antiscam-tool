@@ -97,7 +97,8 @@ type Action =
   | { type: 'REFLECTION_ANSWER'; answer: ReflectionAnswer; nextStep: ReflectionStep | null; nextQuestion: string | null }
   | { type: 'SHOW_SUMMARY'; finalScores: BehaviorScores }
   | { type: 'COMPLETE' }
-  | { type: 'RESET' };
+  | { type: 'RESET' }
+  | { type: 'CONTINUE_CONVERSATION' };
 
 // ---------------------------------------------------------------------------
 // Reducer
@@ -230,6 +231,9 @@ function reducer(state: TrainingState, action: Action): TrainingState {
     case 'COMPLETE':
       return { ...state, phase: 'complete' };
 
+    case 'CONTINUE_CONVERSATION':
+      return { ...state, phase: 'conversation' };
+
     case 'RESET':
       return initialState;
 
@@ -256,6 +260,8 @@ export interface UseTrainingSessionResult {
   finish: () => void;
   /** Reset to initial state. */
   reset: () => void;
+  /** Resume conversation after viewing summary. */
+  continueChat: () => void;
 }
 
 export function useTrainingSession(): UseTrainingSessionResult {
@@ -337,6 +343,7 @@ export function useTrainingSession(): UseTrainingSessionResult {
 
       try {
         // Try SSE streaming first
+        let accumulatedMessage = '';
         await api.sendMessageStream(
           state.scenarioConfig,
           [...state.turns, userTurn],
@@ -359,17 +366,26 @@ export function useTrainingSession(): UseTrainingSessionResult {
               dispatch(scoresAction);
             },
             onToken: (tokenText) => {
+              accumulatedMessage += tokenText;
               dispatch({ type: 'AI_TOKEN', text: tokenText });
             },
             onDone: () => {
-              dispatch({ type: 'AI_STREAM_DONE' });
-              if (interruptInfo?.shouldInterrupt) {
-                dispatch({
-                  type: 'INTERRUPTED',
-                  triggerMessage: trimmed,
-                  interruptReason: interruptInfo.interruptReason ?? 'high_risk',
-                });
-              }
+              // Realistic typing delay: proportional to message length
+              const msgLen = accumulatedMessage.length;
+              const rawDelay = Math.min(800 + msgLen * 20, 4000);
+              const variance = 0.8 + Math.random() * 0.4; // ±20%
+              const finalDelay = Math.round(rawDelay * variance);
+
+              setTimeout(() => {
+                dispatch({ type: 'AI_STREAM_DONE' });
+                if (interruptInfo?.shouldInterrupt) {
+                  dispatch({
+                    type: 'INTERRUPTED',
+                    triggerMessage: trimmed,
+                    interruptReason: interruptInfo.interruptReason ?? 'high_risk',
+                  });
+                }
+              }, finalDelay);
             },
             onError: (error) => {
               stopWaitTimer();
@@ -450,6 +466,10 @@ export function useTrainingSession(): UseTrainingSessionResult {
     dispatch({ type: 'COMPLETE' });
   }, []);
 
+  const continueChat = useCallback(() => {
+    dispatch({ type: 'CONTINUE_CONVERSATION' });
+  }, []);
+
   const reset = useCallback(() => {
     api.cancel();
     stopWaitTimer();
@@ -464,5 +484,6 @@ export function useTrainingSession(): UseTrainingSessionResult {
     beginReflection,
     finish,
     reset,
+    continueChat,
   };
 }

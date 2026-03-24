@@ -256,7 +256,7 @@ export function SimulationsPage({
                   : 'text-amber-300'
               }`}>
                 {trainingState.interruptReason === 'max_turns'
-                  ? 'Simulazione completata — ottimo lavoro! Passiamo alla riflessione.'
+                  ? 'Sessione completata. Passiamo alla riflessione.'
                   : 'Sessione interrotta — il livello di rischio ha superato la soglia.'}
               </p>
               <button
@@ -318,6 +318,7 @@ export function SimulationsPage({
             previousAverageScores={profile.sessionsCompleted > 1 ? profile.averageScores : null}
             onFinish={handleTrainingBack}
             onBack={handleTrainingBack}
+            onContinueChat={training.continueChat}
           />
         </m.div>
       </AnimatePresence>
