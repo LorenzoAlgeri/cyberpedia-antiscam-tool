@@ -12,14 +12,14 @@
 | 3 | UX Training: Setup Flow | COMPLETATA | 7 task completati |
 | 4 | UX Training: Chat Realism | COMPLETATA | 6 task completati |
 | 5 | UX Training: Risultati | COMPLETATA | 8 task completati |
-| 6 | Post-Simulazione: Dossier | DA FARE | |
+| 6 | Post-Simulazione: Dossier | COMPLETATA | 4 task completati |
 | 7 | Analytics Comportamentali | DA FARE | |
 | 8 | Dark Web + Avanzate | DA FARE | |
 | 9 | Deploy + Verifica | DA FARE | Ultima fase |
 
 ## Sessione Corrente
 
-- Fase attiva: Fase 5 completata → prossima Fase 6
+- Fase attiva: Fase 6 completata → prossima Fase 7
 - Task attivo: —
 - Blockers: nessuno
 
@@ -210,3 +210,45 @@
 - Link a privacy policy cyberpedia.it
 - Validazione lato client (checkbox required) + lato worker (consent must be true)
 - Nessun dato sensibile raccolto (solo nome, email, ruolo)
+
+---
+
+### Fase 6 — Post-Simulazione: Dossier (2026-03-24)
+
+**Task 6.1 — Flusso dossier da victim status**
+- `NeedModePage.tsx`: aggiunto tab "Dossier" (con icona FolderLock) visibile quando victimStatus='yes' o dossier esistente
+- `App.tsx`: passa `victimStatus` a NeedModePage
+- Tab Dossier default quando victim mode attivo
+- Prompt PIN se non gia sbloccato, altrimenti mostra DossierForm direttamente
+
+**Task 6.2 — Dossier cifrato in localStorage**
+- Creato `src/types/dossier.ts`: DossierData, ScammerContact, DossierScreenshot, MAX_SCREENSHOTS=5
+- Creato `src/lib/dossier-storage.ts`: saveDossierData/loadDossierData/clearDossierData/hasDossierData
+  - Riusa salt+PIN di emergency data — stessa chiave AES-256-GCM
+  - Storage key: `antiscam-dossier`
+  - Validazione runtime completa (validateDossierData)
+- Creato `src/lib/image-compression.ts`: compressImage via OffscreenCanvas
+  - Max 1920px, JPEG quality 0.7→0.3 progressivo
+  - Limite ~400KB per screenshot (base64 data URI)
+  - `estimateStorageUsage()` e `wouldExceedStorageQuota()` per safety
+- Creato `src/components/dossier/ScreenshotUpload.tsx`: upload file + drag&drop, thumbnails, delete
+- Creato `src/components/dossier/DossierForm.tsx`: form completo con auto-save 2s debounce
+  - Campi: scammerName, scammerContacts (tipo+valore, dynamic add/remove), screenshots, notes, dates, amounts
+  - Status indicator: saving/saved/error
+  - Lazy-loaded via React.lazy in NeedModePage
+
+**Task 6.3 — Export PDF per Polizia Postale**
+- Installato `jspdf` — lazy-loaded via dynamic import (~386KB solo quando serve)
+- Creato `src/lib/dossier-export.ts`: `exportDossierPdf(dossier)`
+  - PDF A4 con header, sezioni identita/dettagli/prove/istruzioni
+  - Screenshot embedded nel PDF
+  - 6 istruzioni pratiche per la denuncia
+  - Link commissariatodips.it
+  - Footer: "Nessun dato trasmesso online"
+- Bottone "Prepara per denuncia" nel DossierForm (disabilitato se dossier vuoto)
+
+**Task 6.4 — Ordinamento scenari per frequenza**
+- `SimulationsPage.tsx`: stato `scenarioClicks` da localStorage key `antiscam-scenario-clicks`
+- Incremento automatico al click su scenario card
+- `sortedSimulations` via useMemo: ordina per click count decrescente, fallback ordine default
+- Nessun dato personale tracciato — solo conteggio click per scenario ID
