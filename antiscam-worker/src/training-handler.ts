@@ -214,8 +214,8 @@ async function handleMessage(request: Request, env: Env): Promise<Response> {
   if (!Array.isArray(parsed.conversationHistory)) {
     return jsonError('Missing required field: conversationHistory', 422, cors);
   }
-  if (parsed.conversationHistory.length > 40) {
-    return jsonError('conversationHistory too long (max 40 turns)', 422, cors);
+  if (parsed.conversationHistory.length > 80) {
+    return jsonError('conversationHistory too long (max 80 turns)', 422, cors);
   }
 
   const scenarioConfig = parsed.scenarioConfig as SendMessageRequest['scenarioConfig'];
@@ -368,7 +368,7 @@ async function handleMessageStream(request: Request, env: Env): Promise<Response
   if (!parsed.userMessage || typeof parsed.userMessage !== 'string' || parsed.userMessage.trim().length === 0 || parsed.userMessage.length > 2000) {
     return jsonError('Invalid userMessage (1-2000 chars required)', 422, cors);
   }
-  if (!Array.isArray(parsed.conversationHistory) || parsed.conversationHistory.length > 40) {
+  if (!Array.isArray(parsed.conversationHistory) || parsed.conversationHistory.length > 80) {
     return jsonError('Invalid conversationHistory', 422, cors);
   }
 

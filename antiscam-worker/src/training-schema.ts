@@ -25,6 +25,7 @@ const ScenarioConfigSchema = z.object({
   scammerPersona: ScammerPersonaSchema,
   interruptThreshold: z.number().min(0).max(100),
   minTurnsBeforeInterrupt: z.number().int().min(1).max(10),
+  maxTurns: z.number().int().min(3).max(20),
 });
 
 const BehaviorScoresSchema = z.object({
@@ -51,6 +52,7 @@ export const SendMessageResponseSchema = z.object({
   shouldInterrupt: z.boolean(),
   nextPhase: z.enum(['P1', 'P2', 'P3']),
   aiMessage: z.string().min(1),
+  interruptReason: z.enum(['high_risk', 'max_turns']).optional().catch(undefined),
 });
 
 export type SendMessageOutput = z.output<typeof SendMessageResponseSchema>;
@@ -60,7 +62,7 @@ export type SendMessageOutput = z.output<typeof SendMessageResponseSchema>;
 export const ReflectionResponseSchema = z.object({
   aiAnalysis: z.string().min(1),
   nextQuestion: z.string().nullable(),
-  insightSummary: z.string().optional(),
+  insightSummary: z.string().nullable().optional().catch(undefined),
 });
 
 export type ReflectionOutput = z.output<typeof ReflectionResponseSchema>;
