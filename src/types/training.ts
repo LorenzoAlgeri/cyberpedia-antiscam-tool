@@ -57,8 +57,11 @@ export type TrainingTarget =
   | 'responsibility' // resist duty/guilt manipulation
   | 'fear'           // resist fear-based control
   | 'trust'          // resist rapid trust building
-  | 'greed'          // resist too-good-to-be-true offers
+  | 'easy_gain'      // resist too-good-to-be-true offers
   | 'authority';     // resist fake authority figures
+
+/** Gender presentation of the scammer in the training scenario */
+export type ScammerGender = 'male' | 'female' | 'unspecified';
 
 // ---------------------------------------------------------------------------
 // Session phase — state machine
@@ -118,7 +121,10 @@ export interface ScenarioConfig {
   readonly scenarioId: string;
   readonly attackType: AttackType;
   readonly difficulty: 'easy' | 'medium' | 'hard';
+  /** @deprecated Use trainingTargets instead. Kept for backward compatibility. */
   readonly trainingTarget: TrainingTarget;
+  readonly trainingTargets: TrainingTarget[];
+  readonly scammerGender?: ScammerGender;
   readonly scammerPersona: ScammerPersona;
   /** Risk score threshold for interruption (0-100, default 70) */
   readonly interruptThreshold: number;
@@ -204,6 +210,24 @@ export interface UserProfile {
 }
 
 // ---------------------------------------------------------------------------
+// Custom scenarios — user-created training scenarios
+// ---------------------------------------------------------------------------
+
+/** A user-created custom training scenario */
+export interface CustomScenario {
+  readonly id: string;
+  readonly name: string;
+  /** Short description for display */
+  readonly description: string;
+  /** Detailed attack description sent to Gemini */
+  readonly attackDescription: string;
+  readonly scammerPersona: ScammerPersona;
+  readonly trainingTarget: TrainingTarget;
+  readonly difficulty: 'easy' | 'medium' | 'hard';
+  readonly createdAt: string;
+}
+
+// ---------------------------------------------------------------------------
 // Worker API types — request/response for /api/training/* endpoints
 // ---------------------------------------------------------------------------
 
@@ -211,7 +235,12 @@ export interface UserProfile {
 export interface StartSessionRequest {
   readonly attackType: AttackType;
   readonly difficulty: 'easy' | 'medium' | 'hard';
-  readonly trainingTarget: TrainingTarget;
+  readonly trainingTargets: TrainingTarget[];
+  readonly scammerGender?: ScammerGender;
+  /** Custom scenario description — when present, overrides attackType for prompt generation */
+  readonly customDescription?: string;
+  /** Custom scammer persona — when present, used instead of AI-generated one */
+  readonly customPersona?: ScammerPersona;
 }
 
 /** POST /api/training/start — response body */

@@ -10,12 +10,14 @@ import { TrainingSetup } from '@/components/training/TrainingSetup';
 import { ReflectionView } from '@/components/training/ReflectionView';
 import { SessionReport } from '@/components/training/SessionReport';
 import { TrainingDashboard } from '@/components/training/TrainingDashboard';
+import { ScenarioEditor } from '@/components/training/ScenarioEditor';
 import { useAISimulation } from '@/hooks/useAISimulation';
 import { useTrainingSession } from '@/hooks/useTrainingSession';
 import { useTrainingProfile } from '@/hooks/useTrainingProfile';
+import { useCustomScenarios } from '@/hooks/useCustomScenarios';
 import type { Simulation } from '@/types/simulation';
 import type { AttackType } from '@/types/emergency';
-import type { TrainingTarget } from '@/types/training';
+import type { TrainingTarget, ScammerGender } from '@/types/training';
 
 /** Map icon string from simulation data to Lucide component */
 const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -63,7 +65,9 @@ export function SimulationsPage({
   const training = useTrainingSession();
   const { state: trainingState } = training;
   const { profile, saveSession, getRecommendedTarget } = useTrainingProfile();
+  const { scenarios: customScenarios, addScenario, removeScenario } = useCustomScenarios();
   const [showSetup, setShowSetup] = useState(false);
+  const [showEditor, setShowEditor] = useState(false);
   /** Track whether we already saved this session to profile */
   const savedSessionRef = useRef(false);
 
@@ -74,9 +78,19 @@ export function SimulationsPage({
   const handleStartTraining = useCallback(async (
     attackType: AttackType,
     difficulty: 'easy' | 'medium' | 'hard',
-    target: TrainingTarget,
+    targets: TrainingTarget[],
+    customDescription?: string,
+    customPersona?: { name: string; role: string; tone: string },
+    gender?: ScammerGender,
   ) => {
-    await training.startSession({ attackType, difficulty, trainingTarget: target });
+    await training.startSession({
+      attackType,
+      difficulty,
+      trainingTargets: targets,
+      ...(gender && gender !== 'unspecified' ? { scammerGender: gender } : {}),
+      ...(customDescription ? { customDescription } : {}),
+      ...(customPersona ? { customPersona } : {}),
+    });
   }, [training]);
 
   const handleTrainingBack = useCallback(() => {
@@ -151,6 +165,30 @@ export function SimulationsPage({
     [selectingId, handleSelectSim],
   );
 
+  // --- Scenario editor view ---
+  if (showEditor) {
+    return (
+      <AnimatePresence mode="wait">
+        <m.div
+          key="scenario-editor"
+          initial={{ opacity: 0, x: 40 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: -40 }}
+          transition={{ duration: 0.25 }}
+          className="fixed inset-0 z-50 flex flex-col bg-background overflow-y-auto"
+        >
+          <ScenarioEditor
+            onSave={(scenario) => {
+              addScenario(scenario);
+              setShowEditor(false);
+            }}
+            onCancel={() => setShowEditor(false)}
+          />
+        </m.div>
+      </AnimatePresence>
+    );
+  }
+
   // --- Training setup view ---
   if (showSetup && trainingState.phase === 'setup') {
     return (
@@ -168,7 +206,10 @@ export function SimulationsPage({
             recommendedTarget={getRecommendedTarget()}
             isLoading={trainingState.isLoading}
             error={trainingState.error}
-            onStart={(at, diff, tgt) => void handleStartTraining(at, diff, tgt)}
+            customScenarios={customScenarios}
+            onStart={(at, diff, tgts, customDesc, customPersona, gender) => void handleStartTraining(at, diff, tgts, customDesc, customPersona, gender)}
+            onCreateScenario={() => setShowEditor(true)}
+            onDeleteScenario={removeScenario}
             onBack={handleTrainingBack}
           />
         </m.div>
@@ -347,14 +388,15 @@ export function SimulationsPage({
           transition={{ duration: 0.3 }}
           whileHover={{ scale: 1.02, y: -2 }}
           whileTap={{ scale: 0.98 }}
-          className="glass-card group relative flex items-start gap-4 p-6 text-left transition-shadow
-                     cursor-pointer border-cyan-brand/30 hover:border-cyan-brand/50"
+          className="group relative flex items-start gap-4 p-6 text-left transition-all cursor-pointer
+                     rounded-3xl border-2 border-violet-500/40 hover:border-violet-400/60
+                     bg-gradient-to-br from-violet-950/60 via-slate-900/80 to-indigo-950/60
+                     backdrop-blur-xl shadow-xl hover:shadow-violet-500/20"
           style={{ minHeight: 44 }}
         >
           {/* Icon */}
-          <div className="flex size-11 shrink-0 items-center justify-center rounded-xl
-                          bg-cyan-brand/15 transition-colors group-hover:bg-cyan-brand/25">
-            <Brain className="size-5 text-cyan-brand" aria-hidden="true" />
+          <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-violet-500/20 transition-colors group-hover:bg-violet-500/30">
+            <Brain className="size-5 text-violet-400" aria-hidden="true" />
           </div>
 
           {/* Text */}
@@ -363,13 +405,13 @@ export function SimulationsPage({
               <h3 className="text-lg font-semibold text-foreground">
                 Palestra Mentale
               </h3>
-              <span className="rounded-full bg-cyan-brand/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-cyan-300">
+              <span className="rounded-full bg-violet-500/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-violet-300">
                 Beta
               </span>
             </div>
             {profile.sessionsCompleted > 0 ? (
               <p className="text-base leading-relaxed text-muted-foreground">
-                Bentornato! <span className="font-medium text-cyan-300">{profile.sessionsCompleted} sessioni</span> completate.
+                Bentornato! <span className="font-medium text-violet-300">{profile.sessionsCompleted} sessioni</span> completate.
                 {profile.weakestDimension && (
                   <> Punto debole: <span className="font-medium text-amber-300">{
                     profile.weakestDimension === 'activation' ? 'attivazione' :
