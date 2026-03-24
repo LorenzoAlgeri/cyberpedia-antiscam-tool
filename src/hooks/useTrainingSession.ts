@@ -89,6 +89,9 @@ type Action =
   | { type: 'SESSION_STARTED'; scenarioConfig: ScenarioConfig; firstMessage: string }
   | { type: 'USER_MESSAGE_SENT'; turn: ConversationTurn }
   | { type: 'AI_RESPONSE'; turn: ConversationTurn; scores: BehaviorScores; nextPhase: NarrativePhase }
+  | { type: 'AI_SCORES_RECEIVED'; scores: BehaviorScores; nextPhase: NarrativePhase; shouldInterrupt: boolean; interruptReason?: InterruptReason }
+  | { type: 'AI_TOKEN'; text: string }
+  | { type: 'AI_STREAM_DONE' }
   | { type: 'INTERRUPTED'; triggerMessage: string; interruptReason: InterruptReason }
   | { type: 'REFLECTION_STARTED'; question: string }
   | { type: 'REFLECTION_ANSWER'; answer: ReflectionAnswer; nextStep: ReflectionStep | null; nextQuestion: string | null }
@@ -141,6 +144,41 @@ function reducer(state: TrainingState, action: Action): TrainingState {
         latestScores: action.scores,
         isLoading: false,
       };
+
+    case 'AI_SCORES_RECEIVED': {
+      // Scores arrive before the message — create a placeholder scammer turn
+      const placeholderTurn: ConversationTurn = {
+        id: `turn-${state.turns.length}`,
+        timestamp: new Date().toISOString(),
+        role: 'scammer',
+        content: '', // will be filled by AI_TOKEN events
+        phase: action.nextPhase,
+      };
+      return {
+        ...state,
+        turns: [...state.turns, placeholderTurn],
+        latestScores: action.scores,
+        // Keep isLoading true — message is still streaming
+      };
+    }
+
+    case 'AI_TOKEN': {
+      // Append text to the last turn (streaming message)
+      if (state.turns.length === 0) return state;
+      const tokenTurns = [...state.turns];
+      const lastTurn = tokenTurns[tokenTurns.length - 1]!;
+      tokenTurns[tokenTurns.length - 1] = {
+        id: lastTurn.id,
+        timestamp: lastTurn.timestamp,
+        role: lastTurn.role,
+        content: lastTurn.content + action.text,
+        phase: lastTurn.phase,
+      };
+      return { ...state, turns: tokenTurns };
+    }
+
+    case 'AI_STREAM_DONE':
+      return { ...state, isLoading: false };
 
     case 'INTERRUPTED':
       return {
@@ -294,48 +332,54 @@ export function useTrainingSession(): UseTrainingSessionResult {
       dispatch({ type: 'USER_MESSAGE_SENT', turn: userTurn });
       startWaitTimer();
 
+      // Track interrupt info from scores callback for use after stream
+      let interruptInfo: { shouldInterrupt: boolean; interruptReason?: InterruptReason } | null = null;
+
       try {
-        const result = await api.sendMessage(
+        // Try SSE streaming first
+        await api.sendMessageStream(
           state.scenarioConfig,
           [...state.turns, userTurn],
           trimmed,
           state.turns.length + 1,
+          {
+            onScores: (data) => {
+              stopWaitTimer();
+              interruptInfo = {
+                shouldInterrupt: data.shouldInterrupt,
+                interruptReason: (data.interruptReason as InterruptReason) ?? undefined,
+              };
+              const scoresAction: Action = {
+                type: 'AI_SCORES_RECEIVED',
+                scores: data.behaviorScores,
+                nextPhase: data.nextPhase as NarrativePhase,
+                shouldInterrupt: data.shouldInterrupt,
+                ...(data.interruptReason ? { interruptReason: data.interruptReason as InterruptReason } : {}),
+              };
+              dispatch(scoresAction);
+            },
+            onToken: (tokenText) => {
+              dispatch({ type: 'AI_TOKEN', text: tokenText });
+            },
+            onDone: () => {
+              dispatch({ type: 'AI_STREAM_DONE' });
+              if (interruptInfo?.shouldInterrupt) {
+                dispatch({
+                  type: 'INTERRUPTED',
+                  triggerMessage: trimmed,
+                  interruptReason: interruptInfo.interruptReason ?? 'high_risk',
+                });
+              }
+            },
+            onError: (error) => {
+              stopWaitTimer();
+              dispatch({ type: 'SET_ERROR', error });
+            },
+          },
         );
-        stopWaitTimer();
-
-        if (!result) {
-          dispatch({ type: 'SET_ERROR', error: 'Errore nella risposta. Riprova.' });
-          return;
-        }
-
-        const aiTurn: ConversationTurn = {
-          id: `turn-${state.turns.length + 1}`,
-          timestamp: new Date().toISOString(),
-          role: 'scammer',
-          content: result.aiMessage,
-          phase: result.nextPhase,
-        };
-
-        dispatch({
-          type: 'AI_RESPONSE',
-          turn: aiTurn,
-          scores: result.behaviorScores,
-          nextPhase: result.nextPhase,
-        });
-
-        if (result.shouldInterrupt) {
-          dispatch({
-            type: 'INTERRUPTED',
-            triggerMessage: trimmed,
-            interruptReason: result.interruptReason ?? 'high_risk',
-          });
-        }
       } catch (e) {
         stopWaitTimer();
-        dispatch({
-          type: 'SET_ERROR',
-          error: translateError(e),
-        });
+        dispatch({ type: 'SET_ERROR', error: translateError(e) });
       }
     },
     [state.scenarioConfig, state.turns, api, startWaitTimer, stopWaitTimer],

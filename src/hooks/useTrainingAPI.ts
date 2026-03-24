@@ -16,6 +16,7 @@ import type {
   StartSessionResponse,
   SendMessageRequest,
   SendMessageResponse,
+  BehaviorScores,
   ReflectionRequest,
   ReflectionResponse,
   ScenarioConfig,
@@ -94,8 +95,25 @@ export interface UseTrainingAPIResult {
     previousReflections: readonly ReflectionAnswer[],
   ) => Promise<ReflectionResponse | null>;
 
+  /** Send a message with SSE streaming. Calls onScores, onToken, onDone progressively. */
+  sendMessageStream: (
+    scenarioConfig: ScenarioConfig,
+    conversationHistory: readonly ConversationTurn[],
+    userMessage: string,
+    turnCount: number,
+    callbacks: StreamCallbacks,
+  ) => Promise<void>;
+
   /** Cancel any in-flight request. */
   cancel: () => void;
+}
+
+/** Callbacks for SSE streaming message responses */
+export interface StreamCallbacks {
+  onScores: (data: { behaviorScores: BehaviorScores; shouldInterrupt: boolean; interruptReason?: string; nextPhase: string }) => void;
+  onToken: (text: string) => void;
+  onDone: () => void;
+  onError: (error: string) => void;
 }
 
 export function useTrainingAPI(): UseTrainingAPIResult {
@@ -202,5 +220,103 @@ export function useTrainingAPI(): UseTrainingAPIResult {
     [createController],
   );
 
-  return { startSession, sendMessage, submitReflection, cancel };
+  const sendMessageStream = useCallback(
+    async (
+      scenarioConfig: ScenarioConfig,
+      conversationHistory: readonly ConversationTurn[],
+      userMessage: string,
+      turnCount: number,
+      callbacks: StreamCallbacks,
+    ): Promise<void> => {
+      if (!isEnabled()) {
+        callbacks.onError('Training non abilitato');
+        return;
+      }
+
+      const controller = createController();
+      try {
+        const response = await fetch(`${WORKER_BASE}/api/training/message-stream`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            scenarioConfig,
+            conversationHistory,
+            userMessage,
+            turnCount,
+          } satisfies SendMessageRequest),
+          signal: controller.signal,
+        });
+
+        if (!response.ok) {
+          let detail = '';
+          try {
+            const errBody = await response.json() as { error?: string };
+            detail = errBody.error ?? '';
+          } catch { /* ignore */ }
+          callbacks.onError(detail || `Errore server (HTTP ${response.status})`);
+          return;
+        }
+
+        if (!response.body) {
+          callbacks.onError('Nessuna risposta dal server');
+          return;
+        }
+
+        // Parse SSE stream
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = '';
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split('\n');
+          // Keep the last incomplete line in buffer
+          buffer = lines.pop() ?? '';
+
+          for (const line of lines) {
+            if (line.startsWith('event: ')) {
+              // Store event type for next data line
+              (reader as unknown as { _eventType: string })._eventType = line.slice(7).trim();
+            } else if (line.startsWith('data: ')) {
+              const eventType = (reader as unknown as { _eventType?: string })._eventType ?? 'unknown';
+              const dataStr = line.slice(6).trim();
+              if (!dataStr) continue;
+
+              try {
+                const data = JSON.parse(dataStr);
+                switch (eventType) {
+                  case 'scores':
+                    callbacks.onScores(data);
+                    break;
+                  case 'token':
+                    callbacks.onToken(data.text ?? '');
+                    break;
+                  case 'done':
+                    callbacks.onDone();
+                    break;
+                  case 'error':
+                    callbacks.onError(data.error ?? 'Errore sconosciuto');
+                    break;
+                }
+              } catch {
+                // Skip unparseable data
+              }
+            }
+          }
+        }
+      } catch (err) {
+        if (err instanceof Error && err.name === 'AbortError') {
+          callbacks.onError('Timeout — il server non ha risposto in tempo. Riprova.');
+        } else {
+          callbacks.onError(err instanceof Error ? err.message : 'Errore di connessione');
+        }
+      }
+    },
+    [createController],
+  );
+
+  return { startSession, sendMessage, sendMessageStream, submitReflection, cancel };
 }
