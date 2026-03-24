@@ -1,4 +1,4 @@
-import { lazy, Suspense, useState, useCallback } from 'react';
+import { lazy, Suspense, useState, useCallback, useSyncExternalStore } from 'react';
 import { LazyMotion, domAnimation } from 'motion/react';
 import { useHashRouter } from '@/hooks/useHashRouter';
 import { useIframeResize } from '@/hooks/useIframeResize';
@@ -28,6 +28,28 @@ const InstallPage = lazy(() =>
 const NeedModePage = lazy(() =>
   import('@/pages/NeedModePage').then((m) => ({ default: m.NeedModePage })),
 );
+const LeadCapturePage = lazy(() =>
+  import('@/pages/LeadCapturePage').then((m) => ({ default: m.LeadCapturePage })),
+);
+
+/* ── Standalone pages outside wizard flow ──────────── */
+
+const STANDALONE_HASHES = new Set(['#beta']);
+
+function subscribeHash(cb: () => void) {
+  window.addEventListener('hashchange', cb);
+  return () => window.removeEventListener('hashchange', cb);
+}
+
+function getHash() {
+  return window.location.hash;
+}
+
+/** True when the current hash matches a standalone page (e.g. #beta) */
+function useStandalonePage() {
+  const hash = useSyncExternalStore(subscribeHash, getHash, getHash);
+  return STANDALONE_HASHES.has(hash);
+}
 
 /** Minimal loading spinner matching design system. */
 function StepFallback() {
@@ -55,6 +77,7 @@ function StepFallback() {
  * Checklist (step 1) is skipped on first visit.
  */
 function App() {
+  const isStandalone = useStandalonePage();
   const { currentStep, direction, goTo, goNext, goBack } = useHashRouter();
   const { isReturningUser } = useReturningUser();
   const [victimStatus, setVictimStatus] = useState<VictimStatus | null>(() => {
@@ -186,6 +209,17 @@ function App() {
       default:
         return assertNever(currentStep);
     }
+  }
+
+  // Standalone pages bypass the wizard entirely
+  if (isStandalone) {
+    return (
+      <LazyMotion features={domAnimation} strict>
+        <Suspense fallback={<StepFallback />}>
+          <LeadCapturePage />
+        </Suspense>
+      </LazyMotion>
+    );
   }
 
   return (
