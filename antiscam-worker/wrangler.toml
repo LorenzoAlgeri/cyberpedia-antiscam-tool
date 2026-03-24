@@ -49,8 +49,8 @@ preview_id = "9ed1a369ab0d41cfbcb809d187545c9a"
 
 [[kv_namespaces]]
 binding = "ANTISCAM_ANALYTICS"
-id = "PLACEHOLDER_ANALYTICS_ID"
-preview_id = "PLACEHOLDER_ANALYTICS_PREVIEW_ID"
+id = "c618000a07ab480f860290645d6c121b"
+preview_id = "c9e134ca6f92432986119d346ceece3f"
 
 # ── Secrets (never put values here) ─────────────────────────────────────────
 # Set via CLI after deploy:
