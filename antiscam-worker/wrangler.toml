@@ -30,6 +30,17 @@ binding = "ANTISCAM_RATELIMIT"
 id = "4bf7e2be994b433ca4304e712b47891e"
 preview_id = "4e0b8f0506c742d1a83b9c680ff265ef"
 
+# ── KV namespace for lead capture ──────────────────────────────────────────
+# Stores pre-conference lead submissions (name, email, role).
+# Create before deploy:
+#   wrangler kv namespace create ANTISCAM_LEADS
+#   wrangler kv namespace create ANTISCAM_LEADS --preview
+
+[[kv_namespaces]]
+binding = "ANTISCAM_LEADS"
+id = "PLACEHOLDER_CREATE_BEFORE_DEPLOY"
+preview_id = "PLACEHOLDER_CREATE_BEFORE_DEPLOY"
+
 # ── Secrets (never put values here) ─────────────────────────────────────────
 # Set via CLI after deploy:
 #   wrangler secret put N8N_WEBHOOK_URL

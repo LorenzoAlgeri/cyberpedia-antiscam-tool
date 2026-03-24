@@ -16,6 +16,10 @@ export interface Env {
   N8N_WEBHOOK_URL: string;
   /** N8N training webhook URL — injected via: wrangler secret put N8N_TRAINING_WEBHOOK_URL */
   N8N_TRAINING_WEBHOOK_URL: string;
+  /** Gemini API key for direct streaming calls — injected via: wrangler secret put GEMINI_API_KEY */
+  GEMINI_API_KEY: string;
+  /** KV namespace for lead capture form submissions */
+  ANTISCAM_LEADS: KVNamespace;
 }
 
 // ── Request validation ────────────────────────────────────────────────────────

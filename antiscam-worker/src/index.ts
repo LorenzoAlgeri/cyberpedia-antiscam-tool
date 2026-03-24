@@ -3,6 +3,7 @@
  *
  * Routes:
  *   POST /api/generate-simulation   Generate or serve cached simulation
+ *   POST /api/lead                  Store pre-conference lead capture submission
  *   POST /api/training/start        Start AI training session
  *   POST /api/training/message      Send user message, get AI response + scores
  *   POST /api/training/reflect      Submit reflection answer, get AI analysis
@@ -36,6 +37,7 @@ import {
   N8NValidationError,
 } from './n8n';
 import { handleTraining } from './training-handler';
+import { handleLead } from './lead-handler';
 
 // ── Handler ───────────────────────────────────────────────────────────────────
 
@@ -155,6 +157,17 @@ export default {
           });
         }
         return handleGenerate(request, env);
+      }
+
+      // Lead capture endpoint — /api/lead
+      if (url.pathname === '/api/lead') {
+        if (request.method !== 'POST') {
+          return new Response('Method Not Allowed', {
+            status: 405,
+            headers: { Allow: 'POST, OPTIONS', ...getCorsHeaders(request) },
+          });
+        }
+        return handleLead(request, env);
       }
 
       // Training endpoints — /api/training/*
