@@ -14,12 +14,12 @@
 | 5 | UX Training: Risultati | COMPLETATA | 8 task completati |
 | 6 | Post-Simulazione: Dossier | COMPLETATA | 4 task completati |
 | 7 | Analytics Comportamentali | COMPLETATA | 3 task completati |
-| 8 | Dark Web + Avanzate | DA FARE | |
+| 8 | Dark Web + Avanzate | COMPLETATA | 2 task completati |
 | 9 | Deploy + Verifica | DA FARE | Ultima fase |
 
 ## Sessione Corrente
 
-- Fase attiva: Fase 7 completata → prossima Fase 8
+- Fase attiva: Fase 8 completata → prossima Fase 9
 - Task attivo: —
 - Blockers: nessuno
 
@@ -288,3 +288,51 @@
   - `trackError` su errori send_message
 - `SimulationsPage.tsx`: `trackFeatureUsage('palestra_mentale')` su apertura setup
 - `NeedModePage.tsx`: `trackFeatureUsage('pdf_export')` su export dossier PDF
+
+---
+
+### Fase 8 — Dark Web Check + Funzioni Avanzate (2026-03-24)
+
+**Task 8.1 — Dark Web Data Check (HIBP)**
+- Decisione architetturale: link esterno + istruzioni (non API integration)
+  - HIBP breach API richiede subscription a pagamento ($3.50/mese)
+  - Per un tool educativo gratuito, link esterno e' la scelta giusta
+  - L'utente controlla direttamente su haveibeenpwned.com — zero dati transitano dal nostro sistema
+- Creato `src/components/emergency/DataBreachCheck.tsx` (187 righe)
+  - Card HIBP con link esterno + trust signal ("Il sito non salva le tue ricerche")
+  - Sezione collapsibile "Come controllare" con 5 step numerati
+  - Card "Verifica password" con link a haveibeenpwned.com/Passwords + spiegazione k-Anonymity
+  - Sezione collapsibile "Cosa fare se compromessi" con 5 azioni remediation
+  - Privacy notice: "Nessun dato trasmesso, verifiche su sito esterno"
+- `NeedModePage.tsx`: aggiunto tab "Verifica" (icona ShieldCheck, accento amber)
+  - Sempre visibile (non condizionale come Dossier)
+  - Lazy-loaded via React.lazy con Suspense
+  - Tab type esteso: `NeedTab = 'base' | 'scenario' | 'dossier' | 'verifica'`
+  - Empty state check aggiornato per escludere tab verifica
+
+**Task 8.2 — Funzione Voce (TTS + STT)**
+- Creato `src/hooks/useSpeechSynthesis.ts`: hook Web Speech API TTS
+  - Preferisce voce italiana (`it-IT`), fallback a default
+  - Rate 0.9 (leggermente piu lento per chiarezza)
+  - Gestisce bug Chrome dove le voci non sono disponibili sincronamente (onvoiceschanged)
+  - Traccia `speakingId` per sapere quale messaggio e' in lettura
+  - Cleanup automatico su unmount
+- Creato `src/hooks/useSpeechRecognition.ts`: hook Web Speech API STT
+  - Supporto Chrome/Edge (`webkitSpeechRecognition`)
+  - Lingua: `it-IT`, modalita singola frase con risultati intermedi
+  - Dichiarazioni TypeScript globali per SpeechRecognition API
+  - Degradazione graceful su browser non supportati (`isSupported = false`)
+- `ChatBubble.tsx`: aggiunto pulsante "Ascolta" (Volume2/VolumeX) sui messaggi del truffatore
+  - Pulsante piccolo (size-7) in basso a destra della bolla
+  - Toggle speak/stop con icone appropriate
+  - Solo su bolle scammer (non user/system/feedback)
+- `TrainingChat.tsx`: wiring TTS + STT
+  - `useSpeechSynthesis()` inizializzato, props passate a ogni ChatBubble
+  - `useSpeechRecognition()` inizializzato, props passate a ChatInput
+  - `isSpeaking` confronta `speakingId === turn.id` per evidenziare messaggio attivo
+- `ChatInput.tsx`: aggiunto bottone microfono per STT
+  - Visibile solo quando `sttSupported = true` (Chrome/Edge)
+  - Icona Mic/MicOff con anello rosso pulsante quando in ascolto
+  - Touch target 44px, stessa dimensione del bottone invio
+  - `injectedText` prop per inserire trascrizione nell'editor
+  - Cursor posizionato a fine testo dopo injection
