@@ -79,6 +79,8 @@ const ATTACK_RECOMMENDED_LEVERS: Partial<Record<AttackType, TrainingTarget[]>> =
 interface TrainingSetupProps {
   readonly profile: UserProfile | null;
   readonly recommendedTarget: TrainingTarget | null;
+  /** Pre-selected levers — used when navigating from "Allenati su questo" in SessionReport */
+  readonly initialTargets?: readonly TrainingTarget[];
   readonly isLoading: boolean;
   readonly error: string | null;
   readonly customScenarios: readonly CustomScenario[];
@@ -120,6 +122,7 @@ function getSuggestedDifficulty(profile: UserProfile | null): Difficulty | null 
 export function TrainingSetup({
   profile,
   recommendedTarget,
+  initialTargets,
   isLoading,
   error,
   customScenarios,
@@ -132,7 +135,10 @@ export function TrainingSetup({
 
   const [attackType, setAttackType] = useState<AttackType | null>(null);
   const [difficulty, setDifficulty] = useState<Difficulty>(suggestedDifficulty ?? 'medium');
-  const [targets, setTargets] = useState<TrainingTarget[]>([]);
+  // initialTargets allows pre-seeding levers from "Allenati su questo" in SessionReport
+  const [targets, setTargets] = useState<TrainingTarget[]>(
+    initialTargets != null ? [...initialTargets] : [],
+  );
   const [scammerGender, setScammerGender] = useState<ScammerGender>('unspecified');
   const [selectedCustom, setSelectedCustom] = useState<CustomScenario | null>(null);
 

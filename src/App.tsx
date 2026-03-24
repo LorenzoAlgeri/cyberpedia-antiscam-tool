@@ -1,8 +1,9 @@
-import { lazy, Suspense, useState, useCallback, useSyncExternalStore } from 'react';
+import { lazy, Suspense, useState, useCallback, useEffect, useSyncExternalStore } from 'react';
 import { LazyMotion, domAnimation } from 'motion/react';
 import { useHashRouter } from '@/hooks/useHashRouter';
 import { useIframeResize } from '@/hooks/useIframeResize';
 import { useReturningUser } from '@/hooks/useReturningUser';
+import { initAnalytics } from '@/lib/event-analytics';
 import { WizardShell } from '@/components/layout/WizardShell';
 import { LandingPage } from '@/pages/LandingPage';
 import { VictimStatusModal } from '@/components/layout/VictimStatusModal';
@@ -99,6 +100,9 @@ function App() {
 
   // Notify parent iframe (cyberpedia.it) of height changes
   useIframeResize();
+
+  // Initialize privacy-first analytics (UTM capture, periodic flush)
+  useEffect(() => { initAnalytics(); }, []);
 
   /** Whether checklist should be shown (returning user or just saved profile) */
   const showChecklist = isReturningUser || profileSavedThisSession;

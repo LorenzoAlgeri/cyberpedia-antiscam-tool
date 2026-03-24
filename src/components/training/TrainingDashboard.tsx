@@ -14,6 +14,7 @@ import {
   TrendingUp,
   TrendingDown,
   AlertTriangle,
+  HelpCircle,
 } from 'lucide-react';
 import type { UserProfile, TrainingDimension } from '@/types/training';
 
@@ -192,11 +193,6 @@ export function TrainingDashboard({ profile }: TrainingDashboardProps) {
   const streak = computeStreak(profile);
   const strongest = findStrongestDimension(profile.averageScores);
 
-  const weakScore =
-    profile.weakestDimension != null
-      ? (profile.averageScores[profile.weakestDimension] ?? 0)
-      : 0;
-
   // Top 3 patterns sorted by frequency descending
   const topPatterns = [...profile.patterns]
     .sort((a, b) => b.frequency - a.frequency)
@@ -244,10 +240,23 @@ export function TrainingDashboard({ profile }: TrainingDashboardProps) {
         >
           <Flame className="mx-auto mb-1 h-4 w-4 text-orange-400" />
           <p className="text-lg font-bold text-slate-100">
-            {streak}
+            {streak > 0 ? streak : '—'}
             {streak >= 3 ? ' \ud83d\udd25' : ''}
           </p>
-          <p className="text-xs text-slate-400">Streak</p>
+          <div className="flex items-center justify-center gap-0.5">
+            <p className="text-xs text-slate-400">Streak</p>
+            <button
+              type="button"
+              title="Giorni consecutivi con almeno una sessione completata. Mantieni l'allenamento quotidiano per costruire resistenza duratura."
+              className="text-slate-600 hover:text-slate-400 transition-colors"
+              aria-label="Cos'è lo streak"
+            >
+              <HelpCircle className="size-3" aria-hidden="true" />
+            </button>
+          </div>
+          {streak === 0 && (
+            <p className="mt-0.5 text-[9px] leading-tight text-slate-500">Inizia oggi</p>
+          )}
         </m.div>
       </div>
 
@@ -266,10 +275,10 @@ export function TrainingDashboard({ profile }: TrainingDashboardProps) {
           <TrendingUp className="h-4 w-4 shrink-0 text-emerald-400" />
           <div className="min-w-0">
             <p className="text-xs text-slate-400">Punto forte</p>
-            <p className="truncate text-base font-semibold text-emerald-300">
+            <p className="truncate text-sm font-semibold text-emerald-300">
               {DIMENSION_LABELS[strongest.dimension]}
             </p>
-            <p className="text-sm text-slate-400">{strongest.score}</p>
+            <p className="text-[10px] text-slate-500 leading-tight">La dimensione in cui sei più resistente</p>
           </div>
         </div>
 
@@ -280,10 +289,10 @@ export function TrainingDashboard({ profile }: TrainingDashboardProps) {
               <AlertTriangle className="h-4 w-4 shrink-0 text-amber-400" />
               <div className="min-w-0">
                 <p className="text-xs text-slate-400">Punto debole</p>
-                <p className="truncate text-base font-semibold text-amber-300">
+                <p className="truncate text-sm font-semibold text-amber-300">
                   {DIMENSION_LABELS[profile.weakestDimension]}
                 </p>
-                <p className="text-sm text-slate-400">{weakScore}</p>
+                <p className="text-[10px] text-slate-500 leading-tight">Dove concentrare l'allenamento</p>
               </div>
             </>
           ) : (

@@ -10,6 +10,14 @@
 
 import { useReducer, useCallback, useRef, useEffect } from 'react';
 import { useTrainingAPI } from './useTrainingAPI';
+import {
+  trackSessionStart,
+  trackSessionComplete,
+  trackSessionDropout,
+  trackLeverEffectiveness,
+  trackResponseTime,
+  trackError,
+} from '@/lib/event-analytics';
 import type {
   SessionPhase,
   ScenarioConfig,
@@ -268,6 +276,10 @@ export function useTrainingSession(): UseTrainingSessionResult {
   const [state, dispatch] = useReducer(reducer, initialState);
   const api = useTrainingAPI();
   const waitTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  /** Track session start time for duration calculation */
+  const sessionStartTimeRef = useRef<number>(0);
+  /** Track when the last user message was sent (for response time) */
+  const lastMessageTimeRef = useRef<number>(0);
 
   // Clean up wait timer on unmount
   useEffect(() => {
@@ -310,6 +322,14 @@ export function useTrainingSession(): UseTrainingSessionResult {
           scenarioConfig: result.scenarioConfig,
           firstMessage: result.firstMessage,
         });
+
+        // Analytics: track session start
+        sessionStartTimeRef.current = Date.now();
+        trackSessionStart(
+          req.attackType,
+          req.difficulty,
+          req.trainingTargets,
+        );
       } catch (e) {
         stopWaitTimer();
         dispatch({
@@ -337,6 +357,7 @@ export function useTrainingSession(): UseTrainingSessionResult {
 
       dispatch({ type: 'USER_MESSAGE_SENT', turn: userTurn });
       startWaitTimer();
+      lastMessageTimeRef.current = Date.now();
 
       // Track interrupt info from scores callback for use after stream
       let interruptInfo: { shouldInterrupt: boolean; interruptReason?: InterruptReason } | null = null;
@@ -352,6 +373,10 @@ export function useTrainingSession(): UseTrainingSessionResult {
           {
             onScores: (data) => {
               stopWaitTimer();
+              // Analytics: track response time (time from user message to first AI response)
+              if (lastMessageTimeRef.current > 0) {
+                trackResponseTime(Date.now() - lastMessageTimeRef.current);
+              }
               interruptInfo = {
                 shouldInterrupt: data.shouldInterrupt,
                 interruptReason: (data.interruptReason as InterruptReason) ?? undefined,
@@ -384,6 +409,13 @@ export function useTrainingSession(): UseTrainingSessionResult {
                     triggerMessage: trimmed,
                     interruptReason: interruptInfo.interruptReason ?? 'high_risk',
                   });
+                  // Analytics: track which lever/scenario triggered interruption
+                  if (state.scenarioConfig) {
+                    trackLeverEffectiveness(
+                      state.scenarioConfig.attackType,
+                      state.scenarioConfig.trainingTarget,
+                    );
+                  }
                 }
               }, finalDelay);
             },
@@ -396,6 +428,7 @@ export function useTrainingSession(): UseTrainingSessionResult {
       } catch (e) {
         stopWaitTimer();
         dispatch({ type: 'SET_ERROR', error: translateError(e) });
+        trackError('send_message');
       }
     },
     [state.scenarioConfig, state.turns, api, startWaitTimer, stopWaitTimer],
@@ -464,17 +497,35 @@ export function useTrainingSession(): UseTrainingSessionResult {
 
   const finish = useCallback(() => {
     dispatch({ type: 'COMPLETE' });
-  }, []);
+
+    // Analytics: track session completion
+    if (state.scenarioConfig) {
+      const durationSec = sessionStartTimeRef.current > 0
+        ? Math.round((Date.now() - sessionStartTimeRef.current) / 1000)
+        : 0;
+      const scores = state.finalScores ?? state.latestScores;
+      trackSessionComplete(
+        state.scenarioConfig.attackType,
+        state.turns.length,
+        durationSec,
+        scores?.riskScore ?? 50,
+      );
+    }
+  }, [state.scenarioConfig, state.turns.length, state.finalScores, state.latestScores]);
 
   const continueChat = useCallback(() => {
     dispatch({ type: 'CONTINUE_CONVERSATION' });
   }, []);
 
   const reset = useCallback(() => {
+    // Analytics: track dropout if session was in progress (not complete/setup)
+    if (state.phase !== 'setup' && state.phase !== 'complete') {
+      trackSessionDropout(state.phase);
+    }
     api.cancel();
     stopWaitTimer();
     dispatch({ type: 'RESET' });
-  }, [api, stopWaitTimer]);
+  }, [api, stopWaitTimer, state.phase]);
 
   return {
     state,

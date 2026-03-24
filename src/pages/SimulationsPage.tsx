@@ -18,6 +18,7 @@ import { useCustomScenarios } from '@/hooks/useCustomScenarios';
 import type { Simulation } from '@/types/simulation';
 import type { AttackType } from '@/types/emergency';
 import type { TrainingTarget, TrainingDimension, ScammerGender } from '@/types/training';
+import { trackFeatureUsage } from '@/lib/event-analytics';
 
 /** Maps each vulnerability dimension to the training target that addresses it */
 const DIMENSION_TO_TARGET: Record<TrainingDimension, TrainingTarget> = {
@@ -97,6 +98,7 @@ export function SimulationsPage({
   const savedSessionRef = useRef(false);
 
   const handleOpenSetup = useCallback(() => {
+    trackFeatureUsage('palestra_mentale');
     setShowSetup(true);
   }, []);
 

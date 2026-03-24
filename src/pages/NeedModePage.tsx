@@ -6,6 +6,7 @@ import { TodoChecklist } from '@/components/emergency/TodoChecklist';
 import { ATTACK_TYPES } from '@/data/attack-types';
 import { hasStoredData, loadEmergencyData, StorageCorruptionError } from '@/lib/storage';
 import { hasDossierData } from '@/lib/dossier-storage';
+import { trackFeatureUsage } from '@/lib/event-analytics';
 // dossier-export is lazily imported to avoid bundling jspdf (~300KB) in this chunk
 import type { EmergencyData } from '@/types/emergency';
 import type { VictimStatus } from '@/lib/victimStatus';
@@ -116,6 +117,7 @@ export function NeedModePage({ onBack, pin: pinProp = null, unlockedData = null,
   }, [data]);
 
   const handleExportDossier = useCallback(async (dossier: DossierData) => {
+    trackFeatureUsage('pdf_export');
     const { exportDossierPdf } = await import('@/lib/dossier-export');
     await exportDossierPdf(dossier);
   }, []);
