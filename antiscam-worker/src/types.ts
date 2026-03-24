@@ -20,6 +20,8 @@ export interface Env {
   GEMINI_API_KEY: string;
   /** KV namespace for lead capture form submissions */
   ANTISCAM_LEADS: KVNamespace;
+  /** KV namespace for aggregated anonymous analytics counters */
+  ANTISCAM_ANALYTICS: KVNamespace;
 }
 
 // ── Request validation ────────────────────────────────────────────────────────

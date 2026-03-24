@@ -38,8 +38,19 @@ preview_id = "4e0b8f0506c742d1a83b9c680ff265ef"
 
 [[kv_namespaces]]
 binding = "ANTISCAM_LEADS"
-id = "PLACEHOLDER_CREATE_BEFORE_DEPLOY"
-preview_id = "PLACEHOLDER_CREATE_BEFORE_DEPLOY"
+id = "97c8980f4cad4c009bb6c14a37b95281"
+preview_id = "9ed1a369ab0d41cfbcb809d187545c9a"
+
+# ── KV namespace for anonymous analytics counters ────────────────────────────
+# Stores aggregated counters only (no individual events, no PII).
+# Create before deploy:
+#   wrangler kv namespace create ANTISCAM_ANALYTICS
+#   wrangler kv namespace create ANTISCAM_ANALYTICS --preview
+
+[[kv_namespaces]]
+binding = "ANTISCAM_ANALYTICS"
+id = "PLACEHOLDER_ANALYTICS_ID"
+preview_id = "PLACEHOLDER_ANALYTICS_PREVIEW_ID"
 
 # ── Secrets (never put values here) ─────────────────────────────────────────
 # Set via CLI after deploy:

@@ -7,6 +7,7 @@
  *   POST /api/training/start        Start AI training session
  *   POST /api/training/message      Send user message, get AI response + scores
  *   POST /api/training/reflect      Submit reflection answer, get AI analysis
+ *   POST /api/analytics/batch       Receive anonymous analytics events (aggregated in KV)
  *   OPTIONS *                       CORS preflight
  *
  * Middleware order per request:
@@ -38,6 +39,7 @@ import {
 } from './n8n';
 import { handleTraining } from './training-handler';
 import { handleLead } from './lead-handler';
+import { handleAnalytics } from './analytics-handler';
 
 // ── Handler ───────────────────────────────────────────────────────────────────
 
@@ -168,6 +170,17 @@ export default {
           });
         }
         return handleLead(request, env);
+      }
+
+      // Analytics batch endpoint — /api/analytics/batch
+      if (url.pathname === '/api/analytics/batch') {
+        if (request.method !== 'POST') {
+          return new Response('Method Not Allowed', {
+            status: 405,
+            headers: { Allow: 'POST, OPTIONS', ...getCorsHeaders(request) },
+          });
+        }
+        return handleAnalytics(request, env);
       }
 
       // Training endpoints — /api/training/*

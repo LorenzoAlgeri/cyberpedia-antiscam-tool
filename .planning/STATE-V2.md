@@ -13,13 +13,13 @@
 | 4 | UX Training: Chat Realism | COMPLETATA | 6 task completati |
 | 5 | UX Training: Risultati | COMPLETATA | 8 task completati |
 | 6 | Post-Simulazione: Dossier | COMPLETATA | 4 task completati |
-| 7 | Analytics Comportamentali | DA FARE | |
+| 7 | Analytics Comportamentali | COMPLETATA | 3 task completati |
 | 8 | Dark Web + Avanzate | DA FARE | |
 | 9 | Deploy + Verifica | DA FARE | Ultima fase |
 
 ## Sessione Corrente
 
-- Fase attiva: Fase 6 completata → prossima Fase 7
+- Fase attiva: Fase 7 completata → prossima Fase 8
 - Task attivo: —
 - Blockers: nessuno
 
@@ -252,3 +252,39 @@
 - Incremento automatico al click su scenario card
 - `sortedSimulations` via useMemo: ordina per click count decrescente, fallback ordine default
 - Nessun dato personale tracciato — solo conteggio click per scenario ID
+
+---
+
+### Fase 7 — Analytics Comportamentali Privacy-First (2026-03-24)
+
+**Task 7.1 — Frontend event-analytics module**
+- Creato `src/lib/event-analytics.ts`: modulo analytics privacy-first
+- 8 tipi evento: session_start, session_complete, session_dropout, lever_effectiveness, response_time, feature_usage, utm_capture, error
+- Buffer in-memory (max 50 eventi), flush ogni 30s o su visibilitychange/pagehide
+- `sendBeacon` per flush affidabile su page unload, fallback fetch keepalive
+- Helper di bucketing: responseTimeBucket, riskBand, turnsBucket, durationBucket
+- Zero PII: solo contatori aggregati, nessun dato personale
+- UTM capture automatico da query string al primo caricamento
+- Convenience helpers tipizzati per ogni evento
+
+**Task 7.2 — Worker POST /api/analytics/batch endpoint**
+- Creato `antiscam-worker/src/analytics-handler.ts`: handler batch analytics
+- Validazione eventi: tipo, timestamp, data values (max 100 chars, no PII)
+- Max 50 eventi per batch, rate limit 10 batch/h per IP
+- Aggregazione in KV: `analytics:{YYYY-MM-DD}:{event_type}` → `{ total, breakdown }`
+- Breakdown keys costruiti per tipo evento (scenario:difficulty, phase, lever, bucket, feature, source:medium, error_type)
+- TTL 180 giorni per auto-cleanup
+- Aggiunto `ANTISCAM_ANALYTICS` KV namespace in wrangler.toml e Env type
+- Route aggiunta in index.ts con method check POST-only
+
+**Task 7.3 — Integrazione analytics nel frontend**
+- `App.tsx`: `initAnalytics()` su mount (UTM capture + flush timer)
+- `useTrainingSession.ts`: tracking completo ciclo sessione
+  - `trackSessionStart` dopo SESSION_STARTED (scenario, difficulty, targets)
+  - `trackResponseTime` su onScores (tempo da messaggio utente a risposta AI)
+  - `trackLeverEffectiveness` su interruzione (quale scenario+leva ha triggerato)
+  - `trackSessionComplete` su finish (scenario, turns bucket, duration bucket, risk band)
+  - `trackSessionDropout` su reset durante sessione attiva (fase di abbandono)
+  - `trackError` su errori send_message
+- `SimulationsPage.tsx`: `trackFeatureUsage('palestra_mentale')` su apertura setup
+- `NeedModePage.tsx`: `trackFeatureUsage('pdf_export')` su export dossier PDF
