@@ -21,12 +21,14 @@
 // ---------------------------------------------------------------------------
 
 /**
- * PBKDF2 iteration count -- 100,000. OWASP 2024 recommends 600,000 for
- * PBKDF2-HMAC-SHA256, but upgrading requires a data migration (decrypt
- * with old count, re-encrypt with new). Deferred to v2. The PIN keyspace
- * (4-6 digits) is the primary brute-force bottleneck, not iteration count.
+ * PBKDF2 iteration count — 600,000 (OWASP 2024 recommendation for HMAC-SHA256).
+ * Older data encrypted with 100,000 iterations is migrated transparently
+ * on next successful PIN entry (see storage.ts).
  */
-const PBKDF2_ITERATIONS = 100_000;
+export const PBKDF2_ITERATIONS = 600_000;
+
+/** Legacy iteration count for transparent migration of pre-v2 data. */
+export const PBKDF2_ITERATIONS_LEGACY = 100_000;
 
 /** Salt length in bytes */
 const SALT_BYTES = 16;
@@ -129,12 +131,16 @@ export function isValidCiphertextStructure(combined: Uint8Array): boolean {
  * Derive an AES-256-GCM CryptoKey from a PIN + salt.
  *
  * 1. Import the PIN as raw key material for PBKDF2
- * 2. Run PBKDF2 with 100 000 iterations
+ * 2. Run PBKDF2 with the specified iteration count
  * 3. Return a non-extractable CryptoKey usable for encrypt/decrypt
+ *
+ * @param iterations Override iteration count (default: PBKDF2_ITERATIONS).
+ *                   Used by storage.ts for transparent migration of legacy data.
  */
 export async function deriveKey(
   pin: string,
   salt: Uint8Array,
+  iterations: number = PBKDF2_ITERATIONS,
 ): Promise<CryptoKey> {
   // Encode PIN to bytes
   const encoder = new TextEncoder();
@@ -155,7 +161,7 @@ export async function deriveKey(
     {
       name: KDF_ALGO,
       salt: salt.buffer as ArrayBuffer,
-      iterations: PBKDF2_ITERATIONS,
+      iterations,
       hash: HASH_ALGO,
     },
     keyMaterial,

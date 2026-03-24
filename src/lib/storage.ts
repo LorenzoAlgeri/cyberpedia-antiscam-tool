@@ -30,6 +30,8 @@ import {
   safeFromBase64,
   safeDecodeSalt,
   isValidCiphertextStructure,
+  PBKDF2_ITERATIONS,
+  PBKDF2_ITERATIONS_LEGACY,
 } from '@/lib/encryption';
 import { isCryptoAvailable } from '@/lib/crypto-support';
 
@@ -39,11 +41,39 @@ import { isCryptoAvailable } from '@/lib/crypto-support';
 
 const STORAGE_KEY_SALT = 'antiscam-salt' as const;
 const STORAGE_KEY_DATA = 'antiscam-data' as const;
+/** Stores encryption metadata (e.g. PBKDF2 iteration count) as JSON. */
+const STORAGE_KEY_META = 'antiscam-meta' as const;
 // Legacy key written by an old implementation that exported a raw AES key.
 // The current scheme derives the key from PIN+PBKDF2 and never persists it.
 const STORAGE_KEY_LEGACY_KEY = 'antiscam-key' as const;
 /** Key for plaintext fallback data (used when Web Crypto API is unavailable). */
 const STORAGE_KEY_PLAINTEXT = 'antiscam-data-plain' as const;
+
+// ---------------------------------------------------------------------------
+// PBKDF2 iteration metadata
+// ---------------------------------------------------------------------------
+
+interface StorageMeta {
+  readonly pbkdf2Iterations: number;
+}
+
+/** Read the stored PBKDF2 iteration count, or return legacy default. */
+function getStoredIterations(): number {
+  const raw = localStorage.getItem(STORAGE_KEY_META);
+  if (!raw) return PBKDF2_ITERATIONS_LEGACY; // no meta → old data
+  try {
+    const meta = JSON.parse(raw) as StorageMeta;
+    return typeof meta.pbkdf2Iterations === 'number' ? meta.pbkdf2Iterations : PBKDF2_ITERATIONS_LEGACY;
+  } catch {
+    return PBKDF2_ITERATIONS_LEGACY;
+  }
+}
+
+/** Persist the current iteration count in metadata. */
+function setStoredIterations(iterations: number): void {
+  const meta: StorageMeta = { pbkdf2Iterations: iterations };
+  localStorage.setItem(STORAGE_KEY_META, JSON.stringify(meta));
+}
 
 // ---------------------------------------------------------------------------
 // Error types
@@ -147,9 +177,10 @@ export async function saveEmergencyData(
     localStorage.setItem(STORAGE_KEY_SALT, encodeSalt(salt));
   }
 
-  const key = await deriveKey(pin, salt);
+  const key = await deriveKey(pin, salt, PBKDF2_ITERATIONS);
   const ciphertext = await encrypt(JSON.stringify(stamped), key);
   localStorage.setItem(STORAGE_KEY_DATA, ciphertext);
+  setStoredIterations(PBKDF2_ITERATIONS);
 }
 
 /**
@@ -204,7 +235,8 @@ export async function loadEmergencyData(
 
   // Case 5: Derive key and attempt decryption
   // decrypt() throws OperationError (DOMException) on wrong PIN
-  const key = await deriveKey(pin, salt);
+  const storedIterations = getStoredIterations();
+  const key = await deriveKey(pin, salt, storedIterations);
   const json = await decrypt(ciphertext, key);
   let parsed: unknown;
   try {
@@ -212,7 +244,17 @@ export async function loadEmergencyData(
   } catch {
     throw new StorageCorruptionError('invalid-json');
   }
-  return validateEmergencyData(parsed);
+  const data = validateEmergencyData(parsed);
+
+  // Transparent PBKDF2 migration: re-encrypt with stronger iterations
+  if (storedIterations < PBKDF2_ITERATIONS && data) {
+    const newKey = await deriveKey(pin, salt, PBKDF2_ITERATIONS);
+    const newCiphertext = await encrypt(JSON.stringify(data), newKey);
+    localStorage.setItem(STORAGE_KEY_DATA, newCiphertext);
+    setStoredIterations(PBKDF2_ITERATIONS);
+  }
+
+  return data;
 }
 
 /**
@@ -223,6 +265,7 @@ export async function loadEmergencyData(
 export function clearStoredData(): void {
   localStorage.removeItem(STORAGE_KEY_SALT);
   localStorage.removeItem(STORAGE_KEY_DATA);
+  localStorage.removeItem(STORAGE_KEY_META);
   localStorage.removeItem(STORAGE_KEY_LEGACY_KEY);
   localStorage.removeItem(STORAGE_KEY_PLAINTEXT);
   clearPersistedAttempts();
