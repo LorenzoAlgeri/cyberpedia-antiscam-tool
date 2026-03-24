@@ -11,7 +11,7 @@
 | 2 | Landing Page Lead Capture | COMPLETATA | 4 task completati |
 | 3 | UX Training: Setup Flow | COMPLETATA | 7 task completati |
 | 4 | UX Training: Chat Realism | COMPLETATA | 6 task completati |
-| 5 | UX Training: Risultati | DA FARE | Dipende da Fase 4 |
+| 5 | UX Training: Risultati | COMPLETATA | 8 task completati |
 | 6 | Post-Simulazione: Dossier | DA FARE | |
 | 7 | Analytics Comportamentali | DA FARE | |
 | 8 | Dark Web + Avanzate | DA FARE | |
@@ -19,7 +19,7 @@
 
 ## Sessione Corrente
 
-- Fase attiva: Fase 4 completata → prossima Fase 5
+- Fase attiva: Fase 5 completata → prossima Fase 6
 - Task attivo: —
 - Blockers: nessuno
 
@@ -136,6 +136,48 @@
 - `useTrainingSession.ts`: aggiunto action `CONTINUE_CONVERSATION` e callback `continueChat`
 - `SessionReport.tsx`: aggiunta prop opzionale `onContinueChat`, UI con testo esplicativo e pulsante
 - `SimulationsPage.tsx`: passato `onContinueChat={training.continueChat}` a SessionReport
+
+---
+
+### Fase 5 — UX Training: Risultati + Profilo (2026-03-24)
+
+**Task 5.1 — RadarChart centrato e più grande**
+- `RadarChart` size aumentata da 220 a 280px nel SessionReport
+- Container wrappato con `flex justify-center` per centrare l'SVG a larghezza fissa
+
+**Task 5.2 — Tooltip sulle 4 dimensioni (HelpCircle)**
+- Aggiunto `HelpCircle` icon next a ogni label in `ScoreBar`
+- Popover on click con definizione breve per ogni dimensione
+- Testi da `DIMENSION_TOOLTIPS` in `score-interpretations.ts`
+
+**Task 5.3 — Interpretazione punteggio per range (ULTRATHINK)**
+- Creato `src/data/score-interpretations.ts` con testi psicologicamente fondati
+- 4 dimensioni × 3 range (low/medium/high based on displayValue) = 12 testi
+- Mostrati sotto ogni barra nel `ScoreBar` component
+- Range basato su displayValue (normalizzato: sempre più alto = meglio)
+
+**Task 5.4 — Descrizione globale per rischio (ULTRATHINK)**
+- 3 fasce: basso (0-35), medio (36-65), alto (66-100)
+- Paragrafo psicologicamente accurato per ogni fascia
+- Mostrato in SessionReport tra radar chart e barre dimensioni
+
+**Task 5.5 — Bottone "Allenati su questo" per punteggi bassi**
+- Appare per ogni dimensione in zona rossa (displayValue < 40)
+- Mappa dimension → TrainingTarget: activation→fear, impulsivity→urgency, verification→trust, awareness→authority
+- Click apre TrainingSetup con leva pre-selezionata
+- Modificati: SessionReport.tsx, TrainingSetup.tsx (initialTargets prop), SimulationsPage.tsx (handler + state)
+
+**Task 5.6 — Sottotitolo "Punto forte"/"Punto debole" in TrainingDashboard**
+- "Punto forte": subtitle "La dimensione in cui sei più resistente"
+- "Punto debole": subtitle "Dove concentrare l'allenamento"
+
+**Task 5.7 — Streak tooltip + messaggio se streak=0**
+- HelpCircle icon con title tooltip: "Giorni consecutivi con almeno una sessione..."
+- Streak=0 mostra "—" invece di "0" + label "Inizia oggi"
+
+**Task 5.8 — "Come funziona la valutazione" accordion**
+- Accordion in SessionReport con 4 sezioni: dimensioni, formula rischio, interruzione, profilo nel tempo
+- `useState` toggle, nessuna libreria aggiuntiva
 
 ---
 
