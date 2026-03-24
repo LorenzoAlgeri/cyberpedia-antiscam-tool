@@ -203,6 +203,7 @@ function App() {
                 setGlobalPin(pin);
                 setUnlockedData(data);
               }}
+              victimStatus={victimStatus}
             />
           </Suspense>
         );

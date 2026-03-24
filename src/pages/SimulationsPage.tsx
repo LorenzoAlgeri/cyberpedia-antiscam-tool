@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import type { KeyboardEvent } from 'react';
 import * as m from 'motion/react-m';
 import { AnimatePresence } from 'motion/react';
@@ -17,7 +17,15 @@ import { useTrainingProfile } from '@/hooks/useTrainingProfile';
 import { useCustomScenarios } from '@/hooks/useCustomScenarios';
 import type { Simulation } from '@/types/simulation';
 import type { AttackType } from '@/types/emergency';
-import type { TrainingTarget, ScammerGender } from '@/types/training';
+import type { TrainingTarget, TrainingDimension, ScammerGender } from '@/types/training';
+
+/** Maps each vulnerability dimension to the training target that addresses it */
+const DIMENSION_TO_TARGET: Record<TrainingDimension, TrainingTarget> = {
+  activation: 'fear',
+  impulsivity: 'urgency',
+  verification: 'trust',
+  awareness: 'authority',
+} as const;
 
 /** Map icon string from simulation data to Lucide component */
 const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -58,6 +66,21 @@ export function SimulationsPage({
   /** Show onboarding-to-realistic hint after first completion */
   const [showRealismHint, setShowRealismHint] = useState(false);
 
+  /** Scenario click counts — persisted in localStorage for frequency sorting */
+  const [scenarioClicks, setScenarioClicks] = useState<Record<string, number>>(() => {
+    try {
+      const raw = localStorage.getItem('antiscam-scenario-clicks');
+      return raw ? (JSON.parse(raw) as Record<string, number>) : {};
+    } catch { return {}; }
+  });
+
+  /** Simulations sorted by click frequency (most clicked first), fallback to default order */
+  const sortedSimulations = useMemo(() => {
+    const hasAnyClicks = Object.values(scenarioClicks).some((c) => c > 0);
+    if (!hasAnyClicks) return simulations;
+    return [...simulations].sort((a, b) => (scenarioClicks[b.id] ?? 0) - (scenarioClicks[a.id] ?? 0));
+  }, [scenarioClicks]);
+
   const { fetchAISimulation } = useAISimulation();
 
   // --- AI Training (Palestra Mentale) ---
@@ -68,6 +91,8 @@ export function SimulationsPage({
   const { scenarios: customScenarios, addScenario, removeScenario } = useCustomScenarios();
   const [showSetup, setShowSetup] = useState(false);
   const [showEditor, setShowEditor] = useState(false);
+  /** Pre-selected targets when navigating from "Allenati su questo" in SessionReport */
+  const [preSelectedTargets, setPreSelectedTargets] = useState<TrainingTarget[]>([]);
   /** Track whether we already saved this session to profile */
   const savedSessionRef = useRef(false);
 
@@ -96,8 +121,21 @@ export function SimulationsPage({
   const handleTrainingBack = useCallback(() => {
     training.reset();
     setShowSetup(false);
+    setPreSelectedTargets([]);
     savedSessionRef.current = false;
   }, [training]);
+
+  /** Called when user clicks "Allenati su questo" in SessionReport */
+  const handleTrainOnDimension = useCallback(
+    (dim: TrainingDimension) => {
+      training.reset();
+      savedSessionRef.current = false;
+      const target = DIMENSION_TO_TARGET[dim];
+      setPreSelectedTargets([target]);
+      setShowSetup(true);
+    },
+    [training],
+  );
 
   // Save session to profile when reaching summary
   useEffect(() => {
@@ -142,6 +180,13 @@ export function SimulationsPage({
     async (simId: string) => {
       const sim = simulations.find((s) => s.id === simId) ?? null;
       if (!sim) return;
+
+      // Track click for frequency sorting
+      setScenarioClicks((prev) => {
+        const updated = { ...prev, [simId]: (prev[simId] ?? 0) + 1 };
+        localStorage.setItem('antiscam-scenario-clicks', JSON.stringify(updated));
+        return updated;
+      });
 
       setSelectingId(sim.id);
       try {
@@ -204,6 +249,7 @@ export function SimulationsPage({
           <TrainingSetup
             profile={profile}
             recommendedTarget={getRecommendedTarget()}
+            {...(preSelectedTargets.length > 0 ? { initialTargets: preSelectedTargets } : {})}
             isLoading={trainingState.isLoading}
             error={trainingState.error}
             customScenarios={customScenarios}
@@ -319,6 +365,7 @@ export function SimulationsPage({
             onFinish={handleTrainingBack}
             onBack={handleTrainingBack}
             onContinueChat={training.continueChat}
+            onTrainOnDimension={handleTrainOnDimension}
           />
         </m.div>
       </AnimatePresence>
@@ -446,7 +493,7 @@ export function SimulationsPage({
         role="list"
         aria-label="Scenari di simulazione disponibili"
       >
-        {simulations.map((sim, i) => {
+        {sortedSimulations.map((sim, i) => {
           const Icon = ICON_MAP[sim.icon];
           const isLoading = selectingId === sim.id;
 

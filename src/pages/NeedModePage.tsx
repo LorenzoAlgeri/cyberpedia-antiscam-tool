@@ -1,11 +1,19 @@
-import { useCallback, useMemo, useState } from 'react';
+import { lazy, Suspense, useCallback, useMemo, useState } from 'react';
 import * as m from 'motion/react-m';
-import { FileText, Phone } from 'lucide-react';
+import { FileText, FolderLock, Phone } from 'lucide-react';
 import { PinDialog } from '@/components/emergency/PinDialog';
 import { TodoChecklist } from '@/components/emergency/TodoChecklist';
 import { ATTACK_TYPES } from '@/data/attack-types';
 import { hasStoredData, loadEmergencyData, StorageCorruptionError } from '@/lib/storage';
+import { hasDossierData } from '@/lib/dossier-storage';
+// dossier-export is lazily imported to avoid bundling jspdf (~300KB) in this chunk
 import type { EmergencyData } from '@/types/emergency';
+import type { VictimStatus } from '@/lib/victimStatus';
+import type { DossierData } from '@/types/dossier';
+
+const DossierForm = lazy(() =>
+  import('@/components/dossier/DossierForm').then((m) => ({ default: m.DossierForm })),
+);
 
 interface NeedModePageProps {
   readonly onBack: () => void;
@@ -15,9 +23,11 @@ interface NeedModePageProps {
   readonly unlockedData?: EmergencyData | null;
   /** Called after local unlock so App can persist the pin+data globally. */
   readonly onUnlock?: (pin: string, data: EmergencyData) => void;
+  /** Victim status — shows dossier tab when 'yes' */
+  readonly victimStatus?: VictimStatus | null;
 }
 
-type NeedTab = 'base' | 'scenario';
+type NeedTab = 'base' | 'scenario' | 'dossier';
 
 function sanitizeTel(value: string): string {
   return value.replace(/[^\d+]/g, '');
@@ -53,10 +63,13 @@ function buildReport(data: EmergencyData): string {
   return lines.join('\n');
 }
 
-export function NeedModePage({ onBack, pin: pinProp = null, unlockedData = null, onUnlock }: NeedModePageProps) {
-  const [tab, setTab] = useState<NeedTab>('base');
+export function NeedModePage({ onBack, pin: pinProp = null, unlockedData = null, onUnlock, victimStatus }: NeedModePageProps) {
+  // Show dossier tab when victimStatus is 'yes' or dossier data already exists
+  const showDossierTab = victimStatus === 'yes' || hasDossierData();
+  const [tab, setTab] = useState<NeedTab>(showDossierTab ? 'dossier' : 'base');
   // Seed local data from App-level unlocked data (avoids second PIN prompt).
   const [data, setData] = useState<EmergencyData | null>(unlockedData);
+  const [localPin, setLocalPin] = useState<string | null>(pinProp);
   const [pinError, setPinError] = useState<string | null>(null);
   // Only show the dialog if no pin was passed from App AND storage exists.
   const [showPinDialog, setShowPinDialog] = useState(() => pinProp === null && hasStoredData());
@@ -76,6 +89,7 @@ export function NeedModePage({ onBack, pin: pinProp = null, unlockedData = null,
         setData(loaded);
         onUnlock?.(enteredPin, loaded);
       }
+      setLocalPin(enteredPin);
       setPinError(null);
       setShowPinDialog(false);
     } catch (err) {
@@ -101,6 +115,11 @@ export function NeedModePage({ onBack, pin: pinProp = null, unlockedData = null,
     URL.revokeObjectURL(url);
   }, [data]);
 
+  const handleExportDossier = useCallback(async (dossier: DossierData) => {
+    const { exportDossierPdf } = await import('@/lib/dossier-export');
+    await exportDossierPdf(dossier);
+  }, []);
+
   const attackMetaLabel = useMemo(() => {
     if (!selectedAttack) return null;
     return ATTACK_TYPES.find((t) => t.id === selectedAttack)?.label ?? selectedAttack;
@@ -125,7 +144,7 @@ export function NeedModePage({ onBack, pin: pinProp = null, unlockedData = null,
         </button>
       </div>
 
-      {/* Tabs (Base / Mirato) */}
+      {/* Tabs */}
       <div className="flex rounded-2xl bg-white/5 p-1" role="tablist" aria-label="Sezioni modalità al bisogno">
         <button
           type="button"
@@ -151,71 +170,118 @@ export function NeedModePage({ onBack, pin: pinProp = null, unlockedData = null,
         >
           Mirato
         </button>
-      </div>
-
-      {/* Checklist content */}
-      <div className="glass-card p-4 sm:p-6">
-        <TodoChecklist
-          selectedAttack={selectedAttack}
-          completedGeneric={data?.completedGenericTodos ?? []}
-          completedAttack={data?.completedAttackTodos ?? []}
-          activeTab={tab}
-          showTabs={false}
-          showIncidentToggle={false}
-          onToggleGeneric={(id) =>
-            setData((prev) =>
-              prev
-                ? {
-                    ...prev,
-                    completedGenericTodos: prev.completedGenericTodos.includes(id)
-                      ? prev.completedGenericTodos.filter((t) => t !== id)
-                      : [...prev.completedGenericTodos, id],
-                  }
-                : prev,
-            )
-          }
-          onToggleAttack={(id) =>
-            setData((prev) =>
-              prev
-                ? {
-                    ...prev,
-                    completedAttackTodos: prev.completedAttackTodos.includes(id)
-                      ? prev.completedAttackTodos.filter((t) => t !== id)
-                      : [...prev.completedAttackTodos, id],
-                  }
-                : prev,
-            )
-          }
-        />
-      </div>
-
-      {/* CTAs */}
-      <div className="mt-auto grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <m.button
-          type="button"
-          onClick={handleCreateReport}
-          disabled={!data}
-          whileHover={!data ? {} : { scale: 1.01, y: -1 }}
-          whileTap={!data ? {} : { scale: 0.99 }}
-          className="btn-primary flex items-center justify-center gap-2 disabled:opacity-60"
-          style={{ minHeight: 44 }}
-        >
-          <FileText className="h-5 w-5" aria-hidden="true" />
-          Crea report
-        </m.button>
-
-        {bankTel ? (
-          <a
-            href={`tel:${bankTel}`}
-            className="btn-secondary flex items-center justify-center gap-2"
-            style={{ minHeight: 44 }}
-            aria-label="Chiama la banca al numero salvato"
+        {showDossierTab && (
+          <button
+            type="button"
+            role="tab"
+            aria-selected={tab === 'dossier'}
+            onClick={() => setTab('dossier')}
+            className={`flex flex-1 items-center justify-center gap-1.5 rounded-xl py-2.5 text-base font-medium transition-colors ${
+              tab === 'dossier'
+                ? 'bg-rose-500/15 text-rose-300 shadow-sm'
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
           >
-            <Phone className="h-5 w-5" aria-hidden="true" />
-            Chiama banca
-          </a>
-        ) : null}
+            <FolderLock className="h-4 w-4" />
+            Dossier
+          </button>
+        )}
       </div>
+
+      {/* Tab content */}
+      {tab === 'dossier' ? (
+        localPin ? (
+          <div className="glass-card p-4 sm:p-6">
+            <Suspense fallback={
+              <div className="flex items-center justify-center py-12">
+                <div className="h-6 w-6 animate-spin rounded-full border-2 border-cyan-400 border-t-transparent" />
+              </div>
+            }>
+              <DossierForm pin={localPin} onExport={handleExportDossier} />
+            </Suspense>
+          </div>
+        ) : (
+          <div className="glass-card flex flex-col items-center gap-4 p-8 text-center">
+            <FolderLock className="h-10 w-10 text-rose-400" />
+            <p className="text-base text-muted-foreground">
+              Per accedere al dossier, inserisci il tuo PIN.
+            </p>
+            <button
+              type="button"
+              onClick={() => setShowPinDialog(true)}
+              className="btn-primary"
+            >
+              Inserisci PIN
+            </button>
+          </div>
+        )
+      ) : (
+        <>
+          {/* Checklist content */}
+          <div className="glass-card p-4 sm:p-6">
+            <TodoChecklist
+              selectedAttack={selectedAttack}
+              completedGeneric={data?.completedGenericTodos ?? []}
+              completedAttack={data?.completedAttackTodos ?? []}
+              activeTab={tab}
+              showTabs={false}
+              showIncidentToggle={false}
+              onToggleGeneric={(id) =>
+                setData((prev) =>
+                  prev
+                    ? {
+                        ...prev,
+                        completedGenericTodos: prev.completedGenericTodos.includes(id)
+                          ? prev.completedGenericTodos.filter((t) => t !== id)
+                          : [...prev.completedGenericTodos, id],
+                      }
+                    : prev,
+                )
+              }
+              onToggleAttack={(id) =>
+                setData((prev) =>
+                  prev
+                    ? {
+                        ...prev,
+                        completedAttackTodos: prev.completedAttackTodos.includes(id)
+                          ? prev.completedAttackTodos.filter((t) => t !== id)
+                          : [...prev.completedAttackTodos, id],
+                      }
+                    : prev,
+                )
+              }
+            />
+          </div>
+
+          {/* CTAs */}
+          <div className="mt-auto grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <m.button
+              type="button"
+              onClick={handleCreateReport}
+              disabled={!data}
+              whileHover={!data ? {} : { scale: 1.01, y: -1 }}
+              whileTap={!data ? {} : { scale: 0.99 }}
+              className="btn-primary flex items-center justify-center gap-2 disabled:opacity-60"
+              style={{ minHeight: 44 }}
+            >
+              <FileText className="h-5 w-5" aria-hidden="true" />
+              Crea report
+            </m.button>
+
+            {bankTel ? (
+              <a
+                href={`tel:${bankTel}`}
+                className="btn-secondary flex items-center justify-center gap-2"
+                style={{ minHeight: 44 }}
+                aria-label="Chiama la banca al numero salvato"
+              >
+                <Phone className="h-5 w-5" aria-hidden="true" />
+                Chiama banca
+              </a>
+            ) : null}
+          </div>
+        </>
+      )}
 
       {/* PIN dialog (unlock) */}
       <PinDialog
@@ -227,7 +293,7 @@ export function NeedModePage({ onBack, pin: pinProp = null, unlockedData = null,
       />
 
       {/* If there's no stored data, show a gentle empty state */}
-      {!hasStoredData() && (
+      {!hasStoredData() && tab !== 'dossier' && (
         <p className="text-center text-base text-muted-foreground">
           Non ci sono dati salvati. Torna indietro e salva prima i tuoi contatti.
         </p>
@@ -235,4 +301,3 @@ export function NeedModePage({ onBack, pin: pinProp = null, unlockedData = null,
     </div>
   );
 }
-
