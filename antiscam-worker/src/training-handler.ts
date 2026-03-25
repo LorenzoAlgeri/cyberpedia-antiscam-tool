@@ -14,7 +14,7 @@
 
 import { getCorsHeaders } from './cors';
 import { checkRateLimit } from './ratelimit';
-import { N8NTimeoutError, N8NApiError, N8NValidationError } from './n8n';
+import { N8NTimeoutError, N8NApiError, N8NValidationError, N8NCircuitOpenError } from './n8n';
 import { callTrainingStart, callTrainingMessage, callTrainingReflect } from './training-n8n';
 import { callGeminiAnalysis, streamGeminiMessage } from './training-gemini';
 import {
@@ -94,6 +94,9 @@ async function parseBody(request: Request): Promise<unknown> {
 }
 
 function mapN8NError(e: unknown, cors: Record<string, string>): Response {
+  if (e instanceof N8NCircuitOpenError) {
+    return jsonError('Il servizio AI è temporaneamente non disponibile. Riprova tra un minuto.', 503, cors);
+  }
   if (e instanceof N8NTimeoutError) {
     return jsonError('Generation timed out. Please retry.', 408, cors);
   }

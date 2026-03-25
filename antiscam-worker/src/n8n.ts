@@ -25,6 +25,7 @@
 import { SimulationSchema, type SimulationOutput } from './schema';
 import { ATTACK_ICONS } from './prompt';
 import type { AttackType, Difficulty } from './types';
+import { createCircuitBreaker } from './circuit-breaker';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -56,6 +57,13 @@ export class N8NValidationError extends Error {
   }
 }
 
+export class N8NCircuitOpenError extends Error {
+  override readonly name = 'N8NCircuitOpenError' as const;
+  constructor() {
+    super('N8N circuit breaker is open — service temporarily unavailable');
+  }
+}
+
 // ── Internal helpers ──────────────────────────────────────────────────────────
 
 /** Overwrite id and icon with deterministic values before Zod parse. */
@@ -67,6 +75,10 @@ function patchFixedFields(raw: unknown, attackType: AttackType): void {
   }
 }
 
+// ── Circuit breaker (per-isolate, see circuit-breaker.ts for caveats) ────────
+
+const simulationCircuitBreaker = createCircuitBreaker('n8n-simulation');
+
 // ── Public API ────────────────────────────────────────────────────────────────
 
 export async function callN8NWebhook(
@@ -74,6 +86,8 @@ export async function callN8NWebhook(
   difficulty: Difficulty,
   webhookUrl: string,
 ): Promise<SimulationOutput> {
+  if (simulationCircuitBreaker.isOpen()) throw new N8NCircuitOpenError();
+
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS);
 
@@ -86,6 +100,7 @@ export async function callN8NWebhook(
       signal: controller.signal,
     });
   } catch (e) {
+    simulationCircuitBreaker.recordFailure();
     if (e instanceof Error && e.name === 'AbortError') throw new N8NTimeoutError();
     throw e;
   } finally {
@@ -93,7 +108,12 @@ export async function callN8NWebhook(
   }
 
   const text = await response.text();
-  if (!response.ok) throw new N8NApiError(response.status, text);
+  if (!response.ok) {
+    if (response.status >= 500) simulationCircuitBreaker.recordFailure();
+    throw new N8NApiError(response.status, text);
+  }
+
+  simulationCircuitBreaker.recordSuccess();
 
   let parsed: unknown;
   try {

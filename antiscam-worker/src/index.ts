@@ -36,6 +36,7 @@ import {
   N8NTimeoutError,
   N8NApiError,
   N8NValidationError,
+  N8NCircuitOpenError,
 } from './n8n';
 import { handleTraining } from './training-handler';
 import { handleLead } from './lead-handler';
@@ -100,6 +101,12 @@ async function handleGenerate(request: Request, env: Env): Promise<Response> {
   try {
     simulation = await callN8NWebhook(attackType, difficulty, env.N8N_WEBHOOK_URL);
   } catch (e) {
+    if (e instanceof N8NCircuitOpenError) {
+      return Response.json(
+        { error: 'Service temporarily unavailable. Please try again in a minute.' },
+        { status: 503, headers: cors },
+      );
+    }
     if (e instanceof N8NTimeoutError) {
       return Response.json(
         { error: 'Generation timed out. Please retry.' },

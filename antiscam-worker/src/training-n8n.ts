@@ -37,11 +37,16 @@ import type {
   ReflectionAnswer,
   ReflectionStep,
 } from './training-types';
-import { N8NTimeoutError, N8NApiError, N8NValidationError } from './n8n';
+import { N8NTimeoutError, N8NApiError, N8NValidationError, N8NCircuitOpenError } from './n8n';
+import { createCircuitBreaker } from './circuit-breaker';
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
 const TIMEOUT_MS = 28_000;
+
+// ── Circuit breaker (per-isolate, see circuit-breaker.ts for caveats) ────────
+
+const trainingCircuitBreaker = createCircuitBreaker('n8n-training');
 
 // ── Internal helper ──────────────────────────────────────────────────────────
 
@@ -49,6 +54,8 @@ async function callWebhook(
   webhookUrl: string,
   payload: Record<string, unknown>,
 ): Promise<unknown> {
+  if (trainingCircuitBreaker.isOpen()) throw new N8NCircuitOpenError();
+
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS);
 
@@ -61,6 +68,7 @@ async function callWebhook(
       signal: controller.signal,
     });
   } catch (e) {
+    trainingCircuitBreaker.recordFailure();
     if (e instanceof Error && e.name === 'AbortError') throw new N8NTimeoutError();
     throw e;
   } finally {
@@ -68,7 +76,12 @@ async function callWebhook(
   }
 
   const text = await response.text();
-  if (!response.ok) throw new N8NApiError(response.status, text);
+  if (!response.ok) {
+    if (response.status >= 500) trainingCircuitBreaker.recordFailure();
+    throw new N8NApiError(response.status, text);
+  }
+
+  trainingCircuitBreaker.recordSuccess();
 
   try {
     return JSON.parse(text);
