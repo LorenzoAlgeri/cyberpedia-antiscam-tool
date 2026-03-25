@@ -92,9 +92,9 @@ export function buildStartSessionSystemPrompt(
 
   const personaInstruction = customPersona && customPersona.name
     ? `"scammerPersona": {
-      "name": "${customPersona.name}",
-      "role": "${customPersona.role || 'truffatore generico'}",
-      "tone": "${customPersona.tone || 'convincente'}"
+      "name": ${JSON.stringify(customPersona.name)},
+      "role": ${JSON.stringify(customPersona.role || 'truffatore generico')},
+      "tone": ${JSON.stringify(customPersona.tone || 'convincente')}
     }`
     : `"scammerPersona": {
       "name": "nome realistico italiano",
@@ -143,6 +143,8 @@ REGOLE:
 - Il messaggio deve sembrare genuino e quotidiano
 - Usa un linguaggio naturale italiano, non formale
 ${customPersona?.name ? '- Usa ESATTAMENTE il nome e ruolo della persona indicati sopra' : '- Il nome deve essere realistico (nome e cognome italiani)'}
+- NON usare MAI placeholder tra parentesi quadre come [Nome], [Nome App/Social], [riferimento a una foto/interesse] ecc.
+- Ogni dettaglio deve essere CONCRETO e specifico (es. "Instagram" non "[Nome App/Social]", "la tua foto al mare" non "[riferimento a una foto/interesse]")
 - Rispondi SOLO con JSON valido, zero markdown, zero testo extra`;
 }
 
@@ -326,6 +328,7 @@ REGOLE:
 - Non rompere mai la quarta parete
 - Rispondi in modo coerente con la conversazione precedente
 - Italiano naturale, max 3 righe
+- NON usare MAI placeholder tra parentesi quadre come [Nome], [Nome App/Social], [riferimento] ecc. — ogni dettaglio deve essere concreto e specifico
 - Rispondi SOLO con il messaggio del truffatore, testo puro, NESSUN JSON, NESSUN markdown
 
 QUANDO L'UTENTE MOSTRA DUBBI O RESISTENZA — INTENSIFICA:
