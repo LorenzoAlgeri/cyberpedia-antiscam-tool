@@ -23,6 +23,8 @@ const GLOBAL_LIMITS: Record<string, number> = {
   'training-start': 300,    // /api/training/start: 300/h total
   'training-msg': 3000,     // /api/training/message + message-stream: 3000/h total
   'training-ref': 1500,     // /api/training/reflect: 1500/h total
+  lead: 200,                // /api/lead: max 200 submissions/h globally
+  analytics: 500,           // /api/analytics/batch: max 500 batches/h globally
 };
 
 interface SlidingWindowEntry {
