@@ -103,16 +103,16 @@ function mapN8NError(e: unknown, cors: Record<string, string>): Response {
   }
   if (e instanceof N8NValidationError) {
     console.error(JSON.stringify({ level: 'warn', handler: 'mapN8NError', detail: e.message }));
-    return jsonError(`AI response failed validation. Please retry. [detail: ${e.message.slice(0, 150)}]`, 422, cors);
+    return jsonError('AI response failed validation. Please retry.', 422, cors);
   }
   if (e instanceof N8NApiError) {
     console.error(JSON.stringify({ level: 'error', handler: 'mapN8NError', status: e.status, detail: e.body?.slice(0, 200) }));
-    return jsonError(`Upstream error (${e.status}). Please retry later. [detail: ${(e.body ?? 'no body').slice(0, 150)}]`, 502, cors);
+    return jsonError('Upstream error. Please retry later.', 502, cors);
   }
   // Unexpected error — log and return generic
   const detail = e instanceof Error ? e.message : String(e);
   console.error(JSON.stringify({ level: 'error', handler: 'mapN8NError.unknown', error: detail }));
-  return jsonError(`Internal server error [detail: ${detail.slice(0, 150)}]`, 500, cors);
+  return jsonError('Internal server error', 500, cors);
 }
 
 // ── Endpoint: /api/training/start ────────────────────────────────────────────
@@ -468,7 +468,7 @@ async function handleMessageStream(request: Request, env: Env): Promise<Response
       } catch (e) {
         const detail = e instanceof Error ? e.message : String(e);
         console.error(JSON.stringify({ level: 'error', handler: 'messageStream.analysis', error: detail }));
-        await write(sseEvent('error', { error: 'Errore durante l\'analisi. Riprova.', detail: `[analysis] ${detail}` }));
+        await write(sseEvent('error', { error: 'Errore durante l\'analisi. Riprova.' }));
         return; // finally sends done + closes writer
       }
 
@@ -536,7 +536,7 @@ async function handleMessageStream(request: Request, env: Env): Promise<Response
       } catch (e) {
         const detail = e instanceof Error ? e.message : String(e);
         console.error(JSON.stringify({ level: 'error', handler: 'messageStream.scammerMsg', error: detail }));
-        await write(sseEvent('error', { error: 'Errore durante la generazione del messaggio. Riprova.', detail: `[scammerMsg] ${detail}` }));
+        await write(sseEvent('error', { error: 'Errore durante la generazione del messaggio. Riprova.' }));
       }
 
       await write(sseEvent('done', {}));
@@ -545,7 +545,7 @@ async function handleMessageStream(request: Request, env: Env): Promise<Response
       const detail = e instanceof Error ? e.message : String(e);
       console.error(JSON.stringify({ level: 'error', handler: 'messageStream.outer', error: detail }));
       try {
-        await write(sseEvent('error', { error: 'Errore interno del server.', detail: `[outer] ${detail}` }));
+        await write(sseEvent('error', { error: 'Errore interno del server.' }));
       } catch {
         // Writer may be closed
       }
