@@ -268,6 +268,42 @@ export function useTrainingAPI(): UseTrainingAPIResult {
         let buffer = '';
         let streamResolved = false;
 
+        let currentEventType = '';
+
+        const processSSELine = (line: string) => {
+          if (line.startsWith('event: ')) {
+            currentEventType = line.slice(7).trim();
+          } else if (line.startsWith('data: ')) {
+            const dataStr = line.slice(6).trim();
+            if (!dataStr) return;
+
+            try {
+              const data = JSON.parse(dataStr);
+              switch (currentEventType) {
+                case 'scores':
+                  callbacks.onScores(data);
+                  break;
+                case 'token':
+                  callbacks.onToken(data.text ?? '');
+                  break;
+                case 'done':
+                  streamResolved = true;
+                  callbacks.onDone();
+                  break;
+                case 'error': {
+                  streamResolved = true;
+                  const errMsg = data.error ?? 'Errore sconosciuto';
+                  const errDetail = data.detail ? `\n${data.detail}` : '';
+                  callbacks.onError(errMsg + errDetail);
+                  break;
+                }
+              }
+            } catch {
+              // Skip unparseable data
+            }
+          }
+        };
+
         try {
           while (true) {
             const { done, value } = await reader.read();
@@ -279,39 +315,15 @@ export function useTrainingAPI(): UseTrainingAPIResult {
             buffer = lines.pop() ?? '';
 
             for (const line of lines) {
-              if (line.startsWith('event: ')) {
-                // Store event type for next data line
-                (reader as unknown as { _eventType: string })._eventType = line.slice(7).trim();
-              } else if (line.startsWith('data: ')) {
-                const eventType = (reader as unknown as { _eventType?: string })._eventType ?? 'unknown';
-                const dataStr = line.slice(6).trim();
-                if (!dataStr) continue;
+              processSSELine(line);
+            }
+          }
 
-                try {
-                  const data = JSON.parse(dataStr);
-                  switch (eventType) {
-                    case 'scores':
-                      callbacks.onScores(data);
-                      break;
-                    case 'token':
-                      callbacks.onToken(data.text ?? '');
-                      break;
-                    case 'done':
-                      streamResolved = true;
-                      callbacks.onDone();
-                      break;
-                    case 'error': {
-                      streamResolved = true;
-                      const errMsg = data.error ?? 'Errore sconosciuto';
-                      const errDetail = data.detail ? `\n${data.detail}` : '';
-                      callbacks.onError(errMsg + errDetail);
-                      break;
-                    }
-                  }
-                } catch {
-                  // Skip unparseable data
-                }
-              }
+          // Flush remaining buffer after stream ends
+          if (buffer.trim()) {
+            const remaining = buffer.split('\n');
+            for (const line of remaining) {
+              processSSELine(line);
             }
           }
         } catch (readErr) {
