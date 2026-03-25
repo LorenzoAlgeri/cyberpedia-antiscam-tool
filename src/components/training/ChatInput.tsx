@@ -31,6 +31,8 @@ interface ChatInputProps {
   readonly injectedText?: string;
   /** Called after injectedText has been consumed (set into editor). */
   readonly onInjectedTextConsumed?: () => void;
+  /** STT error message to display. */
+  readonly sttError?: string | null;
 }
 
 export function ChatInput({
@@ -44,9 +46,12 @@ export function ChatInput({
   onStopListening,
   injectedText,
   onInjectedTextConsumed,
+  sttError,
 }: ChatInputProps) {
   const editorRef = useRef<HTMLDivElement>(null);
   const [canSend, setCanSend] = useState(false);
+  // Track the last injected value to avoid re-injecting the same text
+  const lastInjectedRef = useRef('');
 
   // Auto-focus on mount
   useEffect(() => {
@@ -55,22 +60,35 @@ export function ChatInput({
     }
   }, [disabled]);
 
-  // Inject external text (e.g. from STT) into the editor
+  // Inject external text (e.g. from STT) into the editor.
+  // Only inject when listening STOPS and we have a final transcript.
   useEffect(() => {
-    if (injectedText && editorRef.current) {
-      editorRef.current.textContent = injectedText.slice(0, maxLength);
-      queueMicrotask(() => setCanSend(injectedText.trim().length > 0));
-      // Move cursor to end
-      const range = document.createRange();
-      const sel = window.getSelection();
-      range.selectNodeContents(editorRef.current);
-      range.collapse(false);
-      sel?.removeAllRanges();
-      sel?.addRange(range);
-      editorRef.current.focus({ preventScroll: true });
-      onInjectedTextConsumed?.();
+    if (!injectedText || !editorRef.current) return;
+    // Don't re-inject the same text we already processed
+    if (injectedText === lastInjectedRef.current) return;
+    // Wait for recognition to finish before injecting final text
+    if (isListening) return;
+
+    lastInjectedRef.current = injectedText;
+    editorRef.current.textContent = injectedText.slice(0, maxLength);
+    setCanSend(injectedText.trim().length > 0);
+    // Move cursor to end
+    const range = document.createRange();
+    const sel = window.getSelection();
+    range.selectNodeContents(editorRef.current);
+    range.collapse(false);
+    sel?.removeAllRanges();
+    sel?.addRange(range);
+    editorRef.current.focus({ preventScroll: true });
+    onInjectedTextConsumed?.();
+  }, [injectedText, isListening, maxLength, onInjectedTextConsumed]);
+
+  // Reset lastInjectedRef when transcript is consumed (allows re-injection of same text)
+  useEffect(() => {
+    if (!injectedText) {
+      lastInjectedRef.current = '';
     }
-  }, [injectedText, maxLength, onInjectedTextConsumed]);
+  }, [injectedText]);
 
   const getText = useCallback((): string => {
     return editorRef.current?.textContent ?? '';
@@ -117,65 +135,77 @@ export function ChatInput({
   }, [getText, maxLength]);
 
   return (
-    <div
-      className="flex items-end gap-2 border-t border-slate-700/50 bg-slate-900/60 px-3 py-2"
-    >
-      {/* Mic button for STT (Chrome/Edge only) */}
-      {sttSupported && (
+    <div className="border-t border-slate-700/50 bg-slate-900/60">
+      {/* STT status/error bar */}
+      {isListening && (
+        <div className="flex items-center justify-center gap-2 bg-red-500/10 px-3 py-1.5 text-sm text-red-300">
+          <span className="inline-block size-2 animate-pulse rounded-full bg-red-400" />
+          Sto ascoltando... parla ora
+        </div>
+      )}
+      {sttError && !isListening && (
+        <div className="px-3 py-1.5 text-center text-sm text-amber-400/80">
+          {sttError}
+        </div>
+      )}
+      <div className="flex items-end gap-2 px-3 py-2">
+        {/* Mic button for STT (Chrome/Edge only) */}
+        {sttSupported && (
+          <button
+            type="button"
+            onClick={() => (isListening ? onStopListening?.() : onStartListening?.())}
+            disabled={disabled}
+            aria-label={isListening ? 'Ferma dettatura' : 'Dettatura vocale'}
+            className={`flex size-11 shrink-0 items-center justify-center rounded-full
+                       transition-all active:scale-95
+                       disabled:opacity-50 disabled:active:scale-100
+                       ${
+                         isListening
+                           ? 'bg-red-500/20 text-red-400 ring-2 ring-red-500/50 animate-pulse'
+                           : 'bg-slate-700 text-slate-400 hover:bg-slate-600 hover:text-slate-200'
+                       }`}
+          >
+            {isListening ? (
+              <MicOff className="size-5" aria-hidden="true" />
+            ) : (
+              <Mic className="size-5" aria-hidden="true" />
+            )}
+          </button>
+        )}
+        <div
+          ref={editorRef}
+          contentEditable={!disabled}
+          role="textbox"
+          aria-label="Scrivi il tuo messaggio"
+          data-placeholder={placeholder}
+          onKeyDown={handleKeyDown}
+          onInput={handleInput}
+          className={`min-h-[48px] flex-1 rounded-2xl bg-slate-800/60 px-4 py-3
+                     text-slate-100 outline-none
+                     focus:ring-2 focus:ring-cyan-400/30
+                     ${disabled ? 'cursor-not-allowed opacity-50' : ''}`}
+          style={{
+            fontSize: '18px',
+            overflowWrap: 'break-word',
+            maxHeight: '120px',
+            overflowY: 'auto',
+            wordBreak: 'break-word',
+          }}
+          suppressContentEditableWarning
+        />
         <button
           type="button"
-          onClick={() => (isListening ? onStopListening?.() : onStartListening?.())}
-          disabled={disabled}
-          aria-label={isListening ? 'Ferma dettatura' : 'Dettatura vocale'}
-          className={`flex size-11 shrink-0 items-center justify-center rounded-full
-                     transition-all active:scale-95
-                     disabled:opacity-50 disabled:active:scale-100
-                     ${
-                       isListening
-                         ? 'bg-red-500/20 text-red-400 ring-2 ring-red-500/50 animate-pulse'
-                         : 'bg-slate-700 text-slate-400 hover:bg-slate-600 hover:text-slate-200'
-                     }`}
+          onClick={handleSend}
+          disabled={!canSend || disabled}
+          aria-label="Invia messaggio"
+          className="flex size-11 shrink-0 items-center justify-center rounded-full
+                     bg-cyan-500 text-slate-900 transition-all
+                     hover:bg-cyan-400 active:scale-95
+                     disabled:bg-slate-700 disabled:text-slate-500 disabled:active:scale-100"
         >
-          {isListening ? (
-            <MicOff className="size-5" aria-hidden="true" />
-          ) : (
-            <Mic className="size-5" aria-hidden="true" />
-          )}
+          <Send className="size-5" aria-hidden="true" />
         </button>
-      )}
-      <div
-        ref={editorRef}
-        contentEditable={!disabled}
-        role="textbox"
-        aria-label="Scrivi il tuo messaggio"
-        data-placeholder={placeholder}
-        onKeyDown={handleKeyDown}
-        onInput={handleInput}
-        className={`min-h-[48px] flex-1 rounded-2xl bg-slate-800/60 px-4 py-3
-                   text-slate-100 outline-none
-                   focus:ring-2 focus:ring-cyan-400/30
-                   ${disabled ? 'cursor-not-allowed opacity-50' : ''}`}
-        style={{
-          fontSize: '18px',
-          overflowWrap: 'break-word',
-          maxHeight: '120px',
-          overflowY: 'auto',
-          wordBreak: 'break-word',
-        }}
-        suppressContentEditableWarning
-      />
-      <button
-        type="button"
-        onClick={handleSend}
-        disabled={!canSend || disabled}
-        aria-label="Invia messaggio"
-        className="flex size-11 shrink-0 items-center justify-center rounded-full
-                   bg-cyan-500 text-slate-900 transition-all
-                   hover:bg-cyan-400 active:scale-95
-                   disabled:bg-slate-700 disabled:text-slate-500 disabled:active:scale-100"
-      >
-        <Send className="size-5" aria-hidden="true" />
-      </button>
+      </div>
     </div>
   );
 }

@@ -180,6 +180,7 @@ export function TrainingChat({
         onStopListening={stt.stopListening}
         injectedText={stt.transcript}
         onInjectedTextConsumed={stt.resetTranscript}
+        sttError={stt.error}
       />
     </div>
   );

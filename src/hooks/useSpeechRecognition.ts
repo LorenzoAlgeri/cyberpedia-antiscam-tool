@@ -43,6 +43,15 @@ declare global {
   }
 }
 
+/** Map STT error codes to user-facing Italian messages. */
+const STT_ERROR_MESSAGES: Record<string, string> = {
+  'not-allowed': 'Microfono non autorizzato. Controlla i permessi del browser.',
+  'service-not-allowed': 'Riconoscimento vocale non disponibile su questo dispositivo.',
+  'audio-capture': 'Microfono non disponibile. Verifica che non sia usato da un\'altra app.',
+  'network': 'Errore di rete per il riconoscimento vocale. Verifica la connessione.',
+  'language-not-supported': 'Lingua italiana non supportata per il riconoscimento vocale.',
+};
+
 interface UseSpeechRecognitionReturn {
   /** Start listening for speech. */
   startListening: () => void;
@@ -54,6 +63,8 @@ interface UseSpeechRecognitionReturn {
   transcript: string;
   /** Whether STT is supported (Chrome/Edge mainly). */
   isSupported: boolean;
+  /** User-visible error message (null if no error). */
+  error: string | null;
   /** Reset transcript to empty string. */
   resetTranscript: () => void;
 }
@@ -69,10 +80,14 @@ export function useSpeechRecognition(): UseSpeechRecognitionReturn {
 
   const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState('');
+  const [error, setError] = useState<string | null>(null);
   const recognitionRef = useRef<SpeechRecognitionInstance | null>(null);
+  // Accumulate final text across results (for continuous = false, usually one result)
+  const finalTextRef = useRef('');
 
   const resetTranscript = useCallback(() => {
     setTranscript('');
+    finalTextRef.current = '';
   }, []);
 
   const stopListening = useCallback(() => {
@@ -82,6 +97,10 @@ export function useSpeechRecognition(): UseSpeechRecognitionReturn {
 
   const startListening = useCallback(() => {
     if (!SRClass) return;
+
+    // Clear previous state
+    setError(null);
+    finalTextRef.current = '';
 
     // Stop any existing instance
     recognitionRef.current?.abort();
@@ -108,8 +127,8 @@ export function useSpeechRecognition(): UseSpeechRecognitionReturn {
         }
       }
 
-      // Show interim results while listening, final when done
       if (finalTranscript) {
+        finalTextRef.current = finalTranscript;
         setTranscript(finalTranscript);
       } else if (interimTranscript) {
         setTranscript(interimTranscript);
@@ -117,21 +136,37 @@ export function useSpeechRecognition(): UseSpeechRecognitionReturn {
     };
 
     recognition.onend = () => {
+      // When recognition ends, ensure the final transcript is set
+      // (covers edge case where onresult final fires very close to onend)
+      if (finalTextRef.current) {
+        setTranscript(finalTextRef.current);
+      }
       setIsListening(false);
       recognitionRef.current = null;
     };
 
     recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
-      // 'aborted' and 'no-speech' are non-critical
-      if (event.error !== 'aborted' && event.error !== 'no-speech') {
-        console.warn('[useSpeechRecognition] error:', event.error);
+      // 'aborted' is user-initiated, 'no-speech' just means silence
+      if (event.error !== 'aborted') {
+        if (event.error === 'no-speech') {
+          setError('Nessun audio rilevato. Riprova parlando più forte.');
+        } else {
+          setError(STT_ERROR_MESSAGES[event.error] ?? `Errore microfono: ${event.error}`);
+        }
       }
       setIsListening(false);
       recognitionRef.current = null;
     };
 
     recognitionRef.current = recognition;
-    recognition.start();
+
+    try {
+      recognition.start();
+    } catch {
+      setError('Impossibile avviare il microfono. Controlla i permessi.');
+      setIsListening(false);
+      recognitionRef.current = null;
+    }
   }, [SRClass]);
 
   // Cleanup on unmount
@@ -147,6 +182,7 @@ export function useSpeechRecognition(): UseSpeechRecognitionReturn {
     isListening,
     transcript,
     isSupported,
+    error,
     resetTranscript,
   };
 }
