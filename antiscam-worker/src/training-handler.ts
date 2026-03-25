@@ -54,6 +54,29 @@ const RATE_LIMITS: Record<string, number> = {
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
+/**
+ * Normalize scenarioConfig to ensure trainingTargets (plural) always exists.
+ * The /start endpoint's Gemini prompt + Zod schema only produces trainingTarget (singular),
+ * so when the frontend sends the config back, trainingTargets may be missing.
+ */
+function normalizeScenarioConfig(config: Record<string, unknown>): void {
+  if (!Array.isArray(config.trainingTargets) || config.trainingTargets.length === 0) {
+    const singular = typeof config.trainingTarget === 'string' && config.trainingTarget
+      ? config.trainingTarget
+      : 'urgency';
+    config.trainingTargets = [singular];
+  }
+  // Ensure scammerPersona exists with fallback values
+  if (!config.scammerPersona || typeof config.scammerPersona !== 'object') {
+    config.scammerPersona = { name: 'Sconosciuto', role: 'contatto', tone: 'amichevole' };
+  } else {
+    const persona = config.scammerPersona as Record<string, unknown>;
+    if (!persona.name) persona.name = 'Sconosciuto';
+    if (!persona.role) persona.role = 'contatto';
+    if (!persona.tone) persona.tone = 'amichevole';
+  }
+}
+
 function getIP(request: Request): string {
   return (
     request.headers.get('CF-Connecting-IP') ??
@@ -80,15 +103,16 @@ function mapN8NError(e: unknown, cors: Record<string, string>): Response {
   }
   if (e instanceof N8NValidationError) {
     console.error(JSON.stringify({ level: 'warn', handler: 'mapN8NError', detail: e.message }));
-    return jsonError('AI response failed validation. Please retry.', 422, cors);
+    return jsonError(`AI response failed validation. Please retry. [detail: ${e.message.slice(0, 150)}]`, 422, cors);
   }
   if (e instanceof N8NApiError) {
     console.error(JSON.stringify({ level: 'error', handler: 'mapN8NError', status: e.status, detail: e.body?.slice(0, 200) }));
-    return jsonError('Upstream error. Please retry later.', 502, cors);
+    return jsonError(`Upstream error (${e.status}). Please retry later. [detail: ${(e.body ?? 'no body').slice(0, 150)}]`, 502, cors);
   }
   // Unexpected error — log and return generic
-  console.error(JSON.stringify({ level: 'error', handler: 'mapN8NError.unknown', error: e instanceof Error ? e.message : String(e) }));
-  return jsonError('Internal server error', 500, cors);
+  const detail = e instanceof Error ? e.message : String(e);
+  console.error(JSON.stringify({ level: 'error', handler: 'mapN8NError.unknown', error: detail }));
+  return jsonError(`Internal server error [detail: ${detail.slice(0, 150)}]`, 500, cors);
 }
 
 // ── Endpoint: /api/training/start ────────────────────────────────────────────
@@ -186,10 +210,20 @@ async function handleStart(request: Request, env: Env): Promise<Response> {
       env.N8N_TRAINING_WEBHOOK_URL,
     );
 
-    return Response.json(result, {
-      status: 200,
-      headers: { ...cors, 'Content-Type': 'application/json' },
-    });
+    // Ensure trainingTargets is present in the returned scenarioConfig
+    // (Gemini/Zod only produce trainingTarget singular — we add the plural array)
+    const enrichedConfig = {
+      ...result.scenarioConfig,
+      trainingTargets: trainingTargets,
+    };
+
+    return Response.json(
+      { ...result, scenarioConfig: enrichedConfig },
+      {
+        status: 200,
+        headers: { ...cors, 'Content-Type': 'application/json' },
+      },
+    );
   } catch (e) {
     return mapN8NError(e, cors);
   }
@@ -234,6 +268,7 @@ async function handleMessage(request: Request, env: Env): Promise<Response> {
     return jsonError('conversationHistory too long (max 80 turns)', 422, cors);
   }
 
+  normalizeScenarioConfig(parsed.scenarioConfig as unknown as Record<string, unknown>);
   const scenarioConfig = parsed.scenarioConfig as SendMessageRequest['scenarioConfig'];
   const conversationHistory = parsed.conversationHistory as SendMessageRequest['conversationHistory'];
   const turnCount = typeof parsed.turnCount === 'number' ? parsed.turnCount : conversationHistory.length;
@@ -327,6 +362,8 @@ async function handleReflect(request: Request, env: Env): Promise<Response> {
     return jsonError('userAnswer must be 2000 characters or less', 422, cors);
   }
 
+  normalizeScenarioConfig(parsed.scenarioConfig as unknown as Record<string, unknown>);
+
   try {
     const result = await callTrainingReflect(
       {
@@ -388,6 +425,8 @@ async function handleMessageStream(request: Request, env: Env): Promise<Response
     return jsonError('Invalid conversationHistory', 422, cors);
   }
 
+  // Normalize scenarioConfig to fill in trainingTargets + scammerPersona
+  normalizeScenarioConfig(parsed.scenarioConfig as unknown as Record<string, unknown>);
   const scenarioConfig = parsed.scenarioConfig as ScenarioConfig;
   const conversationHistory = parsed.conversationHistory as SendMessageRequest['conversationHistory'];
   const userMessage = parsed.userMessage;
@@ -407,6 +446,7 @@ async function handleMessageStream(request: Request, env: Env): Promise<Response
 
   // Start async processing
   const processStream = async () => {
+    let sentDone = false;
     try {
       // Phase 1: Behavior analysis (non-streaming, fast)
       const analysisSystemPrompt = buildAnalysisOnlySystemPrompt(scenarioConfig);
@@ -426,10 +466,10 @@ async function handleMessageStream(request: Request, env: Env): Promise<Response
           analysisSystemPrompt, analysisUserPrompt, env.GEMINI_API_KEY,
         );
       } catch (e) {
-        console.error(JSON.stringify({ level: 'error', handler: 'messageStream.analysis', error: e instanceof Error ? e.message : String(e) }));
-        await write(sseEvent('error', { error: 'Errore durante l\'analisi. Riprova.' }));
-        await writer.close();
-        return;
+        const detail = e instanceof Error ? e.message : String(e);
+        console.error(JSON.stringify({ level: 'error', handler: 'messageStream.analysis', error: detail }));
+        await write(sseEvent('error', { error: 'Errore durante l\'analisi. Riprova.', detail: `[analysis] ${detail}` }));
+        return; // finally sends done + closes writer
       }
 
       // MaxTurns safety net
@@ -470,8 +510,8 @@ async function handleMessageStream(request: Request, env: Env): Promise<Response
         }
 
         await write(sseEvent('done', {}));
-        await writer.close();
-        return;
+        sentDone = true;
+        return; // finally closes writer
       }
 
       // Phase 2: Scammer message (streaming)
@@ -494,19 +534,26 @@ async function handleMessageStream(request: Request, env: Env): Promise<Response
           await write(sseEvent('token', { text: value }));
         }
       } catch (e) {
-        console.error(JSON.stringify({ level: 'error', handler: 'messageStream.scammerMsg', error: e instanceof Error ? e.message : String(e) }));
-        await write(sseEvent('error', { error: 'Errore durante la generazione del messaggio. Riprova.' }));
+        const detail = e instanceof Error ? e.message : String(e);
+        console.error(JSON.stringify({ level: 'error', handler: 'messageStream.scammerMsg', error: detail }));
+        await write(sseEvent('error', { error: 'Errore durante la generazione del messaggio. Riprova.', detail: `[scammerMsg] ${detail}` }));
       }
 
       await write(sseEvent('done', {}));
+      sentDone = true;
     } catch (e) {
-      console.error(JSON.stringify({ level: 'error', handler: 'messageStream.outer', error: e instanceof Error ? e.message : String(e) }));
+      const detail = e instanceof Error ? e.message : String(e);
+      console.error(JSON.stringify({ level: 'error', handler: 'messageStream.outer', error: detail }));
       try {
-        await write(sseEvent('error', { error: 'Errore interno del server.' }));
+        await write(sseEvent('error', { error: 'Errore interno del server.', detail: `[outer] ${detail}` }));
       } catch {
         // Writer may be closed
       }
     } finally {
+      // Always send done so frontend never gets stuck on "sta scrivendo..."
+      if (!sentDone) {
+        try { await write(sseEvent('done', {})); } catch { /* writer closed */ }
+      }
       try { await writer.close(); } catch { /* already closed */ }
     }
   };

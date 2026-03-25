@@ -23,6 +23,22 @@ import type {
   NarrativePhase,
 } from './training-types';
 
+// ── Helpers ──────────────────────────────────────────────────────────────────
+
+/** Get trainingTargets safely — falls back to trainingTarget (singular) or ['urgency'] */
+function getTargets(config: ScenarioConfig): TrainingTarget[] {
+  if (Array.isArray(config.trainingTargets) && config.trainingTargets.length > 0) {
+    return config.trainingTargets;
+  }
+  return config.trainingTarget ? [config.trainingTarget] : ['urgency'];
+}
+
+/** Get scammer persona safely — returns fallback if missing */
+function getPersona(config: ScenarioConfig): { name: string; role: string; tone: string } {
+  if (config.scammerPersona?.name) return config.scammerPersona;
+  return { name: 'Sconosciuto', role: 'contatto', tone: 'amichevole' };
+}
+
 // ── Metadata maps ────────────────────────────────────────────────────────────
 
 const ATTACK_LABELS: Record<TrainingAttackType, string> = {
@@ -151,16 +167,16 @@ HAI DUE COMPITI in questa risposta:
 SCENARIO ATTIVO:
 - Tipo: ${ATTACK_LABELS[config.attackType]}
 - Difficoltà: ${DIFFICULTY_INSTRUCTIONS[config.difficulty].description}
-- LEVE PSICOLOGICHE: ${config.trainingTargets.map(t => TARGET_LABELS[t]).join('; ')}
-- Truffatore: ${config.scammerPersona.name} (${config.scammerPersona.role}), tono: ${config.scammerPersona.tone}
+- LEVE PSICOLOGICHE: ${getTargets(config).map(t => TARGET_LABELS[t]).join('; ')}
+- Truffatore: ${getPersona(config).name} (${getPersona(config).role}), tono: ${getPersona(config).tone}
 
 FASI NARRATIVE:
 - P1 (normalità): Contatto plausibile, conversazione naturale. Max 2 turni.
 - P2 (attivazione invisibile): Il coinvolgimento sale. La leva psicologica inizia a operare. Max 2 turni.
 - P3 (micro-spinta): Pressione più diretta. Osserva se l'utente accelera o rallenta. Max 2 turni.
 
-SOGLIA INTERRUZIONE: ${config.interruptThreshold}/100
-TURNI MINIMI PRIMA DI INTERROMPERE: ${config.minTurnsBeforeInterrupt}
+SOGLIA INTERRUZIONE: ${config.interruptThreshold ?? 70}/100
+TURNI MINIMI PRIMA DI INTERROMPERE: ${config.minTurnsBeforeInterrupt ?? 3}
 TURNI MASSIMI UTENTE: ${config.maxTurns ?? 7}
 Se il conteggio dei turni utente raggiunge questo limite e shouldInterrupt è ancora false,
 imposta shouldInterrupt: true e interruptReason: "max_turns".
@@ -175,7 +191,7 @@ ANALISI COMPORTAMENTALE — valuta il messaggio dell'utente su queste dimensioni
 - riskScore: calcolato come activation*0.35 + impulsivity*0.30 + (100-verification)*0.20 + (100-awareness)*0.15
 
 DECISIONE DI INTERRUZIONE:
-- shouldInterrupt = true SE riskScore >= ${config.interruptThreshold} E turnCount >= ${config.minTurnsBeforeInterrupt}
+- shouldInterrupt = true SE riskScore >= ${config.interruptThreshold ?? 70} E turnCount >= ${config.minTurnsBeforeInterrupt ?? 3}
   → in questo caso interruptReason = "high_risk"
 - OPPURE shouldInterrupt = true SE turnCount >= ${config.maxTurns ?? 7}
   → in questo caso interruptReason = "max_turns"
@@ -198,7 +214,7 @@ Rispondi con ESATTAMENTE questo JSON:
 }
 
 REGOLE PER IL MESSAGGIO:
-- Resta SEMPRE in personaggio come ${config.scammerPersona.name}
+- Resta SEMPRE in personaggio come ${getPersona(config).name}
 - Non rompere mai la quarta parete
 - Rispondi in modo coerente con la conversazione precedente
 - Se shouldInterrupt=true, genera comunque un messaggio breve (sarà l'ultimo)
@@ -226,13 +242,15 @@ Analizza e rispondi in JSON.`;
 // ── SSE Streaming: Analysis-Only Prompt ──────────────────────────────────────
 
 export function buildAnalysisOnlySystemPrompt(config: ScenarioConfig): string {
+  const targets = getTargets(config);
+  const persona = getPersona(config);
   return `Sei il modulo di analisi comportamentale di Cyberpedia Palestra Mentale.
 
 SCENARIO ATTIVO:
 - Tipo: ${ATTACK_LABELS[config.attackType]}
-- Difficoltà: ${DIFFICULTY_INSTRUCTIONS[config.difficulty].description}
-- LEVE PSICOLOGICHE: ${config.trainingTargets.map(t => TARGET_LABELS[t]).join('; ')}
-- Truffatore: ${config.scammerPersona.name} (${config.scammerPersona.role}), tono: ${config.scammerPersona.tone}
+- Difficoltà: ${DIFFICULTY_INSTRUCTIONS[config.difficulty]?.description ?? 'media'}
+- LEVE PSICOLOGICHE: ${targets.map(t => TARGET_LABELS[t]).join('; ')}
+- Truffatore: ${persona.name} (${persona.role}), tono: ${persona.tone}
 
 ANALISI COMPORTAMENTALE — valuta il messaggio dell'utente (0-100):
 - activation: attivazione emotiva (urgenza, paura, desiderio)
@@ -242,7 +260,7 @@ ANALISI COMPORTAMENTALE — valuta il messaggio dell'utente (0-100):
 - riskScore: activation*0.35 + impulsivity*0.30 + (100-verification)*0.20 + (100-awareness)*0.15
 
 DECISIONE DI INTERRUZIONE:
-- shouldInterrupt = true SE riskScore >= ${config.interruptThreshold} E turnCount >= ${config.minTurnsBeforeInterrupt}
+- shouldInterrupt = true SE riskScore >= ${config.interruptThreshold ?? 70} E turnCount >= ${config.minTurnsBeforeInterrupt ?? 3}
   → interruptReason = "high_risk"
 - OPPURE shouldInterrupt = true SE turnCount >= ${config.maxTurns ?? 7}
   → interruptReason = "max_turns"
@@ -286,6 +304,8 @@ Analizza e rispondi SOLO con il JSON di analisi. Non generare il messaggio del t
 // ── SSE Streaming: Scammer Message Prompt ────────────────────────────────────
 
 export function buildScammerMessageSystemPrompt(config: ScenarioConfig, nextPhase: NarrativePhase): string {
+  const persona = getPersona(config);
+  const targets = getTargets(config);
   const phaseInstructions: Record<NarrativePhase, string> = {
     P1: 'Sei in fase P1 (normalità): mantieni un contatto plausibile e naturale, senza destare sospetti.',
     P2: 'Sei in fase P2 (attivazione invisibile): il coinvolgimento sale, la leva psicologica inizia a operare sottilmente.',
@@ -294,12 +314,12 @@ export function buildScammerMessageSystemPrompt(config: ScenarioConfig, nextPhas
 
   return `${SAFETY_PREAMBLE}
 
-Sei ${config.scammerPersona.name}, ${config.scammerPersona.role}. Tono: ${config.scammerPersona.tone}.
+Sei ${persona.name}, ${persona.role}. Tono: ${persona.tone}.
 
 ${phaseInstructions[nextPhase]}
 
 TIPO ATTACCO: ${ATTACK_LABELS[config.attackType]}
-LEVE PSICOLOGICHE: ${config.trainingTargets.map(t => TARGET_LABELS[t]).join('; ')}
+LEVE PSICOLOGICHE: ${targets.map(t => TARGET_LABELS[t]).join('; ')}
 
 REGOLE:
 - Resta SEMPRE in personaggio
@@ -387,7 +407,7 @@ STILE LINGUISTICO — OBBLIGATORIO:
 - Usa osservazioni dirette, domande retoriche, o riflessioni in prima persona dell'utente — alterna gli approcci
 
 SCENARIO: ${ATTACK_LABELS[config.attackType]}
-LEVE PSICOLOGICHE: ${config.trainingTargets.map(t => TARGET_LABELS[t]).join('; ')}
+LEVE PSICOLOGICHE: ${getTargets(config).map(t => TARGET_LABELS[t]).join('; ')}
 
 Il tuo compito è analizzare la risposta dell'utente alla domanda riflessiva e:
 1. Riconoscere l'insight emerso (se presente)

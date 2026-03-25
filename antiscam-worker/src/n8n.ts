@@ -51,8 +51,8 @@ export class N8NApiError extends Error {
 
 export class N8NValidationError extends Error {
   override readonly name = 'N8NValidationError' as const;
-  constructor() {
-    super('N8N webhook response failed schema validation');
+  constructor(detail?: string) {
+    super(detail ? `Validation failed: ${detail}` : 'N8N webhook response failed schema validation');
   }
 }
 

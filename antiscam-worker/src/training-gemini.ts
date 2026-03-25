@@ -133,33 +133,37 @@ export async function streamGeminiMessage(
 
   return new ReadableStream<string>({
     async pull(controller) {
-      const { done, value } = await reader.read();
-      if (done) {
-        controller.close();
-        return;
-      }
-
-      const chunk = decoder.decode(value, { stream: true });
-      // Parse SSE format: "data: {...}\n\n"
-      const lines = chunk.split('\n');
-      for (const line of lines) {
-        if (!line.startsWith('data: ')) continue;
-        const jsonStr = line.slice(6).trim();
-        if (!jsonStr || jsonStr === '[DONE]') continue;
-
-        try {
-          const parsed = JSON.parse(jsonStr) as {
-            candidates?: Array<{
-              content?: { parts?: Array<{ text?: string }> };
-            }>;
-          };
-          const text = parsed.candidates?.[0]?.content?.parts?.[0]?.text;
-          if (text) {
-            controller.enqueue(text);
-          }
-        } catch {
-          // Skip unparseable chunks
+      try {
+        const { done, value } = await reader.read();
+        if (done) {
+          controller.close();
+          return;
         }
+
+        const chunk = decoder.decode(value, { stream: true });
+        // Parse SSE format: "data: {...}\n\n"
+        const lines = chunk.split('\n');
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue;
+          const jsonStr = line.slice(6).trim();
+          if (!jsonStr || jsonStr === '[DONE]') continue;
+
+          try {
+            const parsed = JSON.parse(jsonStr) as {
+              candidates?: Array<{
+                content?: { parts?: Array<{ text?: string }> };
+              }>;
+            };
+            const text = parsed.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (text) {
+              controller.enqueue(text);
+            }
+          } catch {
+            // Skip unparseable chunks
+          }
+        }
+      } catch (e) {
+        controller.error(e);
       }
     },
     cancel() {
