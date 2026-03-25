@@ -11,6 +11,71 @@
 const GEMINI_MODEL = 'gemini-2.5-flash';
 const GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta/models';
 
+// ── Resilience: timeout + retry ─────────────────────────────────────────────
+// Prevents hung connections when Gemini accepts but never responds (timeout),
+// and handles transient 429/5xx errors during traffic spikes (retry).
+
+const RETRYABLE_STATUSES = new Set([429, 500, 502, 503, 504]);
+
+/**
+ * Fetch with AbortController timeout (time-to-first-byte).
+ * Once headers arrive, the timeout is cleared — streaming body reads are
+ * not subject to this timeout.
+ */
+async function fetchWithTimeout(
+  url: string,
+  init: RequestInit,
+  timeoutMs: number,
+): Promise<Response> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, { ...init, signal: controller.signal });
+  } catch (err) {
+    if (err instanceof Error && err.name === 'AbortError') {
+      throw new Error(`Gemini request timed out after ${timeoutMs}ms`);
+    }
+    throw err;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
+/**
+ * Fetch with timeout + retry for transient Gemini errors (429, 5xx).
+ * Conservative: 1 retry max to stay within CF Workers' wall-clock budget.
+ * Respects Retry-After header, caps delay at 4s.
+ * Timeouts are NOT retried — a hung endpoint won't recover on retry.
+ */
+async function fetchWithRetry(
+  url: string,
+  init: RequestInit,
+  timeoutMs: number,
+  maxRetries = 1,
+): Promise<Response> {
+  let lastResponse: Response | undefined;
+
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    const response = await fetchWithTimeout(url, init, timeoutMs);
+
+    if (!RETRYABLE_STATUSES.has(response.status)) {
+      return response;
+    }
+
+    lastResponse = response;
+
+    if (attempt < maxRetries) {
+      const retryAfterRaw = response.headers.get('Retry-After');
+      const delayMs = retryAfterRaw
+        ? Math.min(parseInt(retryAfterRaw, 10) * 1000, 4_000)
+        : 2_000;
+      await new Promise(r => setTimeout(r, delayMs));
+    }
+  }
+
+  return lastResponse!;
+}
+
 interface GeminiRequest {
   contents: Array<{ role: string; parts: Array<{ text: string }> }>;
   systemInstruction: { parts: Array<{ text: string }> };
@@ -21,6 +86,53 @@ interface GeminiRequest {
     maxOutputTokens: number;
     responseMimeType?: string;
   };
+}
+
+/**
+ * Repair common JSON issues from Gemini output:
+ * - Trailing commas before } or ]
+ * - Single-line // comments
+ * - Unescaped newlines inside string values
+ * - Truncated JSON (unclosed braces/brackets)
+ */
+function repairJSON(input: string): string {
+  let s = input;
+
+  // Remove single-line comments (outside strings — simplified heuristic)
+  s = s.replace(/^\s*\/\/.*$/gm, '');
+
+  // Remove trailing commas before } or ]
+  s = s.replace(/,\s*([\]}])/g, '$1');
+
+  // Fix unescaped control characters inside strings (newlines, tabs)
+  s = s.replace(/"([^"\\]*(?:\\.[^"\\]*)*)"/g, (match) => {
+    return match
+      .replace(/(?<!\\)\n/g, '\\n')
+      .replace(/(?<!\\)\r/g, '\\r')
+      .replace(/(?<!\\)\t/g, '\\t');
+  });
+
+  // Close unclosed braces/brackets (truncated output)
+  let braces = 0;
+  let brackets = 0;
+  let inString = false;
+  let escaped = false;
+  for (const ch of s) {
+    if (escaped) { escaped = false; continue; }
+    if (ch === '\\') { escaped = true; continue; }
+    if (ch === '"') { inString = !inString; continue; }
+    if (inString) continue;
+    if (ch === '{') braces++;
+    else if (ch === '}') braces--;
+    else if (ch === '[') brackets++;
+    else if (ch === ']') brackets--;
+  }
+  // Remove any trailing comma before we close
+  s = s.replace(/,\s*$/, '');
+  while (brackets > 0) { s += ']'; brackets--; }
+  while (braces > 0) { s += '}'; braces--; }
+
+  return s;
 }
 
 function buildGeminiRequest(
@@ -52,15 +164,19 @@ export async function callGeminiAnalysis<T>(
 ): Promise<T> {
   const url = `${GEMINI_BASE}/${GEMINI_MODEL}:generateContent?key=${apiKey}`;
 
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(buildGeminiRequest(systemPrompt, userPrompt, {
-      temperature: 0.5,
-      maxTokens: 1024,
-      jsonMode: true,
-    })),
-  });
+  const response = await fetchWithRetry(
+    url,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(buildGeminiRequest(systemPrompt, userPrompt, {
+        temperature: 0.5,
+        maxTokens: 1024,
+        jsonMode: true,
+      })),
+    },
+    12_000, // 12s timeout — analysis normally completes in <10s
+  );
 
   if (!response.ok) {
     const text = await response.text();
@@ -92,7 +208,14 @@ export async function callGeminiAnalysis<T>(
     cleaned = cleaned.slice(objStart, objEnd + 1);
   }
 
-  return JSON.parse(cleaned) as T;
+  // Try parsing as-is first
+  try {
+    return JSON.parse(cleaned) as T;
+  } catch {
+    // Repair common Gemini JSON issues before retrying
+    cleaned = repairJSON(cleaned);
+    return JSON.parse(cleaned) as T;
+  }
 }
 
 /**
@@ -108,15 +231,21 @@ export async function streamGeminiMessage(
 ): Promise<ReadableStream<string>> {
   const url = `${GEMINI_BASE}/${GEMINI_MODEL}:streamGenerateContent?key=${apiKey}&alt=sse`;
 
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(buildGeminiRequest(systemPrompt, userPrompt, {
-      temperature: 0.9,
-      maxTokens: 512,
-      jsonMode: false,
-    })),
-  });
+  // Timeout covers TTFB only — once headers arrive, the timeout clears.
+  // Stream duration is governed by CF Workers' own limits, not this timeout.
+  const response = await fetchWithRetry(
+    url,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(buildGeminiRequest(systemPrompt, userPrompt, {
+        temperature: 0.9,
+        maxTokens: 512,
+        jsonMode: false,
+      })),
+    },
+    15_000, // 15s TTFB timeout — cleared once headers arrive, stream continues
+  );
 
   if (!response.ok) {
     const text = await response.text();
@@ -130,38 +259,26 @@ export async function streamGeminiMessage(
   // Transform the Gemini SSE stream into plain text chunks
   const decoder = new TextDecoder();
   const reader = response.body.getReader();
+  let sseBuffer = '';
 
   return new ReadableStream<string>({
     async pull(controller) {
       try {
         const { done, value } = await reader.read();
         if (done) {
+          // Flush remaining buffer
+          if (sseBuffer.trim()) {
+            processSSELines(sseBuffer.split('\n'), controller);
+          }
           controller.close();
           return;
         }
 
-        const chunk = decoder.decode(value, { stream: true });
-        // Parse SSE format: "data: {...}\n\n"
-        const lines = chunk.split('\n');
-        for (const line of lines) {
-          if (!line.startsWith('data: ')) continue;
-          const jsonStr = line.slice(6).trim();
-          if (!jsonStr || jsonStr === '[DONE]') continue;
-
-          try {
-            const parsed = JSON.parse(jsonStr) as {
-              candidates?: Array<{
-                content?: { parts?: Array<{ text?: string }> };
-              }>;
-            };
-            const text = parsed.candidates?.[0]?.content?.parts?.[0]?.text;
-            if (text) {
-              controller.enqueue(text);
-            }
-          } catch {
-            // Skip unparseable chunks
-          }
-        }
+        sseBuffer += decoder.decode(value, { stream: true });
+        const lines = sseBuffer.split('\n');
+        // Keep the last (possibly incomplete) line in buffer
+        sseBuffer = lines.pop() ?? '';
+        processSSELines(lines, controller);
       } catch (e) {
         controller.error(e);
       }
@@ -169,5 +286,30 @@ export async function streamGeminiMessage(
     cancel() {
       reader.cancel();
     },
-  });
+  });}
+
+/** Parse SSE data lines and enqueue text from Gemini responses. */
+function processSSELines(
+  lines: string[],
+  controller: ReadableStreamDefaultController<string>,
+): void {
+  for (const line of lines) {
+    if (!line.startsWith('data: ')) continue;
+    const jsonStr = line.slice(6).trim();
+    if (!jsonStr || jsonStr === '[DONE]') continue;
+
+    try {
+      const parsed = JSON.parse(jsonStr) as {
+        candidates?: Array<{
+          content?: { parts?: Array<{ text?: string }> };
+        }>;
+      };
+      const text = parsed.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (text) {
+        controller.enqueue(text);
+      }
+    } catch {
+      // Skip unparseable chunks
+    }
+  }
 }
