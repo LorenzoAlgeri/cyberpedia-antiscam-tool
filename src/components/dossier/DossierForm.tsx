@@ -25,11 +25,14 @@ export function DossierForm({ pin, onExport }: DossierFormProps) {
   const [isLoading, setIsLoading] = useState(() => hasDossierData());
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle');
   const [loadError, setLoadError] = useState<string | null>(null);
-  const saveTimerRef = useRef<ReturnType<typeof setTimeout>>();
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Load existing dossier on mount
   useEffect(() => {
-    if (!hasDossierData()) { setIsLoading(false); return; }
+    if (!hasDossierData()) {
+      queueMicrotask(() => setIsLoading(false));
+      return;
+    }
     void loadDossierData(pin)
       .then((loaded) => {
         if (loaded) setData(loaded);
@@ -58,7 +61,7 @@ export function DossierForm({ pin, onExport }: DossierFormProps) {
   useEffect(() => {
     if (isLoading) return;
     if (!didLoadRef.current) { didLoadRef.current = true; return; }
-    setSaveStatus('saving');
+    queueMicrotask(() => setSaveStatus('saving'));
     scheduleAutoSave();
     return () => { if (saveTimerRef.current) clearTimeout(saveTimerRef.current); };
   }, [data, isLoading, scheduleAutoSave]);

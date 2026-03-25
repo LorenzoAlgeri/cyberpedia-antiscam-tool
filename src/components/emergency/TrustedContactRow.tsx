@@ -51,7 +51,7 @@ export function TrustedContactRow({
     // Auto-close only for async data load (returning user): phone goes from '' to a value
     // without user having typed anything. Once the user interacts, this is permanently disabled.
     if (!userTouched.current && contact.phone.trim() !== '') {
-      setIsEditing(false);
+      queueMicrotask(() => setIsEditing(false));
     }
   }, [contact.phone]);
 

@@ -262,50 +262,69 @@ export function useTrainingAPI(): UseTrainingAPIResult {
           return;
         }
 
-        // Parse SSE stream
+        // Parse SSE stream — track resolution to guarantee isLoading resets
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
         let buffer = '';
+        let streamResolved = false;
 
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
+        try {
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
 
-          buffer += decoder.decode(value, { stream: true });
-          const lines = buffer.split('\n');
-          // Keep the last incomplete line in buffer
-          buffer = lines.pop() ?? '';
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split('\n');
+            // Keep the last incomplete line in buffer
+            buffer = lines.pop() ?? '';
 
-          for (const line of lines) {
-            if (line.startsWith('event: ')) {
-              // Store event type for next data line
-              (reader as unknown as { _eventType: string })._eventType = line.slice(7).trim();
-            } else if (line.startsWith('data: ')) {
-              const eventType = (reader as unknown as { _eventType?: string })._eventType ?? 'unknown';
-              const dataStr = line.slice(6).trim();
-              if (!dataStr) continue;
+            for (const line of lines) {
+              if (line.startsWith('event: ')) {
+                // Store event type for next data line
+                (reader as unknown as { _eventType: string })._eventType = line.slice(7).trim();
+              } else if (line.startsWith('data: ')) {
+                const eventType = (reader as unknown as { _eventType?: string })._eventType ?? 'unknown';
+                const dataStr = line.slice(6).trim();
+                if (!dataStr) continue;
 
-              try {
-                const data = JSON.parse(dataStr);
-                switch (eventType) {
-                  case 'scores':
-                    callbacks.onScores(data);
-                    break;
-                  case 'token':
-                    callbacks.onToken(data.text ?? '');
-                    break;
-                  case 'done':
-                    callbacks.onDone();
-                    break;
-                  case 'error':
-                    callbacks.onError(data.error ?? 'Errore sconosciuto');
-                    break;
+                try {
+                  const data = JSON.parse(dataStr);
+                  switch (eventType) {
+                    case 'scores':
+                      callbacks.onScores(data);
+                      break;
+                    case 'token':
+                      callbacks.onToken(data.text ?? '');
+                      break;
+                    case 'done':
+                      streamResolved = true;
+                      callbacks.onDone();
+                      break;
+                    case 'error': {
+                      streamResolved = true;
+                      const errMsg = data.error ?? 'Errore sconosciuto';
+                      const errDetail = data.detail ? `\n${data.detail}` : '';
+                      callbacks.onError(errMsg + errDetail);
+                      break;
+                    }
+                  }
+                } catch {
+                  // Skip unparseable data
                 }
-              } catch {
-                // Skip unparseable data
               }
             }
           }
+        } catch (readErr) {
+          if (!streamResolved) {
+            streamResolved = true;
+            const msg = readErr instanceof Error ? readErr.message : 'Connessione interrotta';
+            callbacks.onError(`Connessione interrotta durante la lettura. Riprova.\n[read] ${msg}`);
+          }
+        }
+
+        // Safety net: if stream ended without done/error event, unblock UI
+        if (!streamResolved) {
+          callbacks.onError('Stream terminato senza risposta completa. Riprova.');
         }
       } catch (err) {
         if (err instanceof Error && err.name === 'AbortError') {

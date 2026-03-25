@@ -240,8 +240,7 @@ export function TrainingSetup({
       {/* ----------------------------------------------------------------- */}
       {/* Custom scenarios section                                          */}
       {/* ----------------------------------------------------------------- */}
-      {(customScenarios.length > 0 || true) && (
-        <section className="flex flex-col gap-3">
+      <section className="flex flex-col gap-3">
           <div className="flex items-center justify-between">
             <h3 className="text-base font-semibold text-foreground sm:text-lg">
               I tuoi scenari
@@ -294,8 +293,7 @@ export function TrainingSetup({
               ))}
             </div>
           )}
-        </section>
-      )}
+      </section>
 
       {/* ----------------------------------------------------------------- */}
       {/* Section 1: Attack type (standard)                                 */}

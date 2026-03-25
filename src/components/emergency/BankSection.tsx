@@ -53,7 +53,7 @@ export function BankSection({
   // Auto-close only for async data load (returning user). Once user has typed, skip.
   useEffect(() => {
     if (!userTouched.current && bankPhone.trim() !== '') {
-      setIsBankEditing(false);
+      queueMicrotask(() => setIsBankEditing(false));
     }
   }, [bankPhone]);
 

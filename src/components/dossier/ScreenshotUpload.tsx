@@ -67,7 +67,7 @@ export function ScreenshotUpload({ screenshots, onAdd, onRemove }: ScreenshotUpl
         <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
           {screenshots.map((s, i) => (
             <div key={s.addedAt + i} className="group relative aspect-square overflow-hidden rounded-xl border border-slate-700/50">
-              <img src={s.dataUri} alt={s.filename} className="h-full w-full object-cover" />
+              <img src={s.dataUri} alt={s.filename} loading="lazy" className="h-full w-full object-cover" />
               <button
                 type="button"
                 onClick={() => onRemove(i)}

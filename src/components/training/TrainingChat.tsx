@@ -120,7 +120,7 @@ export function TrainingChat({
           <ChatBubble
             key={turn.id}
             entry={turnToEntry(turn)}
-            onSpeak={tts.isSupported ? tts.speak : undefined}
+            {...(tts.isSupported ? { onSpeak: tts.speak } : {})}
             onStopSpeaking={tts.stop}
             isSpeaking={tts.speakingId === turn.id}
           />
@@ -158,7 +158,12 @@ export function TrainingChat({
             className="mx-auto flex flex-col items-center gap-2 rounded-xl border border-red-500/30 bg-red-950/30 px-4 py-3 text-center text-base text-red-300"
             role="alert"
           >
-            <p>{error}</p>
+            <p>{error.split('\n')[0]}</p>
+            {error.includes('\n') && (
+              <p className="mt-1 break-all text-xs font-mono text-red-400/50">
+                {error.split('\n').slice(1).join('\n')}
+              </p>
+            )}
             <p className="text-sm text-red-400/70">Rinvia il messaggio per riprovare</p>
           </m.div>
         )}
