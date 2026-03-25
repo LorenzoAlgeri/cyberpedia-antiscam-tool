@@ -13,7 +13,8 @@ const ALLOWED_ORIGINS = new Set([
   'https://www.cyberpedia.it',
   'https://antiscam.pages.dev',
   'https://cyberpedia-antiscam-tool.pages.dev',
-  'http://localhost:5173',
+  // localhost:5173 intentionally excluded from production.
+  // For local development, use `wrangler dev` which runs the worker locally.
 ]);
 
 /** Cloudflare Pages preview deploys: *.cyberpedia-antiscam-tool.pages.dev */
