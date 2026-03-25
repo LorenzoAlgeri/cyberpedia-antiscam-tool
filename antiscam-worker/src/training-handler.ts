@@ -78,11 +78,7 @@ function normalizeScenarioConfig(config: Record<string, unknown>): void {
 }
 
 function getIP(request: Request): string {
-  return (
-    request.headers.get('CF-Connecting-IP') ??
-    request.headers.get('X-Forwarded-For') ??
-    'unknown'
-  );
+  return request.headers.get('CF-Connecting-IP') ?? 'unknown';
 }
 
 function jsonError(

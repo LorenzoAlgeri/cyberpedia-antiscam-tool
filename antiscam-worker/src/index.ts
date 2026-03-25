@@ -47,10 +47,7 @@ async function handleGenerate(request: Request, env: Env): Promise<Response> {
   const cors = getCorsHeaders(request);
 
   // ── Rate limit ─────────────────────────────────────────────────────────────
-  const ip =
-    request.headers.get('CF-Connecting-IP') ??
-    request.headers.get('X-Forwarded-For') ??
-    'unknown';
+  const ip = request.headers.get('CF-Connecting-IP') ?? 'unknown';
   const rateResult = await checkRateLimit(env.ANTISCAM_RATELIMIT, ip, 100, 'generate');
   if (!rateResult.allowed) {
     return Response.json(

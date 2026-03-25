@@ -58,11 +58,7 @@ interface AggregatedCounter {
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 function getIP(request: Request): string {
-  return (
-    request.headers.get('CF-Connecting-IP') ??
-    request.headers.get('X-Forwarded-For') ??
-    'unknown'
-  );
+  return request.headers.get('CF-Connecting-IP') ?? 'unknown';
 }
 
 function jsonError(
