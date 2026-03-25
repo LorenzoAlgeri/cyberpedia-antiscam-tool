@@ -4,6 +4,10 @@
  * Works on Chrome/Edge (webkitSpeechRecognition). Gracefully degrades
  * on unsupported browsers (isSupported = false).
  * Language: it-IT. Single phrase mode (continuous = false).
+ *
+ * Safety: includes a 3s timeout — if the browser exposes the API class
+ * but never fires onstart (common in WebViews / in-app browsers),
+ * the user sees an error instead of silent failure.
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
@@ -82,8 +86,15 @@ export function useSpeechRecognition(): UseSpeechRecognitionReturn {
   const [transcript, setTranscript] = useState('');
   const [error, setError] = useState<string | null>(null);
   const recognitionRef = useRef<SpeechRecognitionInstance | null>(null);
-  // Accumulate final text across results (for continuous = false, usually one result)
+  const startTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const finalTextRef = useRef('');
+
+  const clearStartTimeout = useCallback(() => {
+    if (startTimeoutRef.current) {
+      clearTimeout(startTimeoutRef.current);
+      startTimeoutRef.current = null;
+    }
+  }, []);
 
   const resetTranscript = useCallback(() => {
     setTranscript('');
@@ -91,9 +102,10 @@ export function useSpeechRecognition(): UseSpeechRecognitionReturn {
   }, []);
 
   const stopListening = useCallback(() => {
+    clearStartTimeout();
     recognitionRef.current?.stop();
     setIsListening(false);
-  }, []);
+  }, [clearStartTimeout]);
 
   const startListening = useCallback(() => {
     if (!SRClass) return;
@@ -101,6 +113,7 @@ export function useSpeechRecognition(): UseSpeechRecognitionReturn {
     // Clear previous state
     setError(null);
     finalTextRef.current = '';
+    clearStartTimeout();
 
     // Stop any existing instance
     recognitionRef.current?.abort();
@@ -110,8 +123,25 @@ export function useSpeechRecognition(): UseSpeechRecognitionReturn {
     recognition.continuous = false;
     recognition.interimResults = true;
 
+    // Show immediate feedback — set listening optimistically
+    setIsListening(true);
+
+    // Safety timeout: if onstart doesn't fire within 3s, the API is broken
+    // (common in WebViews, in-app browsers, or PWA on iOS)
+    startTimeoutRef.current = setTimeout(() => {
+      startTimeoutRef.current = null;
+      // If we're still in the "optimistic" listening state but onstart never fired
+      if (recognitionRef.current === recognition) {
+        recognition.abort();
+        recognitionRef.current = null;
+        setIsListening(false);
+        setError('Riconoscimento vocale non disponibile. Apri la pagina in Chrome o Safari per usare il microfono.');
+      }
+    }, 3000);
+
     recognition.onstart = () => {
-      setIsListening(true);
+      clearStartTimeout();
+      setIsListening(true); // confirm (redundant but safe)
     };
 
     recognition.onresult = (event: SpeechRecognitionEvent) => {
@@ -136,8 +166,7 @@ export function useSpeechRecognition(): UseSpeechRecognitionReturn {
     };
 
     recognition.onend = () => {
-      // When recognition ends, ensure the final transcript is set
-      // (covers edge case where onresult final fires very close to onend)
+      clearStartTimeout();
       if (finalTextRef.current) {
         setTranscript(finalTextRef.current);
       }
@@ -146,7 +175,7 @@ export function useSpeechRecognition(): UseSpeechRecognitionReturn {
     };
 
     recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
-      // 'aborted' is user-initiated, 'no-speech' just means silence
+      clearStartTimeout();
       if (event.error !== 'aborted') {
         if (event.error === 'no-speech') {
           setError('Nessun audio rilevato. Riprova parlando più forte.');
@@ -162,19 +191,26 @@ export function useSpeechRecognition(): UseSpeechRecognitionReturn {
 
     try {
       recognition.start();
-    } catch {
-      setError('Impossibile avviare il microfono. Controlla i permessi.');
+    } catch (e) {
+      clearStartTimeout();
+      const msg = e instanceof Error ? e.message : '';
+      setError(
+        msg.includes('not allowed') || msg.includes('NotAllowedError')
+          ? 'Microfono non autorizzato. Controlla i permessi del browser.'
+          : 'Impossibile avviare il microfono. Apri la pagina in Chrome.',
+      );
       setIsListening(false);
       recognitionRef.current = null;
     }
-  }, [SRClass]);
+  }, [SRClass, clearStartTimeout]);
 
   // Cleanup on unmount
   useEffect(() => {
     return () => {
+      clearStartTimeout();
       recognitionRef.current?.abort();
     };
-  }, []);
+  }, [clearStartTimeout]);
 
   return {
     startListening,
