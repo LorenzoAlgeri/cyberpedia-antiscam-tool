@@ -40,6 +40,7 @@ import {
   type NarrativePhase,
 } from './training-types';
 import type { Env } from './types';
+import { logger } from './logger';
 
 // ── Rate limit config per endpoint ───────────────────────────────────────────
 
@@ -101,16 +102,16 @@ function mapN8NError(e: unknown, cors: Record<string, string>): Response {
     return jsonError('Generation timed out. Please retry.', 408, cors);
   }
   if (e instanceof N8NValidationError) {
-    console.error(JSON.stringify({ level: 'warn', handler: 'mapN8NError', detail: e.message }));
+    logger.warn('n8n.call.error', { error: e.message, endpoint: 'mapN8NError' });
     return jsonError('AI response failed validation. Please retry.', 422, cors);
   }
   if (e instanceof N8NApiError) {
-    console.error(JSON.stringify({ level: 'error', handler: 'mapN8NError', status: e.status, detail: e.body?.slice(0, 200) }));
+    logger.error('n8n.call.error', { status: e.status, error: e.body?.slice(0, 200), endpoint: 'mapN8NError' });
     return jsonError('Upstream error. Please retry later.', 502, cors);
   }
   // Unexpected error — log and return generic
   const detail = e instanceof Error ? e.message : String(e);
-  console.error(JSON.stringify({ level: 'error', handler: 'mapN8NError.unknown', error: detail }));
+  logger.error('request.error', { error: detail, endpoint: 'mapN8NError' });
   return jsonError('Internal server error', 500, cors);
 }
 
@@ -463,10 +464,11 @@ async function handleMessageStream(request: Request, env: Env): Promise<Response
       try {
         analysis = await callGeminiAnalysis(
           analysisSystemPrompt, analysisUserPrompt, env.GEMINI_API_KEY,
+          request.signal, // Abort if client disconnects during analysis
         );
       } catch (e) {
         const detail = e instanceof Error ? e.message : String(e);
-        console.error(JSON.stringify({ level: 'error', handler: 'messageStream.analysis', error: detail }));
+        logger.error('gemini.call.error', { error: detail, endpoint: '/api/training/message-stream', phase: 'analysis' });
         await write(sseEvent('error', { error: 'Errore durante l\'analisi. Riprova.' }));
         return; // finally sends done + closes writer
       }
@@ -497,7 +499,7 @@ async function handleMessageStream(request: Request, env: Env): Promise<Response
         );
 
         try {
-          const msgStream = await streamGeminiMessage(msgPrompt, msgUserPrompt, env.GEMINI_API_KEY);
+          const msgStream = await streamGeminiMessage(msgPrompt, msgUserPrompt, env.GEMINI_API_KEY, request.signal);
           const reader = msgStream.getReader();
           while (true) {
             const { done, value } = await reader.read();
@@ -524,6 +526,7 @@ async function handleMessageStream(request: Request, env: Env): Promise<Response
       try {
         const textStream = await streamGeminiMessage(
           msgSystemPrompt, msgUserPrompt, env.GEMINI_API_KEY,
+          request.signal, // Abort if client disconnects during generation
         );
         const reader = textStream.getReader();
 
@@ -534,7 +537,7 @@ async function handleMessageStream(request: Request, env: Env): Promise<Response
         }
       } catch (e) {
         const detail = e instanceof Error ? e.message : String(e);
-        console.error(JSON.stringify({ level: 'error', handler: 'messageStream.scammerMsg', error: detail }));
+        logger.error('gemini.call.error', { error: detail, endpoint: '/api/training/message-stream', phase: 'scammerMsg' });
         await write(sseEvent('error', { error: 'Errore durante la generazione del messaggio. Riprova.' }));
       }
 
@@ -542,7 +545,7 @@ async function handleMessageStream(request: Request, env: Env): Promise<Response
       sentDone = true;
     } catch (e) {
       const detail = e instanceof Error ? e.message : String(e);
-      console.error(JSON.stringify({ level: 'error', handler: 'messageStream.outer', error: detail }));
+      logger.error('request.error', { error: detail, endpoint: '/api/training/message-stream' });
       try {
         await write(sseEvent('error', { error: 'Errore interno del server.' }));
       } catch {

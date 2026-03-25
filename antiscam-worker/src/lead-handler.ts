@@ -18,6 +18,7 @@
 import { getCorsHeaders } from './cors';
 import { checkRateLimit } from './ratelimit';
 import type { Env } from './types';
+import { logger } from './logger';
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
@@ -182,21 +183,18 @@ export async function handleLead(request: Request, env: Env): Promise<Response> 
       expirationTtl: 90 * 24 * 60 * 60,
     });
   } catch (e) {
-    console.error(JSON.stringify({
-      level: 'error',
-      handler: 'handleLead',
+    logger.error('request.error', {
+      endpoint: '/api/lead',
       error: e instanceof Error ? e.message : String(e),
-    }));
+    });
     return jsonError('Internal server error', 500, cors);
   }
 
-  console.log(JSON.stringify({
-    level: 'info',
-    handler: 'handleLead',
-    action: 'lead_stored',
+  logger.info('lead.stored', {
+    endpoint: '/api/lead',
     kvKey,
     role: parsed.role,
-  }));
+  });
 
   return Response.json(
     { success: true },

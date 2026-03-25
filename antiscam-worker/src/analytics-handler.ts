@@ -17,6 +17,7 @@
 import { getCorsHeaders } from './cors';
 import { checkRateLimit } from './ratelimit';
 import type { Env } from './types';
+import { logger } from './logger';
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
@@ -247,21 +248,18 @@ export async function handleAnalytics(request: Request, env: Env): Promise<Respo
   try {
     await Promise.all(writePromises);
   } catch (e) {
-    console.error(JSON.stringify({
-      level: 'error',
-      handler: 'handleAnalytics',
+    logger.error('request.error', {
+      endpoint: '/api/analytics/batch',
       error: e instanceof Error ? e.message : String(e),
-    }));
+    });
     return jsonError('Internal server error', 500, cors);
   }
 
-  console.log(JSON.stringify({
-    level: 'info',
-    handler: 'handleAnalytics',
-    action: 'batch_aggregated',
+  logger.info('analytics.batch.aggregated', {
+    endpoint: '/api/analytics/batch',
     accepted,
     groups: grouped.size,
-  }));
+  });
 
   return Response.json(
     { accepted },

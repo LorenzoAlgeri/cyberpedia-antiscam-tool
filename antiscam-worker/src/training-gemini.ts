@@ -8,6 +8,8 @@
  * Uses Gemini 2.5 Flash for speed.
  */
 
+import { logger } from './logger';
+
 const GEMINI_MODEL = 'gemini-2.5-flash';
 const GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta/models';
 
@@ -26,13 +28,22 @@ async function fetchWithTimeout(
   url: string,
   init: RequestInit,
   timeoutMs: number,
+  externalSignal?: AbortSignal,
 ): Promise<Response> {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+  // Combine timeout signal with optional external signal (e.g. request.signal
+  // for client disconnect detection). AbortSignal.any fires on EITHER.
+  const signal = externalSignal
+    ? AbortSignal.any([controller.signal, externalSignal])
+    : controller.signal;
   try {
-    return await fetch(url, { ...init, signal: controller.signal });
+    return await fetch(url, { ...init, signal });
   } catch (err) {
     if (err instanceof Error && err.name === 'AbortError') {
+      // External abort (client disconnect) → propagate as-is for caller to handle
+      if (externalSignal?.aborted) throw err;
+      // Our timeout → descriptive error
       throw new Error(`Gemini request timed out after ${timeoutMs}ms`);
     }
     throw err;
@@ -47,16 +58,20 @@ async function fetchWithTimeout(
  * Respects Retry-After header, caps delay at 4s.
  * Timeouts are NOT retried — a hung endpoint won't recover on retry.
  */
-async function fetchWithRetry(
+export async function fetchWithRetry(
   url: string,
   init: RequestInit,
   timeoutMs: number,
   maxRetries = 1,
+  externalSignal?: AbortSignal,
 ): Promise<Response> {
   let lastResponse: Response | undefined;
 
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
-    const response = await fetchWithTimeout(url, init, timeoutMs);
+    // Bail early if client already disconnected (saves a Gemini call)
+    if (externalSignal?.aborted) throw new DOMException('Client disconnected', 'AbortError');
+
+    const response = await fetchWithTimeout(url, init, timeoutMs, externalSignal);
 
     if (!RETRYABLE_STATUSES.has(response.status)) {
       return response;
@@ -161,6 +176,7 @@ export async function callGeminiAnalysis<T>(
   systemPrompt: string,
   userPrompt: string,
   apiKey: string,
+  signal?: AbortSignal,
 ): Promise<T> {
   const url = `${GEMINI_BASE}/${GEMINI_MODEL}:generateContent?key=${apiKey}`;
 
@@ -176,6 +192,8 @@ export async function callGeminiAnalysis<T>(
       })),
     },
     12_000, // 12s timeout — analysis normally completes in <10s
+    1,
+    signal,
   );
 
   if (!response.ok) {
@@ -187,7 +205,22 @@ export async function callGeminiAnalysis<T>(
     candidates?: Array<{
       content?: { parts?: Array<{ text?: string }> };
     }>;
+    usageMetadata?: {
+      promptTokenCount?: number;
+      candidatesTokenCount?: number;
+      totalTokenCount?: number;
+    };
   };
+
+  // Log token consumption for cost monitoring
+  if (data.usageMetadata?.totalTokenCount) {
+    logger.info('gemini.tokens.used', {
+      totalTokenCount: data.usageMetadata.totalTokenCount,
+      promptTokenCount: data.usageMetadata.promptTokenCount,
+      candidatesTokenCount: data.usageMetadata.candidatesTokenCount,
+      endpoint: 'analysis',
+    });
+  }
 
   const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text;
   if (!rawText) {
@@ -228,6 +261,7 @@ export async function streamGeminiMessage(
   systemPrompt: string,
   userPrompt: string,
   apiKey: string,
+  signal?: AbortSignal,
 ): Promise<ReadableStream<string>> {
   const url = `${GEMINI_BASE}/${GEMINI_MODEL}:streamGenerateContent?key=${apiKey}&alt=sse`;
 
@@ -245,6 +279,8 @@ export async function streamGeminiMessage(
       })),
     },
     15_000, // 15s TTFB timeout — cleared once headers arrive, stream continues
+    1,
+    signal,
   );
 
   if (!response.ok) {

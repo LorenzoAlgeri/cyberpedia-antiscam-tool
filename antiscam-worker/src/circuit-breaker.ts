@@ -19,6 +19,8 @@ interface CircuitBreakerState {
   openedAt: number;
 }
 
+import { logger } from './logger';
+
 const THRESHOLD = 3;
 const RESET_WINDOW_MS = 60_000; // 60s before half-open probe
 
@@ -49,12 +51,10 @@ export function createCircuitBreaker(name: string) {
       state.consecutiveFailures++;
       if (state.consecutiveFailures >= THRESHOLD && state.openedAt === 0) {
         state.openedAt = Date.now();
-        console.error(JSON.stringify({
-          level: 'warn',
+        logger.warn('n8n.circuit.opened', {
           circuit: name,
-          event: 'opened',
           failures: state.consecutiveFailures,
-        }));
+        });
       }
     },
   };

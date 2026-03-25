@@ -1,4 +1,22 @@
 /**
+ * ============================================================================
+ * TODO(ops) — AZIONI MANUALI DA COMPLETARE PRIMA DEL LANCIO IN PRODUZIONE
+ *
+ * 1. Upgrade Cloudflare Workers a piano Paid ($5/mese)
+ *    Senza upgrade: max ~250 req/day per KV write limit.
+ *    Guida: .planning/ops/verify-cf-plan.md
+ *
+ * 2. Upgrade Gemini API a Pay-as-you-go (abilita billing su Google Cloud)
+ *    Senza upgrade: max ~7 utenti/minuto (15 RPM free tier).
+ *    Guida: .planning/ops/verify-gemini-tier.md
+ *
+ * 3. Configurare WAF Rate Limiting Rules su Cloudflare Dashboard
+ *    Una volta fatto, il KV rate limiter puo essere rimosso dal codice.
+ *    Guida: .planning/ops/setup-waf-rate-limiting.md
+ * ============================================================================
+ */
+
+/**
  * antiscam-worker — Cloudflare Worker entry point.
  *
  * Routes:
@@ -41,6 +59,7 @@ import {
 import { handleTraining } from './training-handler';
 import { handleLead } from './lead-handler';
 import { handleAnalytics } from './analytics-handler';
+import { logger } from './logger';
 
 // ── Handler ───────────────────────────────────────────────────────────────────
 
@@ -126,11 +145,10 @@ async function handleGenerate(request: Request, env: Env): Promise<Response> {
       );
     }
     // Unexpected error — log and return generic message
-    console.error(JSON.stringify({
-      level: 'error',
-      handler: 'handleGenerate',
+    logger.error('request.error', {
+      endpoint: '/api/generate-simulation',
       error: e instanceof Error ? e.message : String(e),
-    }));
+    });
     return Response.json(
       { error: 'Internal server error' },
       { status: 500, headers: cors },
@@ -150,12 +168,14 @@ async function handleGenerate(request: Request, env: Env): Promise<Response> {
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
+    const start = Date.now();
+    const url = new URL(request.url);
+    const endpoint = url.pathname;
+
     try {
       if (request.method === 'OPTIONS') return handlePreflight(request);
 
-      const url = new URL(request.url);
-
-      if (url.pathname === '/api/generate-simulation') {
+      if (endpoint === '/api/generate-simulation') {
         if (request.method !== 'POST') {
           return new Response('Method Not Allowed', {
             status: 405,
@@ -166,7 +186,7 @@ export default {
       }
 
       // Lead capture endpoint — /api/lead
-      if (url.pathname === '/api/lead') {
+      if (endpoint === '/api/lead') {
         if (request.method !== 'POST') {
           return new Response('Method Not Allowed', {
             status: 405,
@@ -177,7 +197,7 @@ export default {
       }
 
       // Analytics batch endpoint — /api/analytics/batch
-      if (url.pathname === '/api/analytics/batch') {
+      if (endpoint === '/api/analytics/batch') {
         if (request.method !== 'POST') {
           return new Response('Method Not Allowed', {
             status: 405,
@@ -188,21 +208,17 @@ export default {
       }
 
       // Training endpoints — /api/training/*
-      if (url.pathname.startsWith('/api/training/')) {
-        return handleTraining(request, env, url.pathname);
+      if (endpoint.startsWith('/api/training/')) {
+        return handleTraining(request, env, endpoint);
       }
 
       return new Response('Not Found', { status: 404, headers: getCorsHeaders(request) });
     } catch (e) {
-      // Top-level safety net: log the real error, return generic message
-      console.error(JSON.stringify({
-        level: 'error',
-        handler: 'fetch',
+      logger.error('request.error', {
+        endpoint,
+        durationMs: Date.now() - start,
         error: e instanceof Error ? e.message : String(e),
-        stack: e instanceof Error ? e.stack : undefined,
-        url: request.url,
-        method: request.method,
-      }));
+      });
       return Response.json(
         { error: 'Internal server error' },
         { status: 500, headers: getCorsHeaders(request) },
