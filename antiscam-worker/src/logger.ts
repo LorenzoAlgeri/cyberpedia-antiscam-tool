@@ -7,8 +7,6 @@
  * Privacy: NEVER log user IPs in plaintext, message content, or API keys.
  */
 
-type LogLevel = 'info' | 'warn' | 'error';
-
 interface LogContext {
   readonly endpoint?: string;
   readonly durationMs?: number;

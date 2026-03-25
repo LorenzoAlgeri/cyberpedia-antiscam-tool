@@ -32,10 +32,6 @@ import type {
   StartSessionRequest,
   SendMessageRequest,
   ReflectionRequest,
-  ScenarioConfig,
-  ConversationTurn,
-  ReflectionAnswer,
-  ReflectionStep,
 } from './training-types';
 import { N8NTimeoutError, N8NApiError, N8NValidationError, N8NCircuitOpenError } from './n8n';
 import { createCircuitBreaker } from './circuit-breaker';

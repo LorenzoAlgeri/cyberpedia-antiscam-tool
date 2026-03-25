@@ -23,7 +23,6 @@ import {
   buildScammerMessageSystemPrompt,
   buildScammerMessageUserPrompt,
 } from './training-prompt';
-import { SendMessageResponseSchema } from './training-schema';
 import {
   VALID_TRAINING_ATTACK_TYPES,
   VALID_TRAINING_TARGETS,
