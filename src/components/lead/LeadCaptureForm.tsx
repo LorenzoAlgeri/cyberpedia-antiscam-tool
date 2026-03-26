@@ -1,6 +1,6 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import * as m from 'motion/react-m';
-import { Send, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
+import { Send, CheckCircle2, AlertCircle, Loader2, ArrowRight } from 'lucide-react';
 
 const WORKER_BASE =
   'https://antiscam-worker.lorenzo-algeri.workers.dev';
@@ -25,7 +25,14 @@ interface FormData {
 
 const INITIAL: FormData = { name: '', email: '', role: '', note: '', consent: false };
 
-export function LeadCaptureForm() {
+const BETA_TOKEN_KEY = 'cyberpedia-beta-access';
+
+interface LeadCaptureFormProps {
+  /** Called after beta token is saved — triggers app unlock */
+  onBetaGranted?: () => void;
+}
+
+export function LeadCaptureForm({ onBetaGranted }: LeadCaptureFormProps = {}) {
   const [form, setForm] = useState<FormData>(INITIAL);
   const [status, setStatus] = useState<FormStatus>('idle');
   const [errorMsg, setErrorMsg] = useState('');
@@ -63,6 +70,11 @@ export function LeadCaptureForm() {
           throw new Error((body as { error?: string }).error ?? `HTTP ${res.status}`);
         }
 
+        const data = await res.json() as { success: boolean; betaToken?: string };
+        if (data.betaToken) {
+          localStorage.setItem(BETA_TOKEN_KEY, data.betaToken);
+        }
+
         setStatus('success');
       } catch (err) {
         setErrorMsg(err instanceof Error ? err.message : 'Errore imprevisto.');
@@ -71,6 +83,14 @@ export function LeadCaptureForm() {
     },
     [form, status],
   );
+
+  // Auto-unlock after 3s if callback provided
+  useEffect(() => {
+    if (status === 'success' && onBetaGranted) {
+      const timer = setTimeout(onBetaGranted, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [status, onBetaGranted]);
 
   if (status === 'success') {
     return (
@@ -81,9 +101,26 @@ export function LeadCaptureForm() {
       >
         <CheckCircle2 className="h-12 w-12 text-success" strokeWidth={1.5} />
         <h3 className="text-2xl font-bold text-foreground">Iscrizione completata</h3>
-        <p className="text-base text-muted-foreground">
-          Ti contatteremo con aggiornamenti sul progetto. Grazie per il tuo interesse!
-        </p>
+        {onBetaGranted ? (
+          <>
+            <p className="text-base text-muted-foreground">
+              Grazie per il tuo interesse! Accedi ora al tool.
+            </p>
+            <button
+              type="button"
+              onClick={onBetaGranted}
+              className="btn-primary mt-2 inline-flex items-center gap-2"
+            >
+              Entra nel tool
+              <ArrowRight className="h-5 w-5" />
+            </button>
+          </>
+        ) : (
+          <p className="text-base text-muted-foreground">
+            Sei nella lista d&apos;attesa! Ti contatteremo quando il tool
+            sar&agrave; disponibile. Grazie per il tuo interesse.
+          </p>
+        )}
       </m.div>
     );
   }

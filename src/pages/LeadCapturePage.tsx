@@ -84,7 +84,12 @@ const fadeUp = {
 
 /* ── Page ──────────────────────────────────────────────────── */
 
-export function LeadCapturePage() {
+interface LeadCapturePageProps {
+  /** Called after beta access is granted — transitions to main app */
+  onBetaGranted?: () => void;
+}
+
+export function LeadCapturePage({ onBetaGranted }: LeadCapturePageProps = {}) {
   return (
     <div className="mx-auto flex min-h-dvh max-w-2xl flex-col gap-16 px-4 py-12 md:px-8 lg:max-w-4xl lg:px-12">
       {/* ── HERO ──────────────────────────────────────────── */}
@@ -193,7 +198,7 @@ export function LeadCapturePage() {
 
       {/* ── FORM + QR ─────────────────────────────────────── */}
       <section id="lead-form" className="grid gap-8 lg:grid-cols-[1fr_auto]">
-        <LeadCaptureForm />
+        <LeadCaptureForm onBetaGranted={onBetaGranted} />
 
         <div className="flex flex-col items-center gap-3 self-start">
           <Suspense fallback={null}>
