@@ -1,8 +1,8 @@
-# Cyberpedia Anti-Truffa Tool — Hardening Milestone
+# Cyberpedia Anti-Truffa Tool
 
 ## What This Is
 
-A quality hardening pass on the existing cyberpedia-antiscam-tool SPA. The tool is a 5-step wizard that helps scam victims manage emergency actions (bank contacts, to-do checklists, chat simulations, PWA install). It's production-ready with zero TS errors and zero lint warnings. This milestone focuses on finding hidden issues, splitting oversized components, stress-testing encryption, eliminating dead code, and verifying everything end-to-end.
+A 5-step wizard SPA that helps scam victims manage emergency actions — bank contacts, prioritized to-do checklists by attack type, interactive chat simulations, and PWA installation. Deployed on Cloudflare Pages, embedded via iframe in cyberpedia.it. After v1.0 Hardening: zero dead code, all components under 200 lines, hardened encryption with brute-force protection, runtime type guards, validated AI simulations, and full WCAG 2.2 AA accessibility.
 
 ## Core Value
 
@@ -12,53 +12,63 @@ Every component and utility must be auditable, secure, and maintainable — no h
 
 ### Validated
 
-- Validated TypeScript strict mode (zero errors) — existing
-- Validated AES-256-GCM + PBKDF2 encryption — existing
-- Validated ESLint zero warnings — existing
-- Validated code-splitting with React.lazy — existing
-- Validated WCAG 2.2 AA compliance — existing
+- ✓ TypeScript strict mode (zero errors) — existing
+- ✓ AES-256-GCM + PBKDF2 encryption — existing
+- ✓ ESLint zero warnings — existing
+- ✓ Code-splitting with React.lazy — existing
+- ✓ WCAG 2.2 AA compliance — existing
+- ✓ Dead code elimination (knip zero issues) — v1.0
+- ✓ All components under 200 lines — v1.0
+- ✓ Encryption edge case handling (corruption, wrong PIN, missing salt) — v1.0
+- ✓ Brute-force PIN protection with progressive delay — v1.0
+- ✓ CSP headers hardened for iframe embed — v1.0
+- ✓ Runtime type guards at storage boundaries — v1.0
+- ✓ Exhaustive switch assertions on all unions — v1.0
+- ✓ AI simulation structural validation (9 rules, 30 tests) — v1.0
+- ✓ Screen reader compatibility with ARIA landmarks — v1.0
+- ✓ Touch targets 44x44px, font sizes 16px min — v1.0
 
 ### Active
 
-- [ ] Deep code audit: find dead code, unused exports, unreachable branches
-- [ ] Refactor oversized components (TodoChecklist 497L, ChatSimulator 456L, EmergencyPage 421L, EmergencyForm 385L)
-- [ ] Security stress-test: encryption edge cases, PIN caching, storage layer robustness
-- [ ] TypeScript strictness beyond compiler: runtime type guards, exhaustive switches, branded types where useful
-- [ ] Bundle analysis: identify tree-shaking gaps, unnecessary vendor code, lazy-loading opportunities
-- [ ] End-to-end verification: all changes preserve existing functionality
+- [ ] Lazy-load simulation data files individually
+- [ ] Preload critical CSS for landing page
+- [ ] Unit tests for encryption.ts and storage.ts
+- [ ] Integration tests for full wizard flow
+- [ ] PBKDF2 iteration count upgrade (100k → 600k per OWASP)
 
 ### Out of Scope
 
-- New features — this is purely quality/hardening
-- UI/UX redesign — visual layer stays unchanged
+- New features — tool is feature-complete for current needs
+- UI/UX redesign — visual layer is stable and accessible
 - Backend/API integration — tool remains 100% static SPA
-- Dependency upgrades — versions are current and compatible
+- Mobile native app — PWA covers mobile use case
 
 ## Context
 
-The tool is deployed on Cloudflare Pages, embedded via iframe in cyberpedia.it. It received significant traffic after media coverage (VerificaTruffa.it reference: 10k requests in 24h). The static SPA architecture was chosen specifically for DDoS resilience.
-
-Key technical facts:
-- 53 TypeScript/TSX files, ~407 KB source
-- Build output: 552 KB uncompressed, ~150 KB gzipped
-- Largest files: TodoChecklist (497L), useChatSimulator (456L), EmergencyPage (421L), EmergencyForm (385L)
-- Dependencies: React 19, Motion 12, Tailwind 4, Vite 7
-- Encryption: Web Crypto API native (no external crypto deps)
+Shipped v1.0 Hardening with 8,037 LOC (TypeScript/TSX/CSS).
+Tech stack: React 19, Vite 6, Tailwind 4, Motion 12, Web Crypto API.
+Bundle: 137.63KB gzipped. 66 commits over 7 days.
+Deployed on Cloudflare Pages with DDoS protection.
 
 ## Constraints
 
-- **No regressions**: Every refactor must preserve identical behavior
+- **No regressions**: Every change must preserve identical behavior
 - **Bundle budget**: Total gzipped must stay <=150 KB
-- **Zero new dependencies**: Use only what's already in package.json
 - **Static SPA**: No server-side code, no API calls (except optional AI worker)
+- **Accessibility**: WCAG 2.2 AA minimum for elderly/vulnerable users
 
 ## Key Decisions
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| One skill per phase | Forces focused, verifiable work per phase | -- Pending |
-| 5-6 phases, coarse to fine | Audit first, then fix, then verify | -- Pending |
-| No new features | Hardening only, don't mix concerns | -- Pending |
+| One skill per phase | Forces focused, verifiable work per phase | ✓ Good — clean phase boundaries |
+| 6 phases, coarse to fine | Audit first, then fix, then verify | ✓ Good — dependency chain worked |
+| No new features | Hardening only, don't mix concerns | ✓ Good — stayed focused |
+| @public JSDoc over knip-ignore | knip v5 uses tag-based suppression | ✓ Good — cleaner than comments |
+| LazyMotion + domAnimation | Sync load, smaller chunk | ✓ Good — 3.1KB saved |
+| PBKDF2 100k iterations | Quick ship, OWASP 600k deferred | ⚠️ Revisit in v2 |
+| exactOptionalPropertyTypes spread | Avoids undefined assignability errors | ✓ Good — pattern established |
+| Ref-based DOM updates for a11y | Satisfies react-hooks lint rule | ✓ Good |
 
 ---
-*Last updated: 2026-03-16 after initialization*
+*Last updated: 2026-03-17 after v1.0 milestone*

@@ -82,9 +82,14 @@ async function sha256Hex(input: string): Promise<string> {
   return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
 }
 
+/** Escape special characters for Telegram HTML parse mode. */
+function escapeHtml(text: string): string {
+  return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
 // ── Handler ──────────────────────────────────────────────────────────────────
 
-export async function handleLead(request: Request, env: Env): Promise<Response> {
+export async function handleLead(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
   const cors = getCorsHeaders(request);
 
   // ── Rate limit ───────────────────────────────────────────────────────────
@@ -196,8 +201,53 @@ export async function handleLead(request: Request, env: Env): Promise<Response> 
     role: parsed.role,
   });
 
+  // ── Telegram notification (fire-and-forget) ────────────────────────────────
+  if (env.TELEGRAM_BOT_TOKEN && env.TELEGRAM_CHAT_ID) {
+    const text = [
+      `\u{1F4E9} <b>Nuova iscrizione Beta</b>`,
+      `\u{1F464} <b>Nome:</b> ${escapeHtml(storedLead.name)}`,
+      `\u{1F4E7} <b>Email:</b> ${escapeHtml(storedLead.email)}`,
+      `\u{1F3AF} <b>Ruolo:</b> ${escapeHtml(parsed.role)}`,
+      storedLead.note
+        ? `\u{1F4DD} <b>Nota:</b> ${escapeHtml(storedLead.note)}`
+        : '',
+      `\u{1F552} ${storedLead.submittedAt}`,
+    ]
+      .filter(Boolean)
+      .join('\n');
+
+    // Non-blocking: send to all chat IDs (comma-separated in secret)
+    const chatIds = env.TELEGRAM_CHAT_ID.split(',').map((id) => id.trim()).filter(Boolean);
+    ctx.waitUntil(
+      Promise.all(
+        chatIds.map((chatId) =>
+          fetch(
+            `https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/sendMessage`,
+            {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                chat_id: chatId,
+                text,
+                parse_mode: 'HTML',
+              }),
+            },
+          ).catch((e) =>
+            logger.error('telegram.notify.failed', {
+              chatId,
+              error: e instanceof Error ? e.message : String(e),
+            }),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // Generate a beta access token so the frontend can unlock the app
+  const betaToken = crypto.randomUUID();
+
   return Response.json(
-    { success: true },
+    { success: true, betaToken },
     { status: 201, headers: { ...cors, 'Content-Type': 'application/json' } },
   );
 }

@@ -22,6 +22,10 @@ export interface Env {
   ANTISCAM_LEADS: KVNamespace;
   /** KV namespace for aggregated anonymous analytics counters */
   ANTISCAM_ANALYTICS: KVNamespace;
+  /** Telegram bot token for lead notifications — injected via: wrangler secret put TELEGRAM_BOT_TOKEN */
+  TELEGRAM_BOT_TOKEN: string;
+  /** Telegram chat ID for lead notifications — injected via: wrangler secret put TELEGRAM_CHAT_ID */
+  TELEGRAM_CHAT_ID: string;
 }
 
 // ── Request validation ────────────────────────────────────────────────────────

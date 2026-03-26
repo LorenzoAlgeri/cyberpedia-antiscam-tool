@@ -191,8 +191,8 @@ export async function callGeminiAnalysis<T>(
         jsonMode: true,
       })),
     },
-    12_000, // 12s timeout — analysis normally completes in <10s
-    1,
+    25_000, // 25s timeout — Gemini 2.5 Flash thinking can take 15s+
+    2,
     signal,
   );
 
@@ -274,7 +274,7 @@ export async function streamGeminiMessage(
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(buildGeminiRequest(systemPrompt, userPrompt, {
         temperature: 0.9,
-        maxTokens: 512,
+        maxTokens: 1024,
         jsonMode: false,
       })),
     },

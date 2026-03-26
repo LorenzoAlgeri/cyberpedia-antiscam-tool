@@ -1,6 +1,6 @@
 # STATE — Piano Evoluzione v2
 
-> Ultimo aggiornamento: 2026-03-24
+> Ultimo aggiornamento: 2026-03-25
 > Piano: PIANO-EVOLUZIONE-V2.md
 
 ## Stato Fasi
@@ -15,11 +15,11 @@
 | 6 | Post-Simulazione: Dossier | COMPLETATA | 4 task completati |
 | 7 | Analytics Comportamentali | COMPLETATA | 3 task completati |
 | 8 | Dark Web + Avanzate | COMPLETATA | 2 task completati |
-| 9 | Deploy + Verifica | DA FARE | Ultima fase |
+| 9 | Deploy + Verifica | COMPLETATA | 5 task completati |
 
 ## Sessione Corrente
 
-- Fase attiva: Fase 8 completata → prossima Fase 9
+- Fase attiva: TUTTE LE FASI COMPLETATE
 - Task attivo: —
 - Blockers: nessuno
 
@@ -336,3 +336,44 @@
   - Touch target 44px, stessa dimensione del bottone invio
   - `injectedText` prop per inserire trascrizione nell'editor
   - Cursor posizionato a fine testo dopo injection
+
+---
+
+### Fase 9 — Deploy + Verifica Finale (2026-03-25)
+
+**Task 9.1 — Build verification**
+- Fix 2 errori TypeScript: `useRef` senza valore iniziale (React 19), `exactOptionalPropertyTypes` su ChatBubble
+- Fix 7 errori lint: `queueMicrotask` per setState in useEffect, rimozione dead code (`|| true`)
+- Build: exit 0, 0 errori, 45 precache entries
+- Lint: exit 0, 0 errori, 0 warnings
+- Bundle iniziale (gzipped): ~112 KB (target <200KB rispettato)
+- jsPDF (126 KB) e html2canvas (47 KB) lazy-loaded solo su uso
+
+**Task 9.2 — Lighthouse audit**
+- React.lazy(): 8 componenti lazy-loaded
+- Vite manual chunks: React + Motion vendor separati
+- Nessuna risorsa render-blocking (module scripts)
+- Aggiunto `<link rel="preconnect">` verso worker API
+- Aggiunto `loading="lazy"` su immagini screenshot dossier
+
+**Task 9.3 — Cross-browser checklist**
+- Preparata matrice test per: iPhone Safari, Android Chrome, Samsung Internet, Desktop Chrome/Firefox/Edge
+- Aree critiche: PWA install, SSE streaming, Web Speech API, localStorage encryption, touch targets
+
+**Task 9.4 — Deploy produzione**
+- Worker: `wrangler deploy` completato con successo (v. bd6d8d16)
+  - 4 KV namespaces bound: SIMULATIONS_CACHE, RATELIMIT, LEADS, ANALYTICS
+  - Upload: 587 KB / gzip: 92.5 KB, startup: 25ms
+- Frontend: `git push` → Cloudflare Pages auto-deploy
+- Headers produzione verificati via curl:
+  - CSP: restrictive con connect-src worker, frame-ancestors cyberpedia.it
+  - HSTS: max-age=31536000 con preload
+  - Security headers: X-Frame-Options, X-Content-Type-Options, Permissions-Policy
+  - CORS preflight: 204 con Access-Control-Allow-Origin corretto
+
+**Task 9.5 — Smoke test produzione**
+- Frontend live: https://cyberpedia-antiscam-tool.pages.dev (200 OK)
+- Worker live: https://antiscam-worker.lorenzo-algeri.workers.dev (security headers OK)
+- CORS preflight training/start: 204 No Content, origin corretto
+- SSE streaming fix deployato: guaranteed done event + error propagation
+- Rate limits attivi su tutti gli endpoint

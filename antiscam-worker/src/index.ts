@@ -167,7 +167,7 @@ async function handleGenerate(request: Request, env: Env): Promise<Response> {
 // ── Worker export ─────────────────────────────────────────────────────────────
 
 export default {
-  async fetch(request: Request, env: Env): Promise<Response> {
+  async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const start = Date.now();
     const url = new URL(request.url);
     const endpoint = url.pathname;
@@ -193,7 +193,7 @@ export default {
             headers: { Allow: 'POST, OPTIONS', ...getCorsHeaders(request) },
           });
         }
-        return handleLead(request, env);
+        return handleLead(request, env, ctx);
       }
 
       // Analytics batch endpoint — /api/analytics/batch

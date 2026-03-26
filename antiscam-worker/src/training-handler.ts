@@ -472,7 +472,7 @@ async function handleMessageStream(request: Request, env: Env): Promise<Response
       } catch (e) {
         const detail = e instanceof Error ? e.message : String(e);
         logger.error('gemini.call.error', { error: detail, endpoint: '/api/training/message-stream', phase: 'analysis' });
-        await write(sseEvent('error', { error: 'Errore durante l\'analisi. Riprova.' }));
+        await write(sseEvent('error', { error: 'Errore durante l\'analisi. Riprova.', detail }));
         return; // finally sends done + closes writer
       }
 
@@ -554,7 +554,7 @@ async function handleMessageStream(request: Request, env: Env): Promise<Response
       } catch (e) {
         const detail = e instanceof Error ? e.message : String(e);
         logger.error('gemini.call.error', { error: detail, endpoint: '/api/training/message-stream', phase: 'scammerMsg' });
-        await write(sseEvent('error', { error: 'Errore durante la generazione del messaggio. Riprova.' }));
+        await write(sseEvent('error', { error: 'Errore durante la generazione del messaggio. Riprova.', detail }));
       }
 
       await write(sseEvent('done', {}));
