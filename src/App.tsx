@@ -248,7 +248,7 @@ function App() {
     return (
       <LazyMotion features={domAnimation} strict>
         <Suspense fallback={<StepFallback />}>
-          <LeadCapturePage onBetaGranted={BETA_OPEN ? handleBetaGranted : undefined} />
+          <LeadCapturePage {...(BETA_OPEN ? { onBetaGranted: handleBetaGranted } : {})} />
         </Suspense>
       </LazyMotion>
     );

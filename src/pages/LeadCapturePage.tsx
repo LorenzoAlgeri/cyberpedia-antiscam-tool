@@ -198,7 +198,7 @@ export function LeadCapturePage({ onBetaGranted }: LeadCapturePageProps = {}) {
 
       {/* ── FORM + QR ─────────────────────────────────────── */}
       <section id="lead-form" className="grid gap-8 lg:grid-cols-[1fr_auto]">
-        <LeadCaptureForm onBetaGranted={onBetaGranted} />
+        <LeadCaptureForm {...(onBetaGranted ? { onBetaGranted } : {})} />
 
         <div className="flex flex-col items-center gap-3 self-start">
           <Suspense fallback={null}>
