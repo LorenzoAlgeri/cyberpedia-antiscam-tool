@@ -32,6 +32,9 @@ const NeedModePage = lazy(() =>
 const LeadCapturePage = lazy(() =>
   import('@/pages/LeadCapturePage').then((m) => ({ default: m.LeadCapturePage })),
 );
+const FeedbackDrawer = lazy(() =>
+  import('@/components/feedback/FeedbackDrawer').then((m) => ({ default: m.FeedbackDrawer })),
+);
 
 /* ── Beta gate constants ──────────────────────────────── */
 
@@ -276,6 +279,9 @@ function App() {
       >
         {renderStep()}
       </WizardShell>
+      <Suspense fallback={null}>
+        <FeedbackDrawer currentPage={`step-${currentStep}`} />
+      </Suspense>
     </LazyMotion>
   );
 }

@@ -8,14 +8,15 @@ interface ScreenshotUploadProps {
   readonly screenshots: DossierScreenshot[];
   readonly onAdd: (screenshot: DossierScreenshot) => void;
   readonly onRemove: (index: number) => void;
+  readonly maxScreenshots?: number;
 }
 
-export function ScreenshotUpload({ screenshots, onAdd, onRemove }: ScreenshotUploadProps) {
+export function ScreenshotUpload({ screenshots, onAdd, onRemove, maxScreenshots = MAX_SCREENSHOTS }: ScreenshotUploadProps) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [isCompressing, setIsCompressing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const canAdd = screenshots.length < MAX_SCREENSHOTS;
+  const canAdd = screenshots.length < maxScreenshots;
 
   const handleFiles = useCallback(async (files: FileList | null) => {
     if (!files || files.length === 0) return;
@@ -24,7 +25,7 @@ export function ScreenshotUpload({ screenshots, onAdd, onRemove }: ScreenshotUpl
 
     try {
       for (const file of Array.from(files)) {
-        if (screenshots.length >= MAX_SCREENSHOTS) break;
+        if (screenshots.length >= maxScreenshots) break;
         if (!file.type.startsWith('image/')) {
           setError('Solo file immagine sono accettati.');
           continue;
@@ -58,7 +59,7 @@ export function ScreenshotUpload({ screenshots, onAdd, onRemove }: ScreenshotUpl
           Screenshot / Prove
         </label>
         <span className="text-sm text-muted-foreground">
-          {screenshots.length}/{MAX_SCREENSHOTS}
+          {screenshots.length}/{maxScreenshots}
         </span>
       </div>
 
@@ -119,7 +120,7 @@ export function ScreenshotUpload({ screenshots, onAdd, onRemove }: ScreenshotUpl
                 </button>
               </div>
               <p className="text-sm text-muted-foreground">
-                oppure trascina qui — max {MAX_SCREENSHOTS} immagini
+                oppure trascina qui — max {maxScreenshots} immagini
               </p>
             </>
           )}
