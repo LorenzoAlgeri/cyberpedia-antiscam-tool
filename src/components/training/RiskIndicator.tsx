@@ -31,7 +31,9 @@ function getRiskLabel(score: number): string {
 export function RiskIndicator({ scores }: RiskIndicatorProps) {
   if (!scores) return null;
 
-  const { riskScore } = scores;
+  const riskScore = typeof scores.riskScore === 'number' && !Number.isNaN(scores.riskScore)
+    ? Math.round(Math.max(0, Math.min(100, scores.riskScore)))
+    : 0;
   const color = getRiskColor(riskScore);
   const label = getRiskLabel(riskScore);
 
