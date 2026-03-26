@@ -1,0 +1,3 @@
+[submodule "cyberpedia-antiscam-tool"]
+	path = cyberpedia-antiscam-tool
+	url = https://github.com/LorenzoAlgeri/cyberpedia-antiscam-tool.git

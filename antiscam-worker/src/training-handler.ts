@@ -392,9 +392,11 @@ async function handleReflect(request: Request, env: Env): Promise<Response> {
 
 // ── Endpoint: /api/training/message-stream (SSE) ─────────────────────────────
 
-/** SSE helper: format an event */
+/** SSE helper: format an event. Splits on newlines so each line gets a `data:` prefix (SSE spec). */
 function sseEvent(event: string, data: unknown): string {
-  return `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
+  const json = JSON.stringify(data);
+  const lines = json.split('\n').map((line) => `data: ${line}`).join('\n');
+  return `event: ${event}\n${lines}\n\n`;
 }
 
 async function handleMessageStream(request: Request, env: Env): Promise<Response> {

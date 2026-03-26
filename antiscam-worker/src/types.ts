@@ -26,6 +26,8 @@ export interface Env {
   TELEGRAM_BOT_TOKEN: string;
   /** Telegram chat ID for lead notifications — injected via: wrangler secret put TELEGRAM_CHAT_ID */
   TELEGRAM_CHAT_ID: string;
+  /** Resend API key for email notifications — injected via: wrangler secret put RESEND_API_KEY */
+  RESEND_API_KEY: string;
 }
 
 // ── Request validation ────────────────────────────────────────────────────────

@@ -142,6 +142,10 @@ function repairJSON(input: string): string {
     else if (ch === '[') brackets++;
     else if (ch === ']') brackets--;
   }
+  // If truncated inside a string value, close it first
+  if (inString) {
+    s += '"';
+  }
   // Remove any trailing comma before we close
   s = s.replace(/,\s*$/, '');
   while (brackets > 0) { s += ']'; brackets--; }

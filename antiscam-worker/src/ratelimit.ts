@@ -25,6 +25,7 @@ const GLOBAL_LIMITS: Record<string, number> = {
   'training-ref': 1500,     // /api/training/reflect: 1500/h total
   lead: 200,                // /api/lead: max 200 submissions/h globally
   analytics: 500,           // /api/analytics/batch: max 500 batches/h globally
+  feedback: 100,            // /api/feedback: max 100 submissions/h globally
 };
 
 interface SlidingWindowEntry {

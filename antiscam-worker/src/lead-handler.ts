@@ -19,6 +19,7 @@ import { getCorsHeaders } from './cors';
 import { checkRateLimit } from './ratelimit';
 import type { Env } from './types';
 import { logger } from './logger';
+import { getIP, jsonError, sha256Hex, escapeHtml } from './helpers';
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
@@ -55,36 +56,6 @@ interface StoredLead {
   readonly note?: string | undefined;
   readonly submittedAt: string;
   readonly ip: string;
-}
-
-// ── Helpers ──────────────────────────────────────────────────────────────────
-
-function getIP(request: Request): string {
-  return request.headers.get('CF-Connecting-IP') ?? 'unknown';
-}
-
-function jsonError(
-  message: string,
-  status: number,
-  cors: Record<string, string>,
-): Response {
-  return Response.json({ error: message }, { status, headers: cors });
-}
-
-/**
- * Produce a hex-encoded SHA-256 hash of the given string.
- * Used to derive a deterministic, non-reversible key suffix from an email.
- */
-async function sha256Hex(input: string): Promise<string> {
-  const data = new TextEncoder().encode(input);
-  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
-}
-
-/** Escape special characters for Telegram HTML parse mode. */
-function escapeHtml(text: string): string {
-  return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
 // ── Handler ──────────────────────────────────────────────────────────────────

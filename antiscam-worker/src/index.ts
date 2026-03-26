@@ -22,6 +22,7 @@
  * Routes:
  *   POST /api/generate-simulation   Generate or serve cached simulation
  *   POST /api/lead                  Store pre-conference lead capture submission
+ *   POST /api/feedback              Receive user feedback with Telegram + email notifications
  *   POST /api/training/start        Start AI training session
  *   POST /api/training/message      Send user message, get AI response + scores
  *   POST /api/training/reflect      Submit reflection answer, get AI analysis
@@ -58,6 +59,7 @@ import {
 } from './n8n';
 import { handleTraining } from './training-handler';
 import { handleLead } from './lead-handler';
+import { handleFeedback } from './feedback-handler';
 import { handleAnalytics } from './analytics-handler';
 import { logger } from './logger';
 
@@ -194,6 +196,17 @@ export default {
           });
         }
         return handleLead(request, env, ctx);
+      }
+
+      // Feedback endpoint — /api/feedback
+      if (endpoint === '/api/feedback') {
+        if (request.method !== 'POST') {
+          return new Response('Method Not Allowed', {
+            status: 405,
+            headers: { Allow: 'POST, OPTIONS', ...getCorsHeaders(request) },
+          });
+        }
+        return handleFeedback(request, env, ctx);
       }
 
       // Analytics batch endpoint — /api/analytics/batch
