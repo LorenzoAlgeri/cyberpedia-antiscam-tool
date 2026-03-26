@@ -254,6 +254,17 @@ function App() {
     );
   }
 
+  // Admins can still view #beta page directly
+  if (window.location.hash === '#beta') {
+    return (
+      <LazyMotion features={domAnimation} strict>
+        <Suspense fallback={<StepFallback />}>
+          <LeadCapturePage />
+        </Suspense>
+      </LazyMotion>
+    );
+  }
+
   // User has access (admin or registered+open) → show wizard
   return (
     <LazyMotion features={domAnimation} strict>
