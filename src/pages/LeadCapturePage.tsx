@@ -162,7 +162,7 @@ export function LeadCapturePage() {
       {/* ── PER CHI ───────────────────────────────────────── */}
       <m.section {...fadeUp} className="space-y-6">
         <h2 className="text-center text-2xl font-bold text-foreground sm:text-3xl">
-          Per chi \u00e8 pensato
+          Per chi è pensato
         </h2>
         <ul className="space-y-3">
           {PER_CHI.map(({ icon: Icon, text }) => (
