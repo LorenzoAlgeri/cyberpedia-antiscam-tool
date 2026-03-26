@@ -299,7 +299,15 @@ export function DossierForm({ pin, onExport }: DossierFormProps) {
       </div>
 
       <p className="text-center text-sm text-muted-foreground/60">
-        Tutti i dati restano cifrati sul tuo dispositivo. Nulla viene inviato online.
+        Tutti i dati restano cifrati sul tuo dispositivo. Nulla viene inviato online.{' '}
+        <a
+          href="https://cyberpedia.it/privacy-policy/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="underline underline-offset-2 transition-colors hover:text-muted-foreground"
+        >
+          Privacy Policy
+        </a>
       </p>
     </div>
   );
