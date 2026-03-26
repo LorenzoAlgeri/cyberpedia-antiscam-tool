@@ -395,29 +395,22 @@ export function useTrainingSession(): UseTrainingSessionResult {
               dispatch({ type: 'AI_TOKEN', text: tokenText });
             },
             onDone: () => {
-              // Realistic typing delay: proportional to message length
-              const msgLen = accumulatedMessage.length;
-              const rawDelay = Math.min(800 + msgLen * 20, 4000);
-              const variance = 0.8 + Math.random() * 0.4; // ±20%
-              const finalDelay = Math.round(rawDelay * variance);
-
-              setTimeout(() => {
-                dispatch({ type: 'AI_STREAM_DONE' });
-                if (interruptInfo?.shouldInterrupt) {
-                  dispatch({
-                    type: 'INTERRUPTED',
-                    triggerMessage: trimmed,
-                    interruptReason: interruptInfo.interruptReason ?? 'high_risk',
-                  });
-                  // Analytics: track which lever/scenario triggered interruption
-                  if (state.scenarioConfig) {
-                    trackLeverEffectiveness(
-                      state.scenarioConfig.attackType,
-                      state.scenarioConfig.trainingTarget,
-                    );
-                  }
+              stopWaitTimer();
+              dispatch({ type: 'AI_STREAM_DONE' });
+              if (interruptInfo?.shouldInterrupt) {
+                dispatch({
+                  type: 'INTERRUPTED',
+                  triggerMessage: trimmed,
+                  interruptReason: interruptInfo.interruptReason ?? 'high_risk',
+                });
+                // Analytics: track which lever/scenario triggered interruption
+                if (state.scenarioConfig) {
+                  trackLeverEffectiveness(
+                    state.scenarioConfig.attackType,
+                    state.scenarioConfig.trainingTarget,
+                  );
                 }
-              }, finalDelay);
+              }
             },
             onError: (error) => {
               stopWaitTimer();
