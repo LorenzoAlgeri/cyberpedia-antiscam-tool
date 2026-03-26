@@ -1,16 +1,16 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import * as m from 'motion/react-m';
-import { Send, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
+import { CheckCircle2, AlertCircle, Loader2, ArrowRight } from 'lucide-react';
 
 const WORKER_BASE =
   'https://antiscam-worker.lorenzo-algeri.workers.dev';
 
-const VALID_ROLES = [
-  { value: 'docente', label: 'Docente / Formatore' },
-  { value: 'studente', label: 'Studente' },
-  { value: 'professionista-it', label: 'Professionista IT / Cybersecurity' },
-  { value: 'forze-ordine', label: 'Forze dell\u2019ordine' },
-  { value: 'altro', label: 'Altro' },
+const VALID_PROFILES = [
+  { value: 'privato', label: 'Privato' },
+  { value: 'familiare-caregiver', label: 'Familiare / caregiver' },
+  { value: 'professionista', label: 'Professionista' },
+  { value: 'ente-associazione', label: 'Ente / associazione' },
+  { value: 'media', label: 'Media' },
 ] as const;
 
 type FormStatus = 'idle' | 'submitting' | 'success' | 'error';
@@ -21,11 +21,26 @@ interface FormData {
   role: string;
   note: string;
   consent: boolean;
+  consentMarketing: boolean;
 }
 
-const INITIAL: FormData = { name: '', email: '', role: '', note: '', consent: false };
+const INITIAL: FormData = {
+  name: '',
+  email: '',
+  role: '',
+  note: '',
+  consent: false,
+  consentMarketing: false,
+};
 
-export function LeadCaptureForm() {
+const BETA_TOKEN_KEY = 'cyberpedia-beta-access';
+
+interface LeadCaptureFormProps {
+  /** Called after beta token is saved — triggers app unlock */
+  onBetaGranted?: () => void;
+}
+
+export function LeadCaptureForm({ onBetaGranted }: LeadCaptureFormProps = {}) {
   const [form, setForm] = useState<FormData>(INITIAL);
   const [status, setStatus] = useState<FormStatus>('idle');
   const [errorMsg, setErrorMsg] = useState('');
@@ -43,7 +58,7 @@ export function LeadCaptureForm() {
       if (status === 'submitting') return;
 
       if (!form.consent) {
-        setErrorMsg('Devi acconsentire al trattamento dei dati.');
+        setErrorMsg('Devi dichiarare di aver letto e accettato l\'Informativa Privacy.');
         setStatus('error');
         return;
       }
@@ -63,6 +78,11 @@ export function LeadCaptureForm() {
           throw new Error((body as { error?: string }).error ?? `HTTP ${res.status}`);
         }
 
+        const data = await res.json() as { success: boolean; betaToken?: string };
+        if (data.betaToken) {
+          localStorage.setItem(BETA_TOKEN_KEY, data.betaToken);
+        }
+
         setStatus('success');
       } catch (err) {
         setErrorMsg(err instanceof Error ? err.message : 'Errore imprevisto.');
@@ -72,6 +92,14 @@ export function LeadCaptureForm() {
     [form, status],
   );
 
+  // Auto-unlock after 3s if callback provided
+  useEffect(() => {
+    if (status === 'success' && onBetaGranted) {
+      const timer = setTimeout(onBetaGranted, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [status, onBetaGranted]);
+
   if (status === 'success') {
     return (
       <m.div
@@ -80,25 +108,54 @@ export function LeadCaptureForm() {
         className="glass-card flex flex-col items-center gap-4 p-8 text-center"
       >
         <CheckCircle2 className="h-12 w-12 text-success" strokeWidth={1.5} />
-        <h3 className="text-2xl font-bold text-foreground">Iscrizione completata</h3>
-        <p className="text-base text-muted-foreground">
-          Ti contatteremo con aggiornamenti sul progetto. Grazie per il tuo interesse!
-        </p>
+        <h3 className="text-2xl font-bold text-foreground">Richiesta inviata</h3>
+        {onBetaGranted ? (
+          <>
+            <p className="text-base text-muted-foreground">
+              Grazie per il tuo interesse! Accedi ora al tool.
+            </p>
+            <button
+              type="button"
+              onClick={onBetaGranted}
+              className="btn-primary mt-2 inline-flex items-center gap-2"
+            >
+              Entra nel tool
+              <ArrowRight className="h-5 w-5" />
+            </button>
+          </>
+        ) : (
+          <p className="text-base text-muted-foreground">
+            Sei nella lista prioritaria! Ti contatteremo con le prossime
+            informazioni sul progetto. Grazie per il tuo interesse.
+          </p>
+        )}
       </m.div>
     );
   }
 
   return (
-    <form ref={formRef} onSubmit={handleSubmit} className="glass-card space-y-5 p-6 sm:p-8" noValidate>
-      <h3 className="text-xl font-bold text-foreground">Resta aggiornato</h3>
-      <p className="text-base text-muted-foreground">
-        Lascia i tuoi dati per ricevere aggiornamenti sul lancio e accesso anticipato.
-      </p>
+    <form
+      ref={formRef}
+      onSubmit={handleSubmit}
+      className="glass-card space-y-5 p-6 sm:p-8"
+      noValidate
+    >
+      {/* Header */}
+      <div className="space-y-2">
+        <h3 className="text-xl font-bold text-foreground">
+          Richiedi accesso prioritario
+        </h3>
+        <p className="text-base text-muted-foreground">
+          Stiamo aprendo i primi 100 accessi alla beta privata.
+          Lascia i tuoi dati per entrare nella lista prioritaria e ricevere
+          le prossime informazioni sul progetto.
+        </p>
+      </div>
 
       {/* Name */}
       <input
         type="text"
-        placeholder="Nome e cognome"
+        placeholder="Nome"
         required
         maxLength={100}
         value={form.name}
@@ -119,31 +176,57 @@ export function LeadCaptureForm() {
         autoComplete="email"
       />
 
-      {/* Role */}
+      {/* Profile */}
       <select
         required
         value={form.role}
         onChange={(e) => update('role', e.target.value)}
         className="input-glass cursor-pointer appearance-none"
-        aria-label="Il tuo ruolo"
+        aria-label="Profilo"
       >
-        <option value="" disabled>Seleziona il tuo ruolo</option>
-        {VALID_ROLES.map((r) => (
-          <option key={r.value} value={r.value}>{r.label}</option>
+        <option value="" disabled>Profilo</option>
+        {VALID_PROFILES.map((p) => (
+          <option key={p.value} value={p.value}>{p.label}</option>
         ))}
       </select>
 
-      {/* Note (optional) */}
-      <textarea
-        placeholder="Note o commenti (facoltativo)"
-        maxLength={500}
-        rows={3}
-        value={form.note}
-        onChange={(e) => update('note', e.target.value)}
-        className="input-glass resize-none"
-      />
+      {/* Risk interest (optional) */}
+      <div className="space-y-1">
+        <p className="text-sm text-muted-foreground">
+          Quale tipo di rischio ti interessa di più?{' '}
+          <span className="text-muted-foreground/60">(facoltativo)</span>
+        </p>
+        <textarea
+          placeholder="Truffe sentimentali, phishing, finti operatori bancari, marketplace, altro…"
+          maxLength={500}
+          rows={3}
+          value={form.note}
+          onChange={(e) => update('note', e.target.value)}
+          className="input-glass resize-none"
+        />
+      </div>
 
-      {/* GDPR Consent */}
+      {/* Privacy notice */}
+      <div className="rounded-2xl border border-white/5 bg-white/5 px-4 py-3 text-sm leading-relaxed text-muted-foreground">
+        <p className="mb-1 font-semibold text-foreground">Informativa breve</p>
+        <p>
+          I dati che inserisci saranno utilizzati per gestire la tua richiesta
+          di accesso prioritario, ricontattarti in merito al progetto e
+          organizzare l&apos;eventuale accesso alla beta. Per maggiori
+          informazioni sul trattamento dei dati personali, consulta l&apos;
+          <a
+            href="https://cyberpedia.it/privacy-policy/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline underline-offset-2 transition-colors hover:text-foreground"
+          >
+            Informativa Privacy
+          </a>
+          .
+        </p>
+      </div>
+
+      {/* Consent — mandatory */}
       <label className="flex cursor-pointer items-start gap-3 text-sm text-muted-foreground">
         <input
           type="checkbox"
@@ -153,17 +236,32 @@ export function LeadCaptureForm() {
           required
         />
         <span>
-          Acconsento al trattamento dei miei dati personali (nome, email, ruolo) per
-          ricevere aggiornamenti sul progetto Cyberpedia Anti-Truffa.
-          I dati sono conservati in modo sicuro e non saranno ceduti a terzi.{' '}
+          Dichiaro di aver letto l&apos;
           <a
-            href="https://cyberpedia.it/privacy-policy"
+            href="https://cyberpedia.it/privacy-policy/"
             target="_blank"
             rel="noopener noreferrer"
             className="underline underline-offset-2 transition-colors hover:text-foreground"
           >
-            Informativa privacy
+            Informativa Privacy
           </a>
+          {' '}e acconsento al trattamento dei miei dati per la gestione
+          della richiesta di accesso prioritario.{' '}
+          <span className="text-destructive">*</span>
+        </span>
+      </label>
+
+      {/* Consent marketing — optional */}
+      <label className="flex cursor-pointer items-start gap-3 text-sm text-muted-foreground">
+        <input
+          type="checkbox"
+          checked={form.consentMarketing}
+          onChange={(e) => update('consentMarketing', e.target.checked)}
+          className="mt-0.5 h-5 w-5 shrink-0 cursor-pointer rounded border-white/20 bg-slate-900/60 accent-cyan-brand"
+        />
+        <span>
+          Acconsento a ricevere aggiornamenti, novità sul progetto e
+          comunicazioni informative da Cyberpedia.
         </span>
       </label>
 
@@ -187,12 +285,14 @@ export function LeadCaptureForm() {
             Invio in corso...
           </>
         ) : (
-          <>
-            <Send className="h-5 w-5" />
-            Iscriviti
-          </>
+          'Richiedi accesso prioritario'
         )}
       </button>
+
+      {/* Scarcity note */}
+      <p className="text-center text-sm text-muted-foreground/60">
+        Accesso iniziale riservato ai primi 100 partecipanti selezionati.
+      </p>
     </form>
   );
 }

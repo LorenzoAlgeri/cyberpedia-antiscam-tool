@@ -129,14 +129,24 @@ function PrivacyDialog({ open, onClose }: { open: boolean; onClose: () => void }
               ))}
             </ul>
 
-            {/* Close CTA */}
-            <button
-              type="button"
-              onClick={onClose}
-              className="btn-primary mt-6 w-full"
-            >
-              Capito
-            </button>
+            {/* Link to full privacy policy + Close CTA */}
+            <div className="mt-6 flex flex-col items-center gap-3">
+              <a
+                href="https://cyberpedia.it/privacy-policy/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm text-muted-foreground underline underline-offset-2 transition-colors hover:text-foreground"
+              >
+                Leggi la Privacy Policy completa
+              </a>
+              <button
+                type="button"
+                onClick={onClose}
+                className="btn-primary w-full"
+              >
+                Capito
+              </button>
+            </div>
           </m.div>
         </m.div>
       )}

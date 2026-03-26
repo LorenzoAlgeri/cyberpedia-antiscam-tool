@@ -166,7 +166,7 @@ export function TrainingSetup({
     setTargets(recommended.slice(0, 2));
     // Auto-scroll to difficulty section
     setTimeout(() => {
-      difficultySectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      difficultySectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }, 50);
   }
 

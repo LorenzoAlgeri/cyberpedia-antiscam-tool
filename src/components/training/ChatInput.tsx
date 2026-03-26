@@ -71,7 +71,8 @@ export function ChatInput({
 
     lastInjectedRef.current = injectedText;
     editorRef.current.textContent = injectedText.slice(0, maxLength);
-    setCanSend(injectedText.trim().length > 0);
+    // Defer state update to avoid synchronous setState inside effect
+    queueMicrotask(() => setCanSend(injectedText.trim().length > 0));
     // Move cursor to end
     const range = document.createRange();
     const sel = window.getSelection();

@@ -67,6 +67,10 @@ export interface TrainingState {
   error: string | null;
   /** Seconds elapsed since last API call started (for progressive UX) */
   waitSeconds: number;
+  /** Suggested answers for current reflection question */
+  suggestedAnswers: readonly string[];
+  /** Whether suggestions are being fetched */
+  isFetchingSuggestions: boolean;
 }
 
 const initialState: TrainingState = {
@@ -84,6 +88,8 @@ const initialState: TrainingState = {
   isLoading: false,
   error: null,
   waitSeconds: 0,
+  suggestedAnswers: [],
+  isFetchingSuggestions: false,
 };
 
 // ---------------------------------------------------------------------------
@@ -106,7 +112,10 @@ type Action =
   | { type: 'SHOW_SUMMARY'; finalScores: BehaviorScores }
   | { type: 'COMPLETE' }
   | { type: 'RESET' }
-  | { type: 'CONTINUE_CONVERSATION' };
+  | { type: 'CONTINUE_CONVERSATION' }
+  | { type: 'SUGGESTIONS_LOADING' }
+  | { type: 'SUGGESTIONS_RECEIVED'; suggestions: readonly string[] }
+  | { type: 'SUGGESTIONS_FAILED' };
 
 // ---------------------------------------------------------------------------
 // Reducer
@@ -206,6 +215,8 @@ function reducer(state: TrainingState, action: Action): TrainingState {
         currentReflectionStep: 'R1',
         currentReflectionQuestion: action.question,
         isLoading: false,
+        suggestedAnswers: [],
+        isFetchingSuggestions: false,
       };
 
     case 'REFLECTION_ANSWER': {
@@ -225,6 +236,8 @@ function reducer(state: TrainingState, action: Action): TrainingState {
         currentReflectionStep: action.nextStep,
         currentReflectionQuestion: action.nextQuestion,
         isLoading: false,
+        suggestedAnswers: [],
+        isFetchingSuggestions: false,
       };
     }
 
@@ -241,6 +254,15 @@ function reducer(state: TrainingState, action: Action): TrainingState {
 
     case 'CONTINUE_CONVERSATION':
       return { ...state, phase: 'conversation' };
+
+    case 'SUGGESTIONS_LOADING':
+      return { ...state, isFetchingSuggestions: true, suggestedAnswers: [] };
+
+    case 'SUGGESTIONS_RECEIVED':
+      return { ...state, isFetchingSuggestions: false, suggestedAnswers: action.suggestions };
+
+    case 'SUGGESTIONS_FAILED':
+      return { ...state, isFetchingSuggestions: false, suggestedAnswers: [] };
 
     case 'RESET':
       return initialState;
@@ -395,29 +417,22 @@ export function useTrainingSession(): UseTrainingSessionResult {
               dispatch({ type: 'AI_TOKEN', text: tokenText });
             },
             onDone: () => {
-              // Realistic typing delay: proportional to message length
-              const msgLen = accumulatedMessage.length;
-              const rawDelay = Math.min(800 + msgLen * 20, 4000);
-              const variance = 0.8 + Math.random() * 0.4; // ±20%
-              const finalDelay = Math.round(rawDelay * variance);
-
-              setTimeout(() => {
-                dispatch({ type: 'AI_STREAM_DONE' });
-                if (interruptInfo?.shouldInterrupt) {
-                  dispatch({
-                    type: 'INTERRUPTED',
-                    triggerMessage: trimmed,
-                    interruptReason: interruptInfo.interruptReason ?? 'high_risk',
-                  });
-                  // Analytics: track which lever/scenario triggered interruption
-                  if (state.scenarioConfig) {
-                    trackLeverEffectiveness(
-                      state.scenarioConfig.attackType,
-                      state.scenarioConfig.trainingTarget,
-                    );
-                  }
+              stopWaitTimer();
+              dispatch({ type: 'AI_STREAM_DONE' });
+              if (interruptInfo?.shouldInterrupt) {
+                dispatch({
+                  type: 'INTERRUPTED',
+                  triggerMessage: trimmed,
+                  interruptReason: interruptInfo.interruptReason ?? 'high_risk',
+                });
+                // Analytics: track which lever/scenario triggered interruption
+                if (state.scenarioConfig) {
+                  trackLeverEffectiveness(
+                    state.scenarioConfig.attackType,
+                    state.scenarioConfig.trainingTarget,
+                  );
                 }
-              }, finalDelay);
+              }
             },
             onError: (error) => {
               stopWaitTimer();
@@ -434,10 +449,37 @@ export function useTrainingSession(): UseTrainingSessionResult {
     [state.scenarioConfig, state.turns, api, startWaitTimer, stopWaitTimer],
   );
 
+  /** Fire-and-forget: fetch suggested answers for the given reflection step. */
+  const fetchSuggestions = useCallback(
+    (step: ReflectionStep, question: string) => {
+      if (!state.scenarioConfig || !state.triggerMessage) return;
+      dispatch({ type: 'SUGGESTIONS_LOADING' });
+      void api.fetchReflectionSuggestions(
+        state.scenarioConfig,
+        state.turns,
+        state.triggerMessage,
+        step,
+        question,
+        state.interruptReason ?? undefined,
+        state.reflections,
+      ).then((result) => {
+        if (result && result.suggestions.length > 0) {
+          dispatch({ type: 'SUGGESTIONS_RECEIVED', suggestions: result.suggestions });
+        } else {
+          dispatch({ type: 'SUGGESTIONS_FAILED' });
+        }
+      }).catch(() => {
+        dispatch({ type: 'SUGGESTIONS_FAILED' });
+      });
+    },
+    [state.scenarioConfig, state.triggerMessage, state.turns, state.interruptReason, state.reflections, api],
+  );
+
   const beginReflection = useCallback(() => {
     const question = getReflectionQuestion('R1', state.interruptReason);
     dispatch({ type: 'REFLECTION_STARTED', question });
-  }, [state.interruptReason]);
+    fetchSuggestions('R1', question);
+  }, [state.interruptReason, fetchSuggestions]);
 
   const submitReflection = useCallback(
     async (answer: string) => {
@@ -483,6 +525,11 @@ export function useTrainingSession(): UseTrainingSessionResult {
           nextQuestion: nextQuestion ?? null,
         });
 
+        // Fetch suggestions for next step (fire-and-forget)
+        if (nextStep && nextQuestion) {
+          fetchSuggestions(nextStep, nextQuestion);
+        }
+
         // If reflection is complete, compute final scores from latest
         if (nextStep === null && state.latestScores) {
           dispatch({ type: 'SHOW_SUMMARY', finalScores: state.latestScores });
@@ -492,7 +539,7 @@ export function useTrainingSession(): UseTrainingSessionResult {
         dispatch({ type: 'SET_ERROR', error: translateError(e) });
       }
     },
-    [state, api, startWaitTimer, stopWaitTimer],
+    [state, api, startWaitTimer, stopWaitTimer, fetchSuggestions],
   );
 
   const finish = useCallback(() => {

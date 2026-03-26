@@ -116,19 +116,24 @@ export function TrainingChat({
         aria-label="Conversazione di allenamento"
         aria-live="polite"
       >
-        {turns.map((turn) => (
-          <ChatBubble
-            key={turn.id}
-            entry={turnToEntry(turn)}
-            {...(tts.isSupported ? { onSpeak: tts.speak } : {})}
-            onStopSpeaking={tts.stop}
-            isSpeaking={tts.speakingId === turn.id}
-          />
-        ))}
+        {turns.map((turn) => {
+          // Hide scammer bubble while content is still empty (streaming hasn't started)
+          if (turn.role === 'scammer' && !turn.content) return null;
 
-        {/* Typing indicator */}
+          return (
+            <ChatBubble
+              key={turn.id}
+              entry={turnToEntry(turn)}
+              {...(tts.isSupported && turn.content ? { onSpeak: tts.speak } : {})}
+              onStopSpeaking={tts.stop}
+              isSpeaking={tts.speakingId === turn.id}
+            />
+          );
+        })}
+
+        {/* Typing indicator — hide once streaming text is visible */}
         <AnimatePresence>
-          {isLoading && (
+          {isLoading && !turns.at(-1)?.content && (
             <m.div
               key="typing"
               initial={{ opacity: 0 }}

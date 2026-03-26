@@ -1,4 +1,4 @@
-import { lazy, Suspense, useState, useCallback, useEffect, useSyncExternalStore } from 'react';
+import { lazy, Suspense, useState, useCallback, useEffect } from 'react';
 import { LazyMotion, domAnimation } from 'motion/react';
 import { useHashRouter } from '@/hooks/useHashRouter';
 import { useIframeResize } from '@/hooks/useIframeResize';
@@ -33,23 +33,40 @@ const LeadCapturePage = lazy(() =>
   import('@/pages/LeadCapturePage').then((m) => ({ default: m.LeadCapturePage })),
 );
 
-/* ── Standalone pages outside wizard flow ──────────── */
+/* ── Beta gate constants ──────────────────────────────── */
 
-const STANDALONE_HASHES = new Set(['#beta']);
+const BETA_TOKEN_KEY = 'cyberpedia-beta-access';
+const ADMIN_TOKEN_KEY = 'cyberpedia-admin';
+const BETA_OPEN = import.meta.env.VITE_BETA_OPEN === 'true';
+const ADMIN_KEY = import.meta.env.VITE_ADMIN_KEY ?? 'cyberpedia-admin-2026';
+const ACCESS_PREFIX = '#access-';
 
-function subscribeHash(cb: () => void) {
-  window.addEventListener('hashchange', cb);
-  return () => window.removeEventListener('hashchange', cb);
-}
+/**
+ * Detect admin bypass URL (#access-{secret}) and persist admin flag.
+ * Returns true if admin access is granted (either fresh or persisted).
+ */
+function useAdminBypass(): boolean {
+  const [isAdmin] = useState(() => {
+    if (localStorage.getItem(ADMIN_TOKEN_KEY)) return true;
+    const hash = window.location.hash;
+    if (ADMIN_KEY && hash.startsWith(ACCESS_PREFIX)) {
+      const key = hash.slice(ACCESS_PREFIX.length);
+      if (key === ADMIN_KEY) {
+        localStorage.setItem(ADMIN_TOKEN_KEY, Date.now().toString());
+        return true;
+      }
+    }
+    return false;
+  });
 
-function getHash() {
-  return window.location.hash;
-}
+  // Redirect away from admin hash after detection
+  useEffect(() => {
+    if (isAdmin && window.location.hash.startsWith(ACCESS_PREFIX)) {
+      window.location.hash = '#landing';
+    }
+  }, [isAdmin]);
 
-/** True when the current hash matches a standalone page (e.g. #beta) */
-function useStandalonePage() {
-  const hash = useSyncExternalStore(subscribeHash, getHash, getHash);
-  return STANDALONE_HASHES.has(hash);
+  return isAdmin;
 }
 
 /** Minimal loading spinner matching design system. */
@@ -78,8 +95,18 @@ function StepFallback() {
  * Checklist (step 1) is skipped on first visit.
  */
 function App() {
-  const isStandalone = useStandalonePage();
   const { currentStep, direction, goTo, goNext, goBack } = useHashRouter();
+
+  // Beta gate: admin bypass + registered user check
+  const isAdmin = useAdminBypass();
+  const [hasBetaToken, setHasBetaToken] = useState(
+    () => Boolean(localStorage.getItem(BETA_TOKEN_KEY)),
+  );
+  const canAccess = isAdmin || (hasBetaToken && BETA_OPEN);
+  const handleBetaGranted = useCallback(() => {
+    setHasBetaToken(true);
+    window.location.hash = '#landing';
+  }, []);
   const { isReturningUser } = useReturningUser();
   const [victimStatus, setVictimStatus] = useState<VictimStatus | null>(() => {
     try {
@@ -216,8 +243,19 @@ function App() {
     }
   }
 
-  // Standalone pages bypass the wizard entirely
-  if (isStandalone) {
+  // Beta gate: no access → show registration page (blocks all routes)
+  if (!canAccess) {
+    return (
+      <LazyMotion features={domAnimation} strict>
+        <Suspense fallback={<StepFallback />}>
+          <LeadCapturePage {...(BETA_OPEN ? { onBetaGranted: handleBetaGranted } : {})} />
+        </Suspense>
+      </LazyMotion>
+    );
+  }
+
+  // Admins can still view #beta page directly
+  if (window.location.hash === '#beta') {
     return (
       <LazyMotion features={domAnimation} strict>
         <Suspense fallback={<StepFallback />}>
@@ -227,6 +265,7 @@ function App() {
     );
   }
 
+  // User has access (admin or registered+open) → show wizard
   return (
     <LazyMotion features={domAnimation} strict>
       <WizardShell

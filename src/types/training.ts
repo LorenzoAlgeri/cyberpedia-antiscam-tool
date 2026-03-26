@@ -283,3 +283,19 @@ export interface ReflectionResponse {
   /** Summary provided after the last reflection step */
   readonly insightSummary?: string;
 }
+
+/** POST /api/training/reflection-suggestions — request body */
+export interface ReflectionSuggestionsRequest {
+  readonly scenarioConfig: ScenarioConfig;
+  readonly conversationHistory: readonly ConversationTurn[];
+  readonly triggerMessage: string;
+  readonly reflectionStep: ReflectionStep;
+  readonly currentQuestion: string;
+  readonly interruptReason?: InterruptReason;
+  readonly previousReflections: readonly ReflectionAnswer[];
+}
+
+/** POST /api/training/reflection-suggestions — response body */
+export interface ReflectionSuggestionsResponse {
+  readonly suggestions: readonly string[];
+}

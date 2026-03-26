@@ -19,10 +19,13 @@ import type {
   BehaviorScores,
   ReflectionRequest,
   ReflectionResponse,
+  ReflectionSuggestionsRequest,
+  ReflectionSuggestionsResponse,
   ScenarioConfig,
   ConversationTurn,
   ReflectionStep,
   ReflectionAnswer,
+  InterruptReason,
 } from '@/types/training';
 
 // ---------------------------------------------------------------------------
@@ -94,6 +97,17 @@ export interface UseTrainingAPIResult {
     userAnswer: string,
     previousReflections: readonly ReflectionAnswer[],
   ) => Promise<ReflectionResponse | null>;
+
+  /** Fetch suggested answers for a reflection question. */
+  fetchReflectionSuggestions: (
+    scenarioConfig: ScenarioConfig,
+    conversationHistory: readonly ConversationTurn[],
+    triggerMessage: string,
+    reflectionStep: ReflectionStep,
+    currentQuestion: string,
+    interruptReason: InterruptReason | undefined,
+    previousReflections: readonly ReflectionAnswer[],
+  ) => Promise<ReflectionSuggestionsResponse | null>;
 
   /** Send a message with SSE streaming. Calls onScores, onToken, onDone progressively. */
   sendMessageStream: (
@@ -349,5 +363,43 @@ export function useTrainingAPI(): UseTrainingAPIResult {
     [createController],
   );
 
-  return { startSession, sendMessage, sendMessageStream, submitReflection, cancel };
+  const fetchReflectionSuggestions = useCallback(
+    async (
+      scenarioConfig: ScenarioConfig,
+      conversationHistory: readonly ConversationTurn[],
+      triggerMessage: string,
+      reflectionStep: ReflectionStep,
+      currentQuestion: string,
+      interruptReason: InterruptReason | undefined,
+      previousReflections: readonly ReflectionAnswer[],
+    ): Promise<ReflectionSuggestionsResponse | null> => {
+      if (!isEnabled()) return null;
+
+      const controller = createController();
+      try {
+        const body: ReflectionSuggestionsRequest = {
+          scenarioConfig,
+          conversationHistory,
+          triggerMessage,
+          reflectionStep,
+          currentQuestion,
+          previousReflections,
+          ...(interruptReason ? { interruptReason } : {}),
+        };
+        return await postJSON<ReflectionSuggestionsResponse>(
+          '/api/training/reflection-suggestions',
+          body,
+          controller.signal,
+        );
+      } catch (err) {
+        if (err instanceof Error && err.name === 'AbortError') {
+          return null; // Graceful degradation — suggestions are optional
+        }
+        return null;
+      }
+    },
+    [createController],
+  );
+
+  return { startSession, sendMessage, sendMessageStream, submitReflection, fetchReflectionSuggestions, cancel };
 }

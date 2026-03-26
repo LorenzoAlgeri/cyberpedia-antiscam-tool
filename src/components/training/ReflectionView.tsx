@@ -6,10 +6,12 @@
  * then sees the AI's non-judgmental analysis before the next question.
  */
 
+import { useState, useCallback } from 'react';
 import * as m from 'motion/react-m';
 import { AnimatePresence } from 'motion/react';
 import { Brain, Loader2 } from 'lucide-react';
 import { ChatInput } from './ChatInput';
+import { SuggestedResponses } from './SuggestedResponses';
 import { useVirtualKeyboard } from '@/hooks/useVirtualKeyboard';
 import type { ReflectionAnswer, ReflectionStep } from '@/types/training';
 
@@ -20,6 +22,8 @@ interface ReflectionViewProps {
   readonly isLoading: boolean;
   readonly waitSeconds: number;
   readonly error: string | null;
+  readonly suggestedAnswers: readonly string[];
+  readonly isFetchingSuggestions: boolean;
   readonly onSubmitAnswer: (answer: string) => void;
   readonly onBack: () => void;
 }
@@ -46,6 +50,8 @@ export function ReflectionView({
   isLoading,
   waitSeconds,
   error,
+  suggestedAnswers,
+  isFetchingSuggestions,
   onSubmitAnswer,
   onBack,
 }: ReflectionViewProps) {
@@ -53,6 +59,15 @@ export function ReflectionView({
 
   // Handle virtual keyboard on iOS + Android
   useVirtualKeyboard();
+
+  // Inject suggested text into ChatInput
+  const [injectedText, setInjectedText] = useState('');
+  const handleSuggestionSelect = useCallback((text: string) => {
+    setInjectedText(text);
+  }, []);
+  const handleInjectedTextConsumed = useCallback(() => {
+    setInjectedText('');
+  }, []);
 
   // Show the latest analysis before moving to next question
   const latestReflection = reflections.at(-1);
@@ -157,11 +172,21 @@ export function ReflectionView({
         )}
       </div>
 
+      {/* Suggested responses */}
+      <SuggestedResponses
+        suggestions={suggestedAnswers}
+        isLoading={isFetchingSuggestions}
+        disabled={isLoading}
+        onSelect={handleSuggestionSelect}
+      />
+
       {/* Input */}
       <ChatInput
         onSend={onSubmitAnswer}
         disabled={isLoading}
         placeholder="Scrivi la tua risposta..."
+        injectedText={injectedText}
+        onInjectedTextConsumed={handleInjectedTextConsumed}
       />
     </div>
   );
