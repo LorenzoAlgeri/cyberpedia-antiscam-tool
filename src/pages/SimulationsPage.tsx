@@ -341,6 +341,8 @@ export function SimulationsPage({
             isLoading={trainingState.isLoading}
             waitSeconds={trainingState.waitSeconds}
             error={trainingState.error}
+            suggestedAnswers={trainingState.suggestedAnswers}
+            isFetchingSuggestions={trainingState.isFetchingSuggestions}
             onSubmitAnswer={(answer) => void training.submitReflection(answer)}
             onBack={handleTrainingBack}
           />
