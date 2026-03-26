@@ -377,17 +377,18 @@ export function useTrainingAPI(): UseTrainingAPIResult {
 
       const controller = createController();
       try {
+        const body: ReflectionSuggestionsRequest = {
+          scenarioConfig,
+          conversationHistory,
+          triggerMessage,
+          reflectionStep,
+          currentQuestion,
+          previousReflections,
+          ...(interruptReason ? { interruptReason } : {}),
+        };
         return await postJSON<ReflectionSuggestionsResponse>(
           '/api/training/reflection-suggestions',
-          {
-            scenarioConfig,
-            conversationHistory,
-            triggerMessage,
-            reflectionStep,
-            currentQuestion,
-            interruptReason,
-            previousReflections,
-          } satisfies ReflectionSuggestionsRequest,
+          body,
           controller.signal,
         );
       } catch (err) {
