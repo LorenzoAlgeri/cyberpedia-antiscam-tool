@@ -22,6 +22,8 @@ import {
   buildAnalysisOnlyUserPrompt,
   buildScammerMessageSystemPrompt,
   buildScammerMessageUserPrompt,
+  buildSuggestionsSystemPrompt,
+  buildSuggestionsUserPrompt,
 } from './training-prompt';
 import {
   VALID_TRAINING_ATTACK_TYPES,
@@ -34,8 +36,10 @@ import {
   type StartSessionRequest,
   type SendMessageRequest,
   type ReflectionRequest,
+  type ReflectionSuggestionsRequest,
   type ReflectionStep,
   type ScenarioConfig,
+  type InterruptReason,
   type NarrativePhase,
 } from './training-types';
 import type { Env } from './types';
@@ -479,9 +483,22 @@ async function handleMessageStream(request: Request, env: Env): Promise<Response
         analysis.interruptReason = 'max_turns';
       }
 
+      // Sanitize scores — ensure all are valid numbers in [0,100]
+      const clamp = (v: unknown) => {
+        const n = typeof v === 'number' && !Number.isNaN(v) ? v : 0;
+        return Math.round(Math.max(0, Math.min(100, n)));
+      };
+      const safeScores = {
+        activation: clamp(analysis.behaviorScores.activation),
+        impulsivity: clamp(analysis.behaviorScores.impulsivity),
+        verification: clamp(analysis.behaviorScores.verification),
+        awareness: clamp(analysis.behaviorScores.awareness),
+        riskScore: clamp(analysis.behaviorScores.riskScore),
+      };
+
       // Send scores to client
       await write(sseEvent('scores', {
-        behaviorScores: analysis.behaviorScores,
+        behaviorScores: safeScores,
         shouldInterrupt: analysis.shouldInterrupt,
         interruptReason: analysis.interruptReason,
         nextPhase: analysis.nextPhase,
@@ -573,6 +590,85 @@ async function handleMessageStream(request: Request, env: Env): Promise<Response
   });
 }
 
+// ── Endpoint: /api/training/reflection-suggestions ───────────────────────────
+
+async function handleReflectionSuggestions(request: Request, env: Env): Promise<Response> {
+  const cors = getCorsHeaders(request);
+
+  // Share rate limit with reflect endpoint
+  const rateResult = await checkRateLimit(env.ANTISCAM_RATELIMIT, getIP(request), RATE_LIMITS.reflect, 'training-ref');
+  if (!rateResult.allowed) {
+    return jsonError('Too many requests. Please try again later.', 429, {
+      ...cors,
+      'Retry-After': String(rateResult.retryAfter ?? 3600),
+    });
+  }
+
+  let body: unknown;
+  try {
+    body = await parseBody(request);
+  } catch {
+    return jsonError('Invalid JSON body', 400, cors);
+  }
+
+  const parsed = body as Partial<ReflectionSuggestionsRequest>;
+
+  if (!parsed.scenarioConfig || typeof parsed.scenarioConfig !== 'object') {
+    return jsonError('Missing required field: scenarioConfig', 422, cors);
+  }
+  if (!parsed.triggerMessage || typeof parsed.triggerMessage !== 'string') {
+    return jsonError('Missing required field: triggerMessage', 422, cors);
+  }
+  if (
+    !parsed.reflectionStep ||
+    typeof parsed.reflectionStep !== 'string' ||
+    !(VALID_REFLECTION_STEPS as readonly string[]).includes(parsed.reflectionStep)
+  ) {
+    return jsonError(`Invalid reflectionStep. Valid: ${VALID_REFLECTION_STEPS.join(', ')}`, 422, cors);
+  }
+  if (!parsed.currentQuestion || typeof parsed.currentQuestion !== 'string') {
+    return jsonError('Missing required field: currentQuestion', 422, cors);
+  }
+
+  normalizeScenarioConfig(parsed.scenarioConfig as unknown as Record<string, unknown>);
+  const scenarioConfig = parsed.scenarioConfig as ScenarioConfig;
+  const conversationHistory = Array.isArray(parsed.conversationHistory) ? parsed.conversationHistory.slice(-10) : [];
+  const interruptReason = parsed.interruptReason as InterruptReason | undefined;
+
+  const systemPrompt = buildSuggestionsSystemPrompt(scenarioConfig, interruptReason);
+  const userPrompt = buildSuggestionsUserPrompt(
+    conversationHistory,
+    parsed.triggerMessage,
+    parsed.reflectionStep as ReflectionStep,
+    parsed.currentQuestion,
+    Array.isArray(parsed.previousReflections) ? parsed.previousReflections.slice(0, 4) : [],
+  );
+
+  try {
+    const result = await callGeminiAnalysis<{ suggestions: string[] }>(
+      systemPrompt, userPrompt, env.GEMINI_API_KEY, request.signal,
+    );
+
+    // Validate and sanitize suggestions
+    const suggestions = Array.isArray(result.suggestions)
+      ? result.suggestions.filter((s): s is string => typeof s === 'string' && s.trim().length > 0).slice(0, 3)
+      : [];
+
+    return Response.json({ suggestions }, {
+      status: 200,
+      headers: { ...cors, 'Content-Type': 'application/json' },
+    });
+  } catch (e) {
+    const detail = e instanceof Error ? e.message : String(e);
+    logger.error('gemini.call.error', { error: detail, endpoint: '/api/training/reflection-suggestions' });
+    // Graceful degradation: return empty suggestions instead of error
+    return Response.json({ suggestions: [] }, {
+      status: 200,
+      headers: { ...cors, 'Content-Type': 'application/json' },
+    });
+  }
+}
+
 // ── Router ───────────────────────────────────────────────────────────────────
 
 /** Route /api/training/* requests to the appropriate handler. */
@@ -599,6 +695,8 @@ export async function handleTraining(
       return handleMessageStream(request, env);
     case '/api/training/reflect':
       return handleReflect(request, env);
+    case '/api/training/reflection-suggestions':
+      return handleReflectionSuggestions(request, env);
     default:
       return new Response('Not Found', { status: 404, headers: cors });
   }

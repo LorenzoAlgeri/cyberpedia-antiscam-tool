@@ -453,3 +453,73 @@ RISPOSTA DELL'UTENTE:
 
 Analizza e rispondi in JSON.`;
 }
+
+// ── Reflection Suggestions Prompt ────────────────────────────────────────────
+
+export function buildSuggestionsSystemPrompt(config: ScenarioConfig, interruptReason?: InterruptReason): string {
+  const toneContext = interruptReason === 'max_turns'
+    ? `L'utente ha RESISTITO bene alla manipolazione. I suggerimenti devono aiutarlo ad analizzare cosa ha notato e cosa lo ha protetto.`
+    : `L'utente ha mostrato vulnerabilità alla manipolazione. I suggerimenti devono aiutarlo a riflettere su cosa stava succedendo dentro di sé, senza giudizio.`;
+
+  return `Sei un assistente del sistema Cyberpedia Palestra Mentale.
+
+Il tuo compito è generare 3 RISPOSTE SUGGERITE che l'utente può selezionare per rispondere a una domanda riflessiva.
+
+${toneContext}
+
+SCENARIO: ${ATTACK_LABELS[config.attackType]}
+LEVE PSICOLOGICHE: ${getTargets(config).map(t => TARGET_LABELS[t]).join('; ')}
+
+REGOLE PER I SUGGERIMENTI:
+1. Ogni suggerimento deve essere SPECIFICO alla conversazione avvenuta, NON generico
+2. Massimo 80 caratteri per suggerimento
+3. I 3 suggerimenti devono coprire ANGOLAZIONI DIVERSE:
+   - Uno più emotivo/istintivo (cosa sentivo)
+   - Uno più analitico/razionale (cosa ho notato)
+   - Uno più pratico/comportamentale (cosa avrei fatto)
+4. Scrivi in prima persona singolare, tono naturale e colloquiale
+5. NON usare formule accademiche o tecniche
+6. I suggerimenti devono sembrare risposte reali di una persona comune
+
+Rispondi con ESATTAMENTE questo JSON:
+{
+  "suggestions": ["suggerimento 1", "suggerimento 2", "suggerimento 3"]
+}
+
+Rispondi SOLO con JSON valido, zero markdown, zero testo extra.`;
+}
+
+export function buildSuggestionsUserPrompt(
+  conversationHistory: readonly ConversationTurn[],
+  triggerMessage: string,
+  step: ReflectionStep,
+  currentQuestion: string,
+  previousReflections: readonly ReflectionAnswer[],
+): string {
+  // Compact conversation summary (last 6 turns max to save tokens)
+  const recentTurns = conversationHistory.slice(-6);
+  const chatSummary = recentTurns
+    .map((t) => `[${t.role === 'scammer' ? 'Truffatore' : 'Utente'}]: ${t.content.slice(0, 200)}`)
+    .join('\n');
+
+  const prevText = previousReflections.length > 0
+    ? previousReflections
+        .map((r) => `[${r.step}] D: ${r.question}\nR: ${r.userAnswer}`)
+        .join('\n')
+    : '(nessuna)';
+
+  return `ULTIMI MESSAGGI DELLA CONVERSAZIONE:
+${chatSummary}
+
+MESSAGGIO CHE HA TRIGGERATO L'INTERRUZIONE:
+"${triggerMessage}"
+
+RIFLESSIONI PRECEDENTI:
+${prevText}
+
+STEP CORRENTE: ${step}
+DOMANDA A CUI L'UTENTE DEVE RISPONDERE:
+"${currentQuestion}"
+
+Genera 3 risposte suggerite diverse e specifiche a questa conversazione.`;
+}

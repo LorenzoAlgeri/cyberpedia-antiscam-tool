@@ -140,3 +140,19 @@ export interface ReflectionResponse {
   readonly nextQuestion: string | null;
   readonly insightSummary?: string;
 }
+
+// ── Reflection suggestions ──────────────────────────────────────────────────
+
+export interface ReflectionSuggestionsRequest {
+  readonly scenarioConfig: ScenarioConfig;
+  readonly conversationHistory: readonly ConversationTurn[];
+  readonly triggerMessage: string;
+  readonly reflectionStep: ReflectionStep;
+  readonly currentQuestion: string;
+  readonly interruptReason?: InterruptReason;
+  readonly previousReflections: readonly ReflectionAnswer[];
+}
+
+export interface ReflectionSuggestionsResponse {
+  readonly suggestions: readonly string[];
+}
