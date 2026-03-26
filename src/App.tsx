@@ -38,7 +38,7 @@ const LeadCapturePage = lazy(() =>
 const BETA_TOKEN_KEY = 'cyberpedia-beta-access';
 const ADMIN_TOKEN_KEY = 'cyberpedia-admin';
 const BETA_OPEN = import.meta.env.VITE_BETA_OPEN === 'true';
-const ADMIN_KEY = import.meta.env.VITE_ADMIN_KEY ?? '';
+const ADMIN_KEY = import.meta.env.VITE_ADMIN_KEY ?? 'cyberpedia-admin-2026';
 const ACCESS_PREFIX = '#access-';
 
 /**
