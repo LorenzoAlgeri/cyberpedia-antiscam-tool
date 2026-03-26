@@ -50,6 +50,9 @@ export default defineConfig({
         globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
         // No runtime caching — 100% static, served by Cloudflare CDN
         runtimeCaching: [],
+        // Activate new SW immediately (don't wait for all tabs to close)
+        skipWaiting: true,
+        clientsClaim: true,
       },
     }),
   ],
