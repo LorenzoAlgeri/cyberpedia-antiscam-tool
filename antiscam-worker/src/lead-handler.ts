@@ -24,11 +24,11 @@ import { getIP, jsonError, sha256Hex, escapeHtml } from './helpers';
 // ── Constants ────────────────────────────────────────────────────────────────
 
 const VALID_ROLES = [
-  'docente',
-  'studente',
-  'professionista-it',
-  'forze-ordine',
-  'altro',
+  'privato',
+  'familiare-caregiver',
+  'professionista',
+  'ente-associazione',
+  'media',
 ] as const;
 
 type Role = (typeof VALID_ROLES)[number];
