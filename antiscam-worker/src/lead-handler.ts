@@ -36,12 +36,14 @@ interface LeadPayload {
   readonly email: string;
   readonly note?: string;
   readonly consent: boolean;
+  readonly consentMarketing?: boolean;
 }
 
 interface StoredLead {
   readonly name: string;
   readonly email: string;
   readonly note?: string | undefined;
+  readonly consentMarketing: boolean;
   readonly submittedAt: string;
   readonly ip: string;
 }
@@ -123,6 +125,7 @@ export async function handleLead(request: Request, env: Env, ctx: ExecutionConte
     name: parsed.name.trim(),
     email: emailNormalized,
     note: parsed.note?.trim() || undefined,
+    consentMarketing: parsed.consentMarketing === true,
     submittedAt: new Date(timestamp).toISOString(),
     ip,
   };
@@ -151,6 +154,7 @@ export async function handleLead(request: Request, env: Env, ctx: ExecutionConte
       `\u{1F4E9} <b>Nuova iscrizione Beta</b>`,
       `\u{1F464} <b>Nome:</b> ${escapeHtml(storedLead.name)}`,
       `\u{1F4E7} <b>Email:</b> ${escapeHtml(storedLead.email)}`,
+      `\u{1F4E2} <b>Consenso marketing:</b> ${storedLead.consentMarketing ? 'Si' : 'No'}`,
       storedLead.note
         ? `\u{1F4DD} <b>Nota:</b> ${escapeHtml(storedLead.note)}`
         : '',
