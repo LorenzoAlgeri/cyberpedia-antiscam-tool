@@ -5,20 +5,11 @@ import { CheckCircle2, AlertCircle, Loader2, ArrowRight } from 'lucide-react';
 const WORKER_BASE =
   'https://antiscam-worker.lorenzo-algeri.workers.dev';
 
-const VALID_PROFILES = [
-  { value: 'privato', label: 'Privato' },
-  { value: 'familiare-caregiver', label: 'Familiare / caregiver' },
-  { value: 'professionista', label: 'Professionista' },
-  { value: 'ente-associazione', label: 'Ente / associazione' },
-  { value: 'media', label: 'Media' },
-] as const;
-
 type FormStatus = 'idle' | 'submitting' | 'success' | 'error';
 
 interface FormData {
   name: string;
   email: string;
-  role: string;
   note: string;
   consent: boolean;
   consentMarketing: boolean;
@@ -27,7 +18,6 @@ interface FormData {
 const INITIAL: FormData = {
   name: '',
   email: '',
-  role: '',
   note: '',
   consent: false,
   consentMarketing: false,
@@ -155,7 +145,7 @@ export function LeadCaptureForm({ onBetaGranted }: LeadCaptureFormProps = {}) {
       {/* Name */}
       <input
         type="text"
-        placeholder="Nome"
+        placeholder="Nome e cognome"
         required
         maxLength={100}
         value={form.name}
@@ -175,20 +165,6 @@ export function LeadCaptureForm({ onBetaGranted }: LeadCaptureFormProps = {}) {
         className="input-glass"
         autoComplete="email"
       />
-
-      {/* Profile */}
-      <select
-        required
-        value={form.role}
-        onChange={(e) => update('role', e.target.value)}
-        className="input-glass cursor-pointer appearance-none"
-        aria-label="Profilo"
-      >
-        <option value="" disabled>Profilo</option>
-        {VALID_PROFILES.map((p) => (
-          <option key={p.value} value={p.value}>{p.label}</option>
-        ))}
-      </select>
 
       {/* Risk interest (optional) */}
       <div className="space-y-1">

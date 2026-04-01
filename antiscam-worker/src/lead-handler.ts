@@ -23,16 +23,6 @@ import { getIP, jsonError, sha256Hex, escapeHtml } from './helpers';
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
-const VALID_ROLES = [
-  'privato',
-  'familiare-caregiver',
-  'professionista',
-  'ente-associazione',
-  'media',
-] as const;
-
-type Role = (typeof VALID_ROLES)[number];
-
 /** Lightweight email regex — covers the vast majority of real addresses. */
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -44,7 +34,6 @@ const RATE_LIMIT_PREFIX = 'lead';
 interface LeadPayload {
   readonly name: string;
   readonly email: string;
-  readonly role: Role;
   readonly note?: string;
   readonly consent: boolean;
 }
@@ -52,7 +41,6 @@ interface LeadPayload {
 interface StoredLead {
   readonly name: string;
   readonly email: string;
-  readonly role: Role;
   readonly note?: string | undefined;
   readonly submittedAt: string;
   readonly ip: string;
@@ -112,19 +100,6 @@ export async function handleLead(request: Request, env: Env, ctx: ExecutionConte
     return jsonError('Invalid or missing field: email', 422, cors);
   }
 
-  // ── Validate role ────────────────────────────────────────────────────────
-  if (
-    !parsed.role ||
-    typeof parsed.role !== 'string' ||
-    !(VALID_ROLES as readonly string[]).includes(parsed.role)
-  ) {
-    return jsonError(
-      `Invalid or missing field: role. Valid values: ${VALID_ROLES.join(', ')}`,
-      422,
-      cors,
-    );
-  }
-
   // ── Validate note (optional) ─────────────────────────────────────────────
   if (parsed.note !== undefined && parsed.note !== null) {
     if (typeof parsed.note !== 'string' || parsed.note.length > 500) {
@@ -147,7 +122,6 @@ export async function handleLead(request: Request, env: Env, ctx: ExecutionConte
   const storedLead: StoredLead = {
     name: parsed.name.trim(),
     email: emailNormalized,
-    role: parsed.role as Role,
     note: parsed.note?.trim() || undefined,
     submittedAt: new Date(timestamp).toISOString(),
     ip,
@@ -169,7 +143,6 @@ export async function handleLead(request: Request, env: Env, ctx: ExecutionConte
   logger.info('lead.stored', {
     endpoint: '/api/lead',
     kvKey,
-    role: parsed.role,
   });
 
   // ── Telegram notification (fire-and-forget) ────────────────────────────────
@@ -178,7 +151,6 @@ export async function handleLead(request: Request, env: Env, ctx: ExecutionConte
       `\u{1F4E9} <b>Nuova iscrizione Beta</b>`,
       `\u{1F464} <b>Nome:</b> ${escapeHtml(storedLead.name)}`,
       `\u{1F4E7} <b>Email:</b> ${escapeHtml(storedLead.email)}`,
-      `\u{1F3AF} <b>Ruolo:</b> ${escapeHtml(parsed.role)}`,
       storedLead.note
         ? `\u{1F4DD} <b>Nota:</b> ${escapeHtml(storedLead.note)}`
         : '',
