@@ -101,6 +101,7 @@ interface GeminiRequest {
     maxOutputTokens: number;
     responseMimeType?: string;
     responseSchema?: Record<string, unknown>;
+    thinkingConfig?: { thinkingBudget: number };
   };
 }
 
@@ -189,7 +190,7 @@ function repairJSON(input: string): string {
 function buildGeminiRequest(
   systemPrompt: string,
   userPrompt: string,
-  options: { temperature?: number; maxTokens?: number; jsonMode?: boolean; responseSchema?: Record<string, unknown> } = {},
+  options: { temperature?: number; maxTokens?: number; jsonMode?: boolean; responseSchema?: Record<string, unknown>; disableThinking?: boolean } = {},
 ): GeminiRequest {
   return {
     contents: [{ role: 'user', parts: [{ text: userPrompt }] }],
@@ -201,6 +202,7 @@ function buildGeminiRequest(
       maxOutputTokens: options.maxTokens ?? 2048,
       ...(options.jsonMode ? { responseMimeType: 'application/json' } : {}),
       ...(options.responseSchema ? { responseSchema: options.responseSchema } : {}),
+      ...(options.disableThinking ? { thinkingConfig: { thinkingBudget: 0 } } : {}),
     },
   };
 }
@@ -217,11 +219,11 @@ export async function callGeminiAnalysis<T>(
 ): Promise<T> {
   const url = `${GEMINI_BASE}/${GEMINI_MODEL}:generateContent?key=${apiKey}`;
 
-  // Try up to 2 attempts: first with schema, retry with lower temp on parse failure
-  const MAX_PARSE_ATTEMPTS = 2;
+  // Single attempt with schema — no parse retry to stay within CF Worker 30s wall-clock
+  // fetchWithRetry handles transient HTTP errors (429/5xx) with 1 retry max
   let lastError: Error | null = null;
 
-  for (let attempt = 0; attempt < MAX_PARSE_ATTEMPTS; attempt++) {
+  for (let attempt = 0; attempt < 1; attempt++) {
     if (signal?.aborted) throw new DOMException('Client disconnected', 'AbortError');
 
     const response = await fetchWithRetry(
@@ -230,14 +232,15 @@ export async function callGeminiAnalysis<T>(
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(buildGeminiRequest(systemPrompt, userPrompt, {
-          temperature: attempt === 0 ? 0.5 : 0.2, // Lower temp on retry
+          temperature: 0.3, // Low temp for reliable JSON
           maxTokens: 1024,
           jsonMode: true,
           responseSchema: ANALYSIS_RESPONSE_SCHEMA as unknown as Record<string, unknown>,
+          disableThinking: true, // No thinking needed for structured scoring — saves 2-10s
         })),
       },
-      25_000, // 25s timeout — Gemini 2.5 Flash thinking can take 15s+
-      2,
+      28_000, // 28s timeout — Gemini 2.5 Flash thinking can take 15-20s
+      1, // Max 1 HTTP retry (for 429/5xx only)
       signal,
     );
 
