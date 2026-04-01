@@ -100,8 +100,31 @@ interface GeminiRequest {
     topK: number;
     maxOutputTokens: number;
     responseMimeType?: string;
+    responseSchema?: Record<string, unknown>;
   };
 }
+
+/** JSON Schema for the analysis response — forces Gemini structured output */
+const ANALYSIS_RESPONSE_SCHEMA = {
+  type: 'OBJECT',
+  properties: {
+    behaviorScores: {
+      type: 'OBJECT',
+      properties: {
+        activation: { type: 'INTEGER' },
+        impulsivity: { type: 'INTEGER' },
+        verification: { type: 'INTEGER' },
+        awareness: { type: 'INTEGER' },
+        riskScore: { type: 'INTEGER' },
+      },
+      required: ['activation', 'impulsivity', 'verification', 'awareness', 'riskScore'],
+    },
+    shouldInterrupt: { type: 'BOOLEAN' },
+    interruptReason: { type: 'STRING' },
+    nextPhase: { type: 'STRING' },
+  },
+  required: ['behaviorScores', 'shouldInterrupt', 'nextPhase'],
+} as const;
 
 /**
  * Repair common JSON issues from Gemini output:
@@ -166,7 +189,7 @@ function repairJSON(input: string): string {
 function buildGeminiRequest(
   systemPrompt: string,
   userPrompt: string,
-  options: { temperature?: number; maxTokens?: number; jsonMode?: boolean } = {},
+  options: { temperature?: number; maxTokens?: number; jsonMode?: boolean; responseSchema?: Record<string, unknown> } = {},
 ): GeminiRequest {
   return {
     contents: [{ role: 'user', parts: [{ text: userPrompt }] }],
@@ -177,6 +200,7 @@ function buildGeminiRequest(
       topK: 40,
       maxOutputTokens: options.maxTokens ?? 2048,
       ...(options.jsonMode ? { responseMimeType: 'application/json' } : {}),
+      ...(options.responseSchema ? { responseSchema: options.responseSchema } : {}),
     },
   };
 }
@@ -193,88 +217,104 @@ export async function callGeminiAnalysis<T>(
 ): Promise<T> {
   const url = `${GEMINI_BASE}/${GEMINI_MODEL}:generateContent?key=${apiKey}`;
 
-  const response = await fetchWithRetry(
-    url,
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(buildGeminiRequest(systemPrompt, userPrompt, {
-        temperature: 0.5,
-        maxTokens: 1024,
-        jsonMode: true,
-      })),
-    },
-    25_000, // 25s timeout — Gemini 2.5 Flash thinking can take 15s+
-    2,
-    signal,
-  );
+  // Try up to 2 attempts: first with schema, retry with lower temp on parse failure
+  const MAX_PARSE_ATTEMPTS = 2;
+  let lastError: Error | null = null;
 
-  if (!response.ok) {
-    const text = await response.text();
-    throw new Error(`Gemini API error (${response.status}): ${text.slice(0, 200)}`);
-  }
+  for (let attempt = 0; attempt < MAX_PARSE_ATTEMPTS; attempt++) {
+    if (signal?.aborted) throw new DOMException('Client disconnected', 'AbortError');
 
-  const data = await response.json() as {
-    candidates?: Array<{
-      content?: { parts?: Array<{ text?: string }> };
-    }>;
-    usageMetadata?: {
-      promptTokenCount?: number;
-      candidatesTokenCount?: number;
-      totalTokenCount?: number;
+    const response = await fetchWithRetry(
+      url,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(buildGeminiRequest(systemPrompt, userPrompt, {
+          temperature: attempt === 0 ? 0.5 : 0.2, // Lower temp on retry
+          maxTokens: 1024,
+          jsonMode: true,
+          responseSchema: ANALYSIS_RESPONSE_SCHEMA as unknown as Record<string, unknown>,
+        })),
+      },
+      25_000, // 25s timeout — Gemini 2.5 Flash thinking can take 15s+
+      2,
+      signal,
+    );
+
+    if (!response.ok) {
+      const text = await response.text();
+      throw new Error(`Gemini API error (${response.status}): ${text.slice(0, 200)}`);
+    }
+
+    const data = await response.json() as {
+      candidates?: Array<{
+        content?: { parts?: Array<{ text?: string }> };
+      }>;
+      usageMetadata?: {
+        promptTokenCount?: number;
+        candidatesTokenCount?: number;
+        totalTokenCount?: number;
+      };
     };
-  };
 
-  // Log token consumption for cost monitoring
-  if (data.usageMetadata?.totalTokenCount) {
-    logger.info('gemini.tokens.used', {
-      totalTokenCount: data.usageMetadata.totalTokenCount,
-      promptTokenCount: data.usageMetadata.promptTokenCount,
-      candidatesTokenCount: data.usageMetadata.candidatesTokenCount,
-      endpoint: 'analysis',
-    });
-  }
-
-  const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text;
-  if (!rawText) {
-    throw new Error('Gemini returned empty response');
-  }
-
-  // Strip markdown fences defensively
-  let cleaned = rawText.trim();
-  if (cleaned.startsWith('```json')) cleaned = cleaned.slice(7);
-  if (cleaned.startsWith('```')) cleaned = cleaned.slice(3);
-  if (cleaned.endsWith('```')) cleaned = cleaned.slice(0, -3);
-  cleaned = cleaned.trim();
-
-  // Extract outermost JSON object — handles text or comments before/after braces
-  const objStart = cleaned.indexOf('{');
-  const objEnd = cleaned.lastIndexOf('}');
-  if (objStart !== -1 && objEnd > objStart) {
-    cleaned = cleaned.slice(objStart, objEnd + 1);
-  }
-
-  // Try parsing as-is first, then repair, then log for debug
-  try {
-    return JSON.parse(cleaned) as T;
-  } catch {
-    // Repair common Gemini JSON issues before retrying
-    try {
-      cleaned = repairJSON(cleaned);
-      return JSON.parse(cleaned) as T;
-    } catch (parseErr) {
-      // Log the raw text for debugging
-      logger.error('gemini.json.parse.error', {
-        error: parseErr instanceof Error ? parseErr.message : String(parseErr),
-        rawTextPreview: rawText.slice(0, 500),
-        repairedPreview: cleaned.slice(0, 500),
+    // Log token consumption for cost monitoring
+    if (data.usageMetadata?.totalTokenCount) {
+      logger.info('gemini.tokens.used', {
+        totalTokenCount: data.usageMetadata.totalTokenCount,
+        promptTokenCount: data.usageMetadata.promptTokenCount,
+        candidatesTokenCount: data.usageMetadata.candidatesTokenCount,
         endpoint: 'analysis',
+        attempt,
       });
-      throw new Error(
-        `Gemini ha restituito una risposta non valida. Riprova.`,
-      );
+    }
+
+    const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (!rawText) {
+      lastError = new Error('Gemini returned empty response');
+      logger.warn('gemini.empty.response', { attempt, endpoint: 'analysis' });
+      continue; // retry
+    }
+
+    // Strip markdown fences defensively
+    let cleaned = rawText.trim();
+    if (cleaned.startsWith('```json')) cleaned = cleaned.slice(7);
+    if (cleaned.startsWith('```')) cleaned = cleaned.slice(3);
+    if (cleaned.endsWith('```')) cleaned = cleaned.slice(0, -3);
+    cleaned = cleaned.trim();
+
+    // Extract outermost JSON object — handles text or comments before/after braces
+    const objStart = cleaned.indexOf('{');
+    const objEnd = cleaned.lastIndexOf('}');
+    if (objStart !== -1 && objEnd > objStart) {
+      cleaned = cleaned.slice(objStart, objEnd + 1);
+    }
+
+    // Try parsing: raw → repaired → retry with new Gemini call
+    try {
+      return JSON.parse(cleaned) as T;
+    } catch {
+      try {
+        cleaned = repairJSON(cleaned);
+        return JSON.parse(cleaned) as T;
+      } catch (parseErr) {
+        logger.warn('gemini.json.parse.retry', {
+          error: parseErr instanceof Error ? parseErr.message : String(parseErr),
+          rawTextPreview: rawText.slice(0, 300),
+          attempt,
+          endpoint: 'analysis',
+        });
+        lastError = parseErr instanceof Error ? parseErr : new Error(String(parseErr));
+        // continue → retry with lower temperature
+      }
     }
   }
+
+  // Both attempts failed — log and throw user-friendly error
+  logger.error('gemini.json.parse.failed', {
+    error: lastError?.message ?? 'unknown',
+    endpoint: 'analysis',
+  });
+  throw new Error('Errore temporaneo nell\'analisi. Riprova tra qualche secondo.');
 }
 
 /**
