@@ -1,4 +1,3 @@
-import { lazy, Suspense } from 'react';
 import * as m from 'motion/react-m';
 import {
   ShieldCheck,
@@ -18,10 +17,6 @@ import {
 } from 'lucide-react';
 import { CyberpediaLogo } from '@/components/layout/CyberpediaLogo';
 import { LeadCaptureForm } from '@/components/lead/LeadCaptureForm';
-
-const QrCodeBeta = lazy(() =>
-  import('@/components/layout/QrCodeBeta').then((m) => ({ default: m.QrCodeBeta })),
-);
 
 /* ── Static data ───────────────────────────────────────────── */
 
@@ -196,18 +191,9 @@ export function LeadCapturePage({ onBetaGranted }: LeadCapturePageProps = {}) {
         </p>
       </m.section>
 
-      {/* ── FORM + QR ─────────────────────────────────────── */}
-      <section id="lead-form" className="grid gap-8 lg:grid-cols-[1fr_auto]">
+      {/* ── FORM ─────────────────────────────────────────── */}
+      <section id="lead-form">
         <LeadCaptureForm {...(onBetaGranted ? { onBetaGranted } : {})} />
-
-        <div className="flex flex-col items-center gap-3 self-start">
-          <Suspense fallback={null}>
-            <QrCodeBeta width={180} />
-          </Suspense>
-          <p className="text-center text-xs text-muted-foreground">
-            Scansiona per aprire<br />questa pagina
-          </p>
-        </div>
       </section>
 
       {/* ── FOOTER ────────────────────────────────────────── */}
