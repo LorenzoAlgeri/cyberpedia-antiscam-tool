@@ -486,17 +486,50 @@ async function handleMessageStream(request: Request, env: Env): Promise<Response
       }
 
       // Sanitize scores — ensure all are valid numbers in [0,100]
-      const clamp = (v: unknown) => {
+      // Gemini sometimes returns 0-10 scale instead of 0-100 — auto-detect and normalize
+      const rawScores = analysis.behaviorScores;
+      const toNum = (v: unknown): number => {
         const n = typeof v === 'number' && !Number.isNaN(v) ? v : 0;
-        return Math.round(Math.max(0, Math.min(100, n)));
+        return Math.max(0, n);
       };
-      const safeScores = {
-        activation: clamp(analysis.behaviorScores.activation),
-        impulsivity: clamp(analysis.behaviorScores.impulsivity),
-        verification: clamp(analysis.behaviorScores.verification),
-        awareness: clamp(analysis.behaviorScores.awareness),
-        riskScore: clamp(analysis.behaviorScores.riskScore),
-      };
+      let activation = toNum(rawScores.activation);
+      let impulsivity = toNum(rawScores.impulsivity);
+      let verification = toNum(rawScores.verification);
+      let awareness = toNum(rawScores.awareness);
+
+      // Auto-detect 0-10 scale: if ALL four scores are <= 10, assume 0-10 and multiply by 10
+      if (activation <= 10 && impulsivity <= 10 && verification <= 10 && awareness <= 10) {
+        activation = Math.round(activation * 10);
+        impulsivity = Math.round(impulsivity * 10);
+        verification = Math.round(verification * 10);
+        awareness = Math.round(awareness * 10);
+      }
+
+      // Clamp to [0, 100]
+      const clamp100 = (v: number) => Math.round(Math.max(0, Math.min(100, v)));
+      activation = clamp100(activation);
+      impulsivity = clamp100(impulsivity);
+      verification = clamp100(verification);
+      awareness = clamp100(awareness);
+
+      // Calculate riskScore server-side (don't trust Gemini's calculation)
+      // Formula: activation*0.35 + impulsivity*0.30 + (100-verification)*0.20 + (100-awareness)*0.15
+      const riskScore = clamp100(
+        activation * 0.35 +
+        impulsivity * 0.30 +
+        (100 - verification) * 0.20 +
+        (100 - awareness) * 0.15
+      );
+
+      const safeScores = { activation, impulsivity, verification, awareness, riskScore };
+
+      // Re-evaluate shouldInterrupt based on server-calculated riskScore
+      const interruptThreshold = (scenarioConfig as { interruptThreshold?: number }).interruptThreshold ?? 70;
+      const minTurns = (scenarioConfig as { minTurnsBeforeInterrupt?: number }).minTurnsBeforeInterrupt ?? 3;
+      if (!analysis.shouldInterrupt && riskScore >= interruptThreshold && userTurnCount >= minTurns) {
+        analysis.shouldInterrupt = true;
+        analysis.interruptReason = 'high_risk';
+      }
 
       // Send scores to client
       await write(sseEvent('scores', {
