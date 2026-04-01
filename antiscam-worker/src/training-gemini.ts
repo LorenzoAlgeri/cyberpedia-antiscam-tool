@@ -108,6 +108,8 @@ interface GeminiRequest {
  * - Trailing commas before } or ]
  * - Single-line // comments
  * - Unescaped newlines inside string values
+ * - Unquoted property names (e.g. {activation: 50} → {"activation": 50})
+ * - Single-quoted strings (e.g. {'key': 'val'} → {"key": "val"})
  * - Truncated JSON (unclosed braces/brackets)
  */
 function repairJSON(input: string): string {
@@ -118,6 +120,13 @@ function repairJSON(input: string): string {
 
   // Remove trailing commas before } or ]
   s = s.replace(/,\s*([\]}])/g, '$1');
+
+  // Fix unquoted property names: { key: → { "key":
+  // Matches word characters after { or , that are followed by :
+  s = s.replace(/([{,]\s*)([a-zA-Z_$][a-zA-Z0-9_$]*)\s*:/g, '$1"$2":');
+
+  // Fix single-quoted strings → double-quoted (simplified: outside existing double quotes)
+  s = s.replace(/'/g, '"');
 
   // Fix unescaped control characters inside strings (newlines, tabs)
   s = s.replace(/"([^"\\]*(?:\\.[^"\\]*)*)"/g, (match) => {
@@ -245,13 +254,26 @@ export async function callGeminiAnalysis<T>(
     cleaned = cleaned.slice(objStart, objEnd + 1);
   }
 
-  // Try parsing as-is first
+  // Try parsing as-is first, then repair, then log for debug
   try {
     return JSON.parse(cleaned) as T;
   } catch {
     // Repair common Gemini JSON issues before retrying
-    cleaned = repairJSON(cleaned);
-    return JSON.parse(cleaned) as T;
+    try {
+      cleaned = repairJSON(cleaned);
+      return JSON.parse(cleaned) as T;
+    } catch (parseErr) {
+      // Log the raw text for debugging
+      logger.error('gemini.json.parse.error', {
+        error: parseErr instanceof Error ? parseErr.message : String(parseErr),
+        rawTextPreview: rawText.slice(0, 500),
+        repairedPreview: cleaned.slice(0, 500),
+        endpoint: 'analysis',
+      });
+      throw new Error(
+        `Gemini ha restituito una risposta non valida. Riprova.`,
+      );
+    }
   }
 }
 
