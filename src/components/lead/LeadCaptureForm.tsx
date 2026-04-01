@@ -47,8 +47,20 @@ export function LeadCaptureForm({ onBetaGranted }: LeadCaptureFormProps = {}) {
       e.preventDefault();
       if (status === 'submitting') return;
 
+      if (!form.name.trim()) {
+        setErrorMsg('Inserisci il tuo nome e cognome.');
+        setStatus('error');
+        return;
+      }
+
+      if (!form.email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
+        setErrorMsg('Inserisci un indirizzo email valido.');
+        setStatus('error');
+        return;
+      }
+
       if (!form.consent) {
-        setErrorMsg('Devi dichiarare di aver letto e accettato l\'Informativa Privacy.');
+        setErrorMsg('Per procedere devi accettare l\'Informativa Privacy.');
         setStatus('error');
         return;
       }
@@ -143,28 +155,38 @@ export function LeadCaptureForm({ onBetaGranted }: LeadCaptureFormProps = {}) {
       </div>
 
       {/* Name */}
-      <input
-        type="text"
-        placeholder="Nome e cognome"
-        required
-        maxLength={100}
-        value={form.name}
-        onChange={(e) => update('name', e.target.value)}
-        className="input-glass"
-        autoComplete="name"
-      />
+      <div className="space-y-1">
+        <label className="text-sm font-medium text-foreground">
+          Nome e cognome <span className="text-destructive">*</span>
+        </label>
+        <input
+          type="text"
+          placeholder="Nome e cognome"
+          required
+          maxLength={100}
+          value={form.name}
+          onChange={(e) => update('name', e.target.value)}
+          className="input-glass"
+          autoComplete="name"
+        />
+      </div>
 
       {/* Email */}
-      <input
-        type="email"
-        placeholder="Email"
-        required
-        maxLength={254}
-        value={form.email}
-        onChange={(e) => update('email', e.target.value)}
-        className="input-glass"
-        autoComplete="email"
-      />
+      <div className="space-y-1">
+        <label className="text-sm font-medium text-foreground">
+          Email <span className="text-destructive">*</span>
+        </label>
+        <input
+          type="email"
+          placeholder="Email"
+          required
+          maxLength={254}
+          value={form.email}
+          onChange={(e) => update('email', e.target.value)}
+          className="input-glass"
+          autoComplete="email"
+        />
+      </div>
 
       {/* Risk interest (optional) */}
       <div className="space-y-1">
