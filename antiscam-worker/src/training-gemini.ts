@@ -343,7 +343,7 @@ export async function streamGeminiMessage(
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(buildGeminiRequest(systemPrompt, userPrompt, {
         temperature: 0.9,
-        maxTokens: 1024,
+        maxTokens: 2048,
         jsonMode: false,
       })),
     },
